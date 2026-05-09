@@ -26,10 +26,10 @@ cd game
 
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
-- GUT 套件：126 个测试通过，708 个断言。
+- GUT 套件：131 个测试通过，737 个断言。
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
 - Native gameplay smoke：代表性 gameplay scenario 通过，trace、截图和 overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
-- Structural lint：Tree-sitter GDScript 解析 73 个文件，0 个 error；当前 warning 跟踪 TD-008、TD-009 和 TD-010。
+- Structural lint：Tree-sitter GDScript 解析 75 个文件，0 个 error；当前 warning 跟踪 TD-008 和 TD-010。
 - Agent preflight：运行 `check-all.sh`、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
 - 已知警告：GUT 退出时有来自场景/资源清理的 ObjectDB leaked instances 警告，记录为 TD-007。
 
@@ -52,6 +52,7 @@ cd game
 - 覆盖放塔、Single 击杀奖励、Area 溅射、Slow 状态、漏怪、胜利和失败的 native gameplay smoke。
 - Tree-sitter structural lint，覆盖 core/scene 边界、BoardView 资产加载边界和结构 warning 报告。
 - `BoardAssetCatalog`，集中管理主棋盘场景的关卡、map style、HUD 图标、塔/敌人 sprite 和特效贴图加载。
+- `BoardGameSession`，集中管理一局游戏的棋盘、钱包、放置服务、战斗模拟、波次、奖励和胜负 flow；场景测试和 smoke runner 仍通过 `BoardView` facade 兼容。
 - 用于本地 agent 迭代反馈的 agent preflight 和 UI smoke 摘要脚本。
 - 面向核心玩法规则、场景/UI 验证和 harness 维护的项目 Codex skills。
 - 面向核心玩法和 UI 的功能清单与测试计划文档。
@@ -65,8 +66,8 @@ cd game
 
 ## 已知风险
 
-- `game/scripts/board/board_view.gd` 很大，仍混合了输入、布局、渲染、HUD 状态和模拟集成，记录为 TD-008。
-- `BoardView` 仍构造默认经济配置和波次定义，记录为 TD-009。
+- `game/scripts/board/board_view.gd` 很大，仍混合了输入、布局、渲染、HUD 状态和视觉反馈状态，记录为 TD-008。
+- `BoardGameSession` 仍构造默认经济配置和波次定义，记录为 TD-009。
 - `game/scripts/core/maps/BoardMapRenderer` 仍包含渲染和资源加载耦合，记录为 TD-010。
 - 塔和波次数值仍有一部分硬编码在 GDScript 中。
 - 测试质量依赖 GUT 加 checklist，而不是行覆盖率。
@@ -87,5 +88,5 @@ cd game
 
 1. 决定并实现 Prototype 塔成长模型。
 2. 将塔、敌人和波次定义推进到数据文件。
-3. 在下一个玩法决策后拆分 `BoardView` 职责。
+3. 继续按 `docs/designs/2026-05-10-board-view-decomposition.md` 拆分 `BoardView` 的 layout、HUD、visual state 和 renderer。
 4. 保持 `game/tools/check-all.sh` 作为默认验证命令。

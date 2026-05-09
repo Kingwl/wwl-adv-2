@@ -48,8 +48,8 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
   - 校验数据文件和运行时资产之间的引用。
 
 - [ ] 将 structural lint 的 warning 分阶段收敛成更严格规则。
-  - 先拆出 `BoardView` 的 HUD、输入、渲染和 game flow adapter。
-  - 将默认经济配置和波次定义迁移到数据/配置层。
+  - 继续按 `docs/designs/2026-05-10-board-view-decomposition.md` 拆出 `BoardView` 的 layout、HUD、visual state 和 renderer。
+  - 将 `BoardGameSession` 中的默认经济配置和波次定义迁移到数据/配置层。
   - 将 `BoardMapRenderer` 从 `game/scripts/core/` 迁出到场景/渲染 adapter。
 
 - [x] 添加 agent preflight 命令。

@@ -86,7 +86,7 @@ var attack_feedbacks: Array
 var tower_attack_animations: Dictionary
 var enemy_death_animations: Array
 var visual_elapsed_seconds := 0.0
-var flow_state := FlowState.PLAYING
+var flow_state: int = FlowState.PLAYING
 var gameplay_paused := false
 var selected_tower_type: GameTower.Type = GameTower.Type.SINGLE_TARGET
 var tower_deck_is_bottom := false
@@ -116,6 +116,7 @@ var _gold_icon_rect: TextureRect
 var _lives_icon_rect: TextureRect
 var _wave_icon_rect: TextureRect
 var _map_normal_light: DirectionalLight2D
+var _game_session: BoardGameSession
 var _asset_catalog: BoardAssetCatalog
 var _gold_icon_texture: Texture2D
 var _lives_icon_texture: Texture2D
@@ -175,20 +176,24 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_sync_session_from_facade()
 	if combat_simulation == null or gameplay_paused:
 		return
 
 	_advance_visual_animations(delta)
-	var tick_results := combat_simulation.advance(delta)
-	last_tick_results = tick_results
+	var previous_flow_state := flow_state
+	var tick_results := _game_session.advance_combat(delta)
+	_sync_session_to_facade()
 	_advance_attack_feedbacks(delta)
 	_spawn_tower_attack_animations(tick_results)
 	_spawn_enemy_death_animations(tick_results)
 	_spawn_attack_feedback(tick_results)
-	_apply_tick_rewards(tick_results)
-	_apply_tick_outcome(tick_results)
+	_sync_flow_overlay_from_transition(previous_flow_state)
+	_update_gold_label()
 	_update_lives_label()
 	_update_wave_label()
+	_sync_message_labels()
+	_sync_tower_button_state()
 	queue_redraw()
 
 
@@ -196,73 +201,30 @@ func initialize_board() -> void:
 	if level_definition == null:
 		_load_level_definition()
 
-	if level_definition != null and level_definition.is_valid():
-		board = Board.new(level_definition.grid_width, level_definition.grid_height)
-		level_definition.apply_to_board(board)
-	else:
-		board = Board.new(BOARD_WIDTH, BOARD_HEIGHT)
-		board.set_path(get_default_path())
-
-	var path_result := board.validate_path(get_default_path())
-	assert(path_result.succeeded, "Default path must be valid.")
-
-	economy_config = EconomyConfig.new()
-	wallet = Wallet.new(economy_config.initial_gold)
-	placement_service = TowerPlacementService.new(board, wallet, economy_config)
-	selected_tower_type = GameTower.Type.SINGLE_TARGET
-	placement_service.basic_tower_type = selected_tower_type
-	kill_reward_service = KillRewardService.new(wallet)
-	wave_reward_service = WaveRewardService.new(wallet)
-	last_placement_result = null
-	last_tick_results = []
-	last_reward_transaction_results = []
-	last_wave_reward_transaction_results = []
-	hover_grid_position = INVALID_GRID_POSITION
-	attack_feedbacks = []
-	tower_attack_animations = {}
-	enemy_death_animations = []
-	visual_elapsed_seconds = 0.0
+	_ensure_game_session()
+	_sync_session_from_facade()
+	_game_session.initialize_board()
+	_sync_session_to_facade()
+	_reset_view_state()
 
 
 func initialize_combat() -> void:
-	path_follower = PathFollower.new(get_default_path())
-	wave_spawner = WaveSpawner.new(get_default_wave_definitions())
-	combat_simulation = CombatSimulation.new(
-		placement_service.tower_registry.get_all_towers(),
-		[],
-		path_follower,
-		CombatSimulation.DEFAULT_FIXED_STEP_SECONDS,
-		null,
-		null,
-		wave_spawner
-	)
+	_ensure_game_session()
+	_sync_session_from_facade()
+	_game_session.initialize_combat()
+	_sync_session_to_facade()
 
 
 func get_default_path() -> Array:
-	if level_definition != null and not level_definition.path_cells.is_empty():
-		return level_definition.path_cells.duplicate()
-
-	return [
-		Vector2i(0, 3),
-		Vector2i(1, 3),
-		Vector2i(2, 3),
-		Vector2i(3, 3),
-		Vector2i(4, 3),
-		Vector2i(4, 4),
-		Vector2i(5, 4),
-		Vector2i(6, 4),
-		Vector2i(7, 4),
-		Vector2i(8, 4),
-		Vector2i(9, 4),
-	]
+	_ensure_game_session()
+	_sync_session_from_facade()
+	return _game_session.get_default_path()
 
 
 func get_default_wave_definitions() -> Array:
-	return [
-		WaveDefinition.new("wave-1", 5, 0.8, 20.0, 1.0, 5, 20),
-		WaveDefinition.new("wave-2", 7, 0.7, 24.0, 1.0, 5, 25),
-		WaveDefinition.new("wave-3", 10, 0.6, 30.0, 1.1, 6, 35),
-	]
+	_ensure_game_session()
+	_sync_session_from_facade()
+	return _game_session.get_default_wave_definitions()
 
 
 func screen_to_grid_position(screen_position: Vector2) -> Vector2i:
@@ -333,56 +295,49 @@ func _hud_reserved_height(viewport_size: Vector2) -> float:
 
 
 func try_place_at_grid(grid_position: Vector2i) -> TowerPlacementResult:
-	placement_service.basic_tower_type = selected_tower_type
-	var result := placement_service.try_place_basic_tower(grid_position)
-	last_placement_result = result.placement_result
-
-	if result.succeeded:
-		_sync_combat_towers()
-		_set_status("Placed %s at (%d, %d) for %d gold." % [
-			result.tower_id,
-			grid_position.x,
-			grid_position.y,
-			economy_config.basic_tower_cost,
-		])
-	elif result.placement_result != null:
-		_set_status("Cannot place at (%d, %d): %s" % [grid_position.x, grid_position.y, result.placement_result.message])
-	else:
-		_set_status("Cannot place at (%d, %d): %s" % [grid_position.x, grid_position.y, result.message])
-
+	_ensure_game_session()
+	_sync_session_from_facade()
+	var result := _game_session.try_place_at_grid(grid_position)
+	_sync_session_to_facade()
+	_sync_message_labels()
 	_update_gold_label()
+	_sync_tower_button_state()
 	queue_redraw()
 	return result
 
 
 func start_game() -> void:
-	flow_state = FlowState.PLAYING
-	gameplay_paused = false
+	_ensure_game_session()
+	_sync_session_from_facade()
+	_game_session.start_game()
+	_sync_session_to_facade()
 	_set_overlay_visible(false)
 	_sync_menu_button_state()
 	_sync_tower_button_state()
-	_set_status("Click a green slot to place a tower.")
 	_update_selected_tower_hint()
+	_sync_message_labels()
 	queue_redraw()
 
 
 func open_pause_menu() -> void:
-	if flow_state != FlowState.PLAYING:
+	_ensure_game_session()
+	_sync_session_from_facade()
+	if not _game_session.open_pause_menu():
 		return
 
-	flow_state = FlowState.MENU
-	gameplay_paused = true
+	_sync_session_to_facade()
 	_show_overlay("Paused", "Game paused.", "Resume", "Start")
 	_sync_menu_button_state()
 	_sync_tower_button_state()
 
 
 func resume_game() -> void:
-	if flow_state != FlowState.MENU:
+	_ensure_game_session()
+	_sync_session_from_facade()
+	if not _game_session.resume_game():
 		return
 
-	flow_state = FlowState.PLAYING
-	gameplay_paused = false
+	_sync_session_to_facade()
 	_set_overlay_visible(false)
 	_sync_menu_button_state()
 	_sync_tower_button_state()
@@ -390,14 +345,20 @@ func resume_game() -> void:
 
 
 func restart_game() -> void:
-	initialize_board()
-	initialize_combat()
+	_ensure_game_session()
+	_sync_session_from_facade()
+	_game_session.restart_game()
+	_sync_session_to_facade()
+	_reset_view_state()
 	_update_gold_label()
 	_update_lives_label()
 	_update_wave_label()
 	_update_selected_tower_hint()
+	_sync_message_labels()
 	_sync_tower_button_state()
-	start_game()
+	_set_overlay_visible(false)
+	_sync_menu_button_state()
+	queue_redraw()
 
 
 func return_to_start_screen() -> void:
@@ -407,26 +368,30 @@ func return_to_start_screen() -> void:
 
 
 func show_victory_screen() -> void:
-	flow_state = FlowState.WON
-	gameplay_paused = true
+	_ensure_game_session()
+	_sync_session_from_facade()
+	_game_session.show_victory_screen()
+	_sync_session_to_facade()
 	_show_overlay("Victory", "All waves cleared.", "Restart", "Start")
 	_sync_menu_button_state()
 	_sync_tower_button_state()
 
 
 func show_defeat_screen() -> void:
-	flow_state = FlowState.LOST
-	gameplay_paused = true
+	_ensure_game_session()
+	_sync_session_from_facade()
+	_game_session.show_defeat_screen()
+	_sync_session_to_facade()
 	_show_overlay("Defeat", "Enemies breached the path.", "Restart", "Start")
 	_sync_menu_button_state()
 	_sync_tower_button_state()
 
 
 func select_tower_type(tower_type: GameTower.Type) -> void:
-	selected_tower_type = tower_type
-	if placement_service != null:
-		placement_service.basic_tower_type = selected_tower_type
-
+	_ensure_game_session()
+	_sync_session_from_facade()
+	_game_session.select_tower_type(tower_type)
+	_sync_session_to_facade()
 	_update_selected_tower_hint()
 	_sync_tower_button_state()
 	queue_redraw()
@@ -843,6 +808,85 @@ func _sync_asset_catalog() -> void:
 	_slow_impact_textures = _asset_catalog.slow_impact_textures
 
 
+func _ensure_game_session() -> void:
+	if _game_session == null:
+		_game_session = BoardGameSession.new(BOARD_WIDTH, BOARD_HEIGHT)
+
+
+func _sync_session_from_facade() -> void:
+	_ensure_game_session()
+	_game_session.board = board
+	_game_session.wallet = wallet
+	_game_session.economy_config = economy_config
+	_game_session.placement_service = placement_service
+	_game_session.combat_simulation = combat_simulation
+	_game_session.kill_reward_service = kill_reward_service
+	_game_session.wave_reward_service = wave_reward_service
+	_game_session.wave_spawner = wave_spawner
+	_game_session.path_follower = path_follower
+	_game_session.level_definition = level_definition
+	_game_session.last_placement_result = last_placement_result
+	_game_session.last_tick_results = last_tick_results
+	_game_session.last_reward_transaction_results = last_reward_transaction_results
+	_game_session.last_wave_reward_transaction_results = last_wave_reward_transaction_results
+	_game_session.flow_state = flow_state
+	_game_session.gameplay_paused = gameplay_paused
+	_game_session.selected_tower_type = selected_tower_type
+	_game_session.status_text = _status_text
+	_game_session.hint_text = _hint_text
+
+
+func _sync_session_to_facade() -> void:
+	if _game_session == null:
+		return
+
+	board = _game_session.board
+	wallet = _game_session.wallet
+	economy_config = _game_session.economy_config
+	placement_service = _game_session.placement_service
+	combat_simulation = _game_session.combat_simulation
+	kill_reward_service = _game_session.kill_reward_service
+	wave_reward_service = _game_session.wave_reward_service
+	wave_spawner = _game_session.wave_spawner
+	path_follower = _game_session.path_follower
+	level_definition = _game_session.level_definition
+	last_placement_result = _game_session.last_placement_result
+	last_tick_results = _game_session.last_tick_results
+	last_reward_transaction_results = _game_session.last_reward_transaction_results
+	last_wave_reward_transaction_results = _game_session.last_wave_reward_transaction_results
+	flow_state = _game_session.flow_state
+	gameplay_paused = _game_session.gameplay_paused
+	selected_tower_type = _game_session.selected_tower_type
+	_status_text = _game_session.status_text
+	_hint_text = _game_session.hint_text
+
+
+func _reset_view_state() -> void:
+	hover_grid_position = INVALID_GRID_POSITION
+	attack_feedbacks = []
+	tower_attack_animations = {}
+	enemy_death_animations = []
+	visual_elapsed_seconds = 0.0
+
+
+func _sync_flow_overlay_from_transition(previous_flow_state: int) -> void:
+	if previous_flow_state == flow_state:
+		return
+
+	match flow_state:
+		FlowState.WON:
+			_show_overlay("Victory", "All waves cleared.", "Restart", "Start")
+		FlowState.LOST:
+			_show_overlay("Defeat", "Enemies breached the path.", "Restart", "Start")
+		FlowState.MENU:
+			_show_overlay("Paused", "Game paused.", "Resume", "Start")
+		FlowState.PLAYING:
+			_set_overlay_visible(false)
+
+	_sync_menu_button_state()
+	_sync_tower_button_state()
+
+
 func _sync_map_normal_light() -> void:
 	var should_enable := (
 		map_style_definition != null
@@ -1141,30 +1185,13 @@ func _advance_attack_feedback(delta_seconds: float) -> void:
 
 
 func _get_tower_by_id(tower_id: String) -> GameTower:
-	if placement_service != null and placement_service.tower_registry != null:
-		var placed_tower := placement_service.tower_registry.get_tower(tower_id)
-		if placed_tower != null:
-			return placed_tower
-
-	if combat_simulation != null:
-		for candidate in combat_simulation.towers:
-			var tower := candidate as GameTower
-			if tower != null and tower.id == tower_id:
-				return tower
-
-	return null
+	_sync_session_from_facade()
+	return _game_session.get_tower_by_id(tower_id)
 
 
 func _get_enemy_by_id(enemy_id: String) -> Enemy:
-	if combat_simulation == null:
-		return null
-
-	for candidate in combat_simulation.enemies:
-		var enemy := candidate as Enemy
-		if enemy != null and enemy.id == enemy_id:
-			return enemy
-
-	return null
+	_sync_session_from_facade()
+	return _game_session.get_enemy_by_id(enemy_id)
 
 
 func _enemy_local_position(enemy: Enemy) -> Vector2:
@@ -1412,11 +1439,15 @@ func _on_overlay_secondary_pressed() -> void:
 
 
 func _set_status(text: String) -> void:
+	if _game_session != null:
+		_game_session.set_status(text)
 	_status_text = text
 	_sync_message_labels()
 
 
 func _set_hint(text: String) -> void:
+	if _game_session != null:
+		_game_session.set_hint(text)
 	_hint_text = text
 	_sync_message_labels()
 
@@ -1550,91 +1581,30 @@ func _update_wave_label() -> void:
 
 
 func get_visible_enemies() -> Array:
-	if combat_simulation == null:
-		return []
-
-	var visible_enemies := []
-	for candidate in combat_simulation.enemies:
-		var enemy := candidate as Enemy
-		if enemy == null or enemy.defeated or enemy.completed:
-			continue
-
-		visible_enemies.append(enemy)
-
-	return visible_enemies
+	_sync_session_from_facade()
+	return _game_session.get_visible_enemies()
 
 
 func _sync_combat_towers() -> void:
-	if combat_simulation == null or placement_service == null:
-		return
-
-	combat_simulation.towers = placement_service.tower_registry.get_all_towers()
+	_sync_session_from_facade()
+	_game_session.sync_combat_towers()
+	_sync_session_to_facade()
 
 
 func _apply_tick_rewards(tick_results: Array) -> void:
-	if kill_reward_service == null or wave_reward_service == null:
-		return
-
-	var earned_gold := 0
-	var defeated_enemy_id := ""
-	var cleared_wave_id := ""
-	last_reward_transaction_results = []
-	last_wave_reward_transaction_results = []
-
-	for candidate in tick_results:
-		var tick_result := candidate as CombatTickResult
-		if tick_result == null or tick_result.damage_result == null:
-			continue
-
-		var transaction_results := kill_reward_service.apply_death_events(tick_result.damage_result.death_events)
-		last_reward_transaction_results.append_array(transaction_results)
-		var wave_transaction_results := wave_reward_service.apply_clear_events(tick_result.wave_clear_events)
-		last_wave_reward_transaction_results.append_array(wave_transaction_results)
-
-		for transaction_result in transaction_results:
-			if transaction_result.succeeded:
-				earned_gold += transaction_result.amount
-				defeated_enemy_id = transaction_result.reference_id
-
-		for transaction_result in wave_transaction_results:
-			if transaction_result.succeeded:
-				earned_gold += transaction_result.amount
-				cleared_wave_id = transaction_result.reference_id
-
-	if earned_gold <= 0:
-		return
-
-	if last_reward_transaction_results.size() == 1 and last_wave_reward_transaction_results.is_empty():
-		_set_status("Defeated %s for %d gold." % [defeated_enemy_id, earned_gold])
-	elif last_reward_transaction_results.is_empty() and last_wave_reward_transaction_results.size() == 1:
-		_set_status("Cleared %s for %d gold." % [cleared_wave_id, earned_gold])
-	else:
-		_set_status("Earned %d gold." % earned_gold)
-
+	_sync_session_from_facade()
+	_game_session.apply_tick_rewards(tick_results)
+	_sync_session_to_facade()
 	_update_gold_label()
+	_sync_message_labels()
 
 
 func _apply_tick_outcome(tick_results: Array) -> void:
-	var leak_count := 0
-	var latest_lives := combat_simulation.player_life.lives
-
-	for candidate in tick_results:
-		var tick_result := candidate as CombatTickResult
-		if tick_result == null:
-			continue
-
-		leak_count += tick_result.enemy_leak_events.size()
-		latest_lives = tick_result.lives_remaining
-
-		if tick_result.game_failed:
-			_set_status("Defeat. Enemies breached the path.")
-			show_defeat_screen()
-			return
-
-		if tick_result.game_won:
-			_set_status("Victory. All waves cleared.")
-			show_victory_screen()
-			return
-
-	if leak_count > 0:
-		_set_status("Enemy leaked. Lives: %d" % latest_lives)
+	var previous_flow_state := flow_state
+	_sync_session_from_facade()
+	_game_session.apply_tick_outcome(tick_results)
+	_sync_session_to_facade()
+	_sync_flow_overlay_from_transition(previous_flow_state)
+	_update_lives_label()
+	_update_wave_label()
+	_sync_message_labels()

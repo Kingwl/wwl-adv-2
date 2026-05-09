@@ -43,7 +43,6 @@ cd game
 当前 structural lint 会以 warning 跟踪但不阻塞的技术债：
 
 - `BoardView` 仍超过 1200 行，且函数数量偏多。
-- `BoardView` 仍构造默认经济配置和波次定义。
 - `game/scripts/core/maps/BoardMapRenderer` 仍包含渲染和资源加载耦合。
 
 native UI/可玩性 smoke 检查：

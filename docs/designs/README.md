@@ -32,6 +32,7 @@
 | `2026-05-09-road-ribbon-rendering-and-asset-contract.md` | Accepted | `game/tools/generate-road-guide.py`, map assets | 契约已部分验证；确定性道路材质生成仍是未来工作。 |
 | `2026-05-09-merge-ui-integration.md` | Deferred | Core merge only: `game/scripts/core/towers/tower_merge_service.gd` | 被“合成还是直接升级”决策阻塞。 |
 | `2026-05-09-ui-playability-validation.md` | Accepted | `game/tools/check-ui-smoke.sh`; proposed Web smoke | Native smoke 已用于开发；Web smoke 仍是未来发布门禁。 |
+| `2026-05-10-board-view-decomposition.md` | Accepted | `game/scripts/board/board_game_session.gd` first slice | `BoardGameSession` 已落地；HUD、layout、visual state 和 renderer 仍需继续迁出。 |
 
 ## 工具索引
 
