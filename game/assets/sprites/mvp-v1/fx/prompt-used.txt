@@ -1,0 +1,1 @@
+Clean HD 2D tower-defense FX sheet: golden projectile, orange explosion impact, icy slow impact. Solid #FF00FF background, 3x4 cells, no labels, no borders.

@@ -1,0 +1,249 @@
+{
+  "target": "creature",
+  "mode": "death",
+  "prompt": "Original goblin-wolf raider creature death animation, conservative largest-component cleanup for QC.",
+  "role": "",
+  "input": "/Users/bytedance/.codex/generated_images/019e0673-5a9c-7082-b622-e330e89eb6d3/ig_0146f725eb9e9aec0169fdde989f248191b35a93c9e634f006.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 2,
+  "cols": 3,
+  "cell_size": 128,
+  "fit_scale": 0.82,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 6,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "enemy-death-1",
+    "enemy-death-2",
+    "enemy-death-3",
+    "enemy-death-4",
+    "enemy-death-5",
+    "enemy-death-6"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "component_mode": "largest",
+      "component_count": 37,
+      "selected_component_area": 65695,
+      "selected_component_bbox": [
+        124,
+        119,
+        504,
+        454
+      ],
+      "crop_bbox": [
+        118,
+        113,
+        504,
+        460
+      ],
+      "edge_touch": false,
+      "output_size": [
+        99,
+        89
+      ],
+      "paste_position": [
+        14,
+        28
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        512,
+        0,
+        1024,
+        512
+      ],
+      "component_mode": "largest",
+      "component_count": 22,
+      "selected_component_area": 61149,
+      "selected_component_bbox": [
+        100,
+        150,
+        440,
+        471
+      ],
+      "crop_bbox": [
+        94,
+        144,
+        446,
+        477
+      ],
+      "edge_touch": false,
+      "output_size": [
+        90,
+        85
+      ],
+      "paste_position": [
+        19,
+        32
+      ]
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        1024,
+        0,
+        1536,
+        512
+      ],
+      "component_mode": "largest",
+      "component_count": 6,
+      "selected_component_area": 52105,
+      "selected_component_bbox": [
+        61,
+        206,
+        392,
+        466
+      ],
+      "crop_bbox": [
+        55,
+        200,
+        398,
+        472
+      ],
+      "edge_touch": false,
+      "output_size": [
+        88,
+        69
+      ],
+      "paste_position": [
+        20,
+        48
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        512,
+        512,
+        1024
+      ],
+      "component_mode": "largest",
+      "component_count": 24,
+      "selected_component_area": 56049,
+      "selected_component_bbox": [
+        106,
+        136,
+        472,
+        390
+      ],
+      "crop_bbox": [
+        100,
+        130,
+        478,
+        396
+      ],
+      "edge_touch": false,
+      "output_size": [
+        97,
+        68
+      ],
+      "paste_position": [
+        15,
+        49
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        512,
+        512,
+        1024,
+        1024
+      ],
+      "component_mode": "largest",
+      "component_count": 12,
+      "selected_component_area": 43028,
+      "selected_component_bbox": [
+        73,
+        200,
+        469,
+        371
+      ],
+      "crop_bbox": [
+        67,
+        194,
+        475,
+        377
+      ],
+      "edge_touch": false,
+      "output_size": [
+        104,
+        47
+      ],
+      "paste_position": [
+        12,
+        70
+      ]
+    },
+    {
+      "grid": [
+        1,
+        2
+      ],
+      "source_box": [
+        1024,
+        512,
+        1536,
+        1024
+      ],
+      "component_mode": "largest",
+      "component_count": 26,
+      "selected_component_area": 34874,
+      "selected_component_bbox": [
+        44,
+        235,
+        430,
+        382
+      ],
+      "crop_bbox": [
+        38,
+        229,
+        436,
+        388
+      ],
+      "edge_touch": false,
+      "output_size": [
+        102,
+        40
+      ],
+      "paste_position": [
+        13,
+        77
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

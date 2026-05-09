@@ -1,0 +1,12 @@
+# Godot
+.godot/
+*.translation
+game/tools/out/
+game/assets/ui/frost_rts/frames_clean_tmp/
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store

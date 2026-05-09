@@ -1,0 +1,1 @@
+Original goblin-wolf raider creature death animation, conservative largest-component cleanup for QC.

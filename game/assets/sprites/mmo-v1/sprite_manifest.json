@@ -1,0 +1,62 @@
+{
+  "version": "mmo-v1",
+  "theme": "original high-fantasy MMO archetypes inspired by broad Warcraft-like visual language, not exact World of Warcraft units or logos",
+  "cell_size": 128,
+  "towers": {
+    "single": {
+      "static": "towers/single_tower.png",
+      "attack_frames": [
+        "towers/single_tower_attack_1.png",
+        "towers/single_tower_attack_2.png",
+        "towers/single_tower_attack_3.png",
+        "towers/single_tower_attack_4.png"
+      ],
+      "attack_strip": "towers/single_tower_attack_strip.png",
+      "concept": "human kingdom ballista guard tower"
+    },
+    "area": {
+      "static": "towers/area_tower.png",
+      "attack_frames": [
+        "towers/area_tower_attack_1.png",
+        "towers/area_tower_attack_2.png",
+        "towers/area_tower_attack_3.png",
+        "towers/area_tower_attack_4.png"
+      ],
+      "attack_strip": "towers/area_tower_attack_strip.png",
+      "concept": "dwarven-style siege mortar bunker tower"
+    },
+    "slow": {
+      "static": "towers/slow_tower.png",
+      "attack_frames": [
+        "towers/slow_tower_attack_1.png",
+        "towers/slow_tower_attack_2.png",
+        "towers/slow_tower_attack_3.png",
+        "towers/slow_tower_attack_4.png"
+      ],
+      "attack_strip": "towers/slow_tower_attack_strip.png",
+      "concept": "frost mage crystal spire"
+    }
+  },
+  "enemies": {
+    "basic": {
+      "static": "enemies/basic_enemy.png",
+      "walk_frames": [
+        "enemies/enemy_walk_1.png",
+        "enemies/enemy_walk_2.png",
+        "enemies/enemy_walk_3.png",
+        "enemies/enemy_walk_4.png"
+      ],
+      "walk_strip": "enemies/enemy_walk_strip.png",
+      "death_frames": [
+        "enemies/enemy_death_1.png",
+        "enemies/enemy_death_2.png",
+        "enemies/enemy_death_3.png",
+        "enemies/enemy_death_4.png",
+        "enemies/enemy_death_5.png",
+        "enemies/enemy_death_6.png"
+      ],
+      "death_strip": "enemies/enemy_death_strip.png",
+      "concept": "original goblin-wolf raider creature"
+    }
+  }
+}

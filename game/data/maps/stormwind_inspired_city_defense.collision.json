@@ -1,0 +1,40 @@
+{
+  "id": "stormwind_inspired_city_defense_collision",
+  "model": "coarse_shapes",
+  "grid": {
+    "width": 10,
+    "height": 8
+  },
+  "enemy_path": [
+    [0, 3],
+    [1, 3],
+    [2, 3],
+    [3, 3],
+    [4, 3],
+    [4, 4],
+    [5, 4],
+    [6, 4],
+    [7, 4],
+    [8, 4],
+    [9, 4]
+  ],
+  "non_buildable_cells": [
+    [0, 3],
+    [1, 3],
+    [2, 3],
+    [3, 3],
+    [4, 3],
+    [4, 4],
+    [5, 4],
+    [6, 4],
+    [7, 4],
+    [8, 4],
+    [9, 4]
+  ],
+  "buildable_policy": "Any in-bounds cell not listed in non_buildable_cells remains buildable for the current MVP rules.",
+  "critical_points": {
+    "spawn": [0, 3],
+    "bend": [4, 3],
+    "exit": [9, 4]
+  }
+}

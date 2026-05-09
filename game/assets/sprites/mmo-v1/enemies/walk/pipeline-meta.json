@@ -1,0 +1,155 @@
+{
+  "target": "creature",
+  "mode": "walk",
+  "prompt": "Original goblin-wolf raider creature walk animation, broad Warcraft-like wilderness monster inspiration without copying exact creatures or named units.",
+  "role": "",
+  "input": "/Users/bytedance/.codex/generated_images/019e0673-5a9c-7082-b622-e330e89eb6d3/ig_0146f725eb9e9aec0169fdde65628881918e38f45ecfd90863.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 1,
+  "cols": 4,
+  "cell_size": 128,
+  "fit_scale": 0.82,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "enemy-walk-1",
+    "enemy-walk-2",
+    "enemy-walk-3",
+    "enemy-walk-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        543,
+        724
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        115,
+        131,
+        479,
+        585
+      ],
+      "edge_touch": false,
+      "output_size": [
+        84,
+        104
+      ],
+      "paste_position": [
+        22,
+        13
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        543,
+        0,
+        1086,
+        724
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        72,
+        145,
+        457,
+        585
+      ],
+      "edge_touch": false,
+      "output_size": [
+        89,
+        101
+      ],
+      "paste_position": [
+        19,
+        16
+      ]
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        1086,
+        0,
+        1629,
+        724
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        63,
+        133,
+        467,
+        585
+      ],
+      "edge_touch": false,
+      "output_size": [
+        93,
+        104
+      ],
+      "paste_position": [
+        17,
+        13
+      ]
+    },
+    {
+      "grid": [
+        0,
+        3
+      ],
+      "source_box": [
+        1629,
+        0,
+        2172,
+        724
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        68,
+        139,
+        423,
+        585
+      ],
+      "edge_touch": false,
+      "output_size": [
+        82,
+        103
+      ],
+      "paste_position": [
+        23,
+        14
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

@@ -1,0 +1,47 @@
+{
+  "source_generated_images": {
+    "tower_card_normal": "/Users/bytedance/.codex/generated_images/019e0c5d-7b7b-7ed1-8aac-6ebe3d8d0343/ig_0ac78fcfd3660e1d0169ff2f6666d0819185acdb1c175eedf6.png",
+    "tower_card_selected": "/Users/bytedance/.codex/generated_images/019e0c5d-7b7b-7ed1-8aac-6ebe3d8d0343/ig_0ac78fcfd3660e1d0169ff2fab96488191b9f056ce4f15feec.png",
+    "hud_panel_frame": "/Users/bytedance/.codex/generated_images/019e0c5d-7b7b-7ed1-8aac-6ebe3d8d0343/ig_0ac78fcfd3660e1d0169ff2ff9b8c481918368dc71ff4f9005.png",
+    "menu_panel_frame": "/Users/bytedance/.codex/generated_images/019e0c5d-7b7b-7ed1-8aac-6ebe3d8d0343/ig_071a7d6a068515190169ff30dd4e2481919ec07ea66848ed1a.png"
+  },
+  "outputs": {
+    "button_normal.png": [
+      420,
+      48
+    ],
+    "button_pressed.png": [
+      420,
+      48
+    ],
+    "hud_panel_frame.png": [
+      900,
+      103
+    ],
+    "tower_card_normal.png": [
+      420,
+      156
+    ],
+    "tower_card_selected.png": [
+      420,
+      152
+    ],
+    "tower_card_disabled.png": [
+      420,
+      156
+    ],
+    "menu_panel_frame.png": [
+      520,
+      355
+    ],
+    "command_button_frame.png": [
+      420,
+      156
+    ],
+    "selected_card_frame.png": [
+      420,
+      152
+    ]
+  },
+  "processing": "generate2dsprite magenta cleanup + local alpha crop; final widths chosen to match Godot StyleBoxTexture margins without 128px downscale"
+}

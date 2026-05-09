@@ -1,0 +1,3 @@
+Regenerated dark icy fantasy RTS UI frame batch for HUD, tower cards, selected cards, and pause/menu panel.
+Solid #FF00FF magenta source backgrounds for chroma-key cleanup.
+Final assets are cropped transparent PNGs, resized to match Godot nine-slice margins, with no text or logos baked into the art.

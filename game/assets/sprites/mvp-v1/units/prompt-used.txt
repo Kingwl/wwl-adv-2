@@ -1,0 +1,1 @@
+Clean HD 2D top-down tower defense sprite sheet: Single tower, Area tower, Slow tower, and basic enemy creep. Solid #FF00FF background, 2x2 cells, no labels, no borders.

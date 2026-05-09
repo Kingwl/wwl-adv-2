@@ -1,0 +1,155 @@
+{
+  "target": "asset",
+  "mode": "single",
+  "prompt": "Clean HD 2D top-down tower defense sprite sheet: Single tower, Area tower, Slow tower, and basic enemy creep. Solid #FF00FF background, 2x2 cells, no labels, no borders.",
+  "role": "",
+  "input": "/Users/bytedance/.codex/generated_images/019e0673-5a9c-7082-b622-e330e89eb6d3/ig_0146f725eb9e9aec0169fdc8e52b5c8191afded71c733fed13.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "fit_scale": 0.82,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "mvp-unit-1",
+    "mvp-unit-2",
+    "mvp-unit-3",
+    "mvp-unit-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        155,
+        130,
+        515,
+        535
+      ],
+      "edge_touch": false,
+      "output_size": [
+        79,
+        88
+      ],
+      "paste_position": [
+        24,
+        20
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 2,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        59,
+        97,
+        451,
+        547
+      ],
+      "edge_touch": false,
+      "output_size": [
+        86,
+        98
+      ],
+      "paste_position": [
+        21,
+        15
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        160,
+        20,
+        517,
+        498
+      ],
+      "edge_touch": false,
+      "output_size": [
+        78,
+        104
+      ],
+      "paste_position": [
+        25,
+        12
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        103,
+        175,
+        396,
+        446
+      ],
+      "edge_touch": false,
+      "output_size": [
+        64,
+        59
+      ],
+      "paste_position": [
+        32,
+        34
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

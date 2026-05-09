@@ -1,0 +1,44 @@
+{
+  "id": "stormwind_inspired_city_defense",
+  "display_name": "Stormwind-Inspired City Defense",
+  "visual_model": "baked_raster",
+  "runtime_object_model": "none",
+  "collision_model": "coarse_shapes",
+  "engine_target": "project-native",
+  "art_style": "clean_hd",
+  "source": "image_gen",
+  "theme_notes": "Original high-fantasy white-stone human capital defense map with blue-and-gold banners, canals, cathedral spires, and fortified city plazas. Inspired by the requested Stormwind mood without copying specific game layouts, logos, characters, or emblems.",
+  "image": "res://assets/maps/stormwind_inspired_city_defense.png",
+  "raw_image": "res://assets/maps/stormwind_inspired_city_defense.raw.png",
+  "prompt": "res://assets/maps/stormwind_inspired_city_defense.prompt.txt",
+  "pixel_size": {
+    "width": 1280,
+    "height": 1024
+  },
+  "grid": {
+    "width": 10,
+    "height": 8,
+    "cell_width": 128,
+    "cell_height": 128
+  },
+  "path_cells": [
+    [0, 3],
+    [1, 3],
+    [2, 3],
+    [3, 3],
+    [4, 3],
+    [4, 4],
+    [5, 4],
+    [6, 4],
+    [7, 4],
+    [8, 4],
+    [9, 4]
+  ],
+  "spawn_cell": [0, 3],
+  "exit_cell": [9, 4],
+  "notes": [
+    "Generated as a 10:8 board background at 2x the current 640x512 board render size.",
+    "Designed for the existing BoardView default path; it is not wired into rendering yet.",
+    "Use path_cells as coarse collision/path metadata when integrating with BoardView."
+  ]
+}

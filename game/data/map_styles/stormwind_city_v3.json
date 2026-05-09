@@ -1,0 +1,19 @@
+{
+  "id": "stormwind_city_v3",
+  "display_name": "Stormwind-Inspired City V3",
+  "tile_size": 128,
+  "theme_notes": "Path-guide generated full-board city defense map. The road and buildable terrain are baked into the background from gameplay path data.",
+  "background": "res://assets/tilesets/stormwind_city_v3/background_frame.png",
+  "background_normal": "res://assets/tilesets/stormwind_city_v3/background_frame_normal.png",
+  "lighting": {
+    "normal_light_enabled": true,
+    "normal_light_energy": 0.28,
+    "normal_light_height": 0.38,
+    "normal_light_rotation_degrees": -42.0,
+    "normal_light_color": [1.0, 0.96, 0.88, 1.0]
+  },
+  "tiles": {
+    "blocked": "",
+    "locked": ""
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "grid_aligned_city_defense",
+  "display_name": "Grid-Aligned City Defense",
+  "visual_model": "board_contract_raster",
+  "runtime_object_model": "none",
+  "collision_model": "tile_collision",
+  "engine_target": "project-native",
+  "source": "existing_art_composite",
+  "theme_notes": "Original white-stone high-fantasy city defense board with blue-and-gold accents. The road is generated from gameplay path cells so movement and background art align exactly.",
+  "image": "res://assets/maps/grid_aligned_city_defense.png",
+  "pixel_size": {
+    "width": 1280,
+    "height": 1024
+  },
+  "grid": {
+    "width": 10,
+    "height": 8,
+    "cell_width": 128,
+    "cell_height": 128
+  },
+  "path_cells": [
+    [0, 3],
+    [1, 3],
+    [2, 3],
+    [3, 3],
+    [4, 3],
+    [4, 4],
+    [5, 4],
+    [6, 4],
+    [7, 4],
+    [8, 4],
+    [9, 4]
+  ],
+  "spawn_cell": [0, 3],
+  "exit_cell": [9, 4],
+  "notes": [
+    "Each source cell is 128x128 and maps to exactly one BoardView cell.",
+    "The visible paved road is drawn only inside path_cells.",
+    "Slot overlays in BoardView are interaction hints, not independent map geometry."
+  ]
+}

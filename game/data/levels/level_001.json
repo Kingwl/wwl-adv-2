@@ -1,0 +1,26 @@
+{
+  "id": "level_001",
+  "display_name": "City Gate Test",
+  "style_id": "stormwind_city_v3",
+  "grid": {
+    "width": 10,
+    "height": 8
+  },
+  "path_cells": [
+    [0, 3],
+    [1, 3],
+    [2, 3],
+    [3, 3],
+    [4, 3],
+    [4, 4],
+    [5, 4],
+    [6, 4],
+    [7, 4],
+    [8, 4],
+    [9, 4]
+  ],
+  "blocked_cells": [],
+  "locked_cells": [],
+  "spawn_cell": [0, 3],
+  "exit_cell": [9, 4]
+}
