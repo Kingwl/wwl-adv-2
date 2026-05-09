@@ -69,6 +69,8 @@ cd game
 ./tools/godot-headless.sh
 ./tools/test-gut.sh
 ./tools/check-docs.sh
+./tools/check-assets.sh
+./tools/export-web.sh ../build/web
 ```
 
 If a check cannot be run, note the reason in the final response.

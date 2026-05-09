@@ -32,6 +32,13 @@ Use this directory for design proposals, architecture notes, and decision record
 | `2026-05-09-road-ribbon-rendering-and-asset-contract.md` | Accepted | `game/tools/generate-road-guide.py`, map assets | Contract partly proven; deterministic road material generation remains future work. |
 | `2026-05-09-merge-ui-integration.md` | Deferred | Core merge only: `game/scripts/core/towers/tower_merge_service.gd` | Blocked by merge versus direct upgrade decision. |
 
+## Tooling Index
+
+| Tooling | Status | Implementation | Notes |
+| --- | --- | --- | --- |
+| Level and map style schema checks | Implemented | `game/data/schemas/`, `game/tools/check-assets.sh` | Runs inside `check-all.sh`. |
+| Godot Web export and Pages playable build | Implemented | `game/export_presets.cfg`, `game/tools/export-web.sh`, `.github/workflows/pages.yml` | Export output is outside `game/`; Pages publishes it under `/play/`. |
+
 ## Expectations
 
 Each design document should explain the problem, goals, constraints, proposed solution, alternatives, risks, and open questions.

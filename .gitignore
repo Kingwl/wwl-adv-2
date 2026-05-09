@@ -3,6 +3,8 @@
 *.translation
 game/tools/out/
 game/assets/ui/frost_rts/frames_clean_tmp/
+build/
+ci-artifacts/
 
 # Python
 __pycache__/

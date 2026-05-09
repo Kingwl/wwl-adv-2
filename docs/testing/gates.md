@@ -15,6 +15,8 @@ GitHub Actions runs the same project gate in `.github/workflows/ci.yml`.
 
 CI uploads the full `check-all.log` as the `godot-check-logs` artifact on every run, including failed runs.
 
+`check-all.sh` includes JSON/schema validation for `game/data/levels` and `game/data/map_styles`.
+
 For documentation-only changes:
 
 ```bash
@@ -56,6 +58,13 @@ When documentation layout changes:
 
 ## GitHub Pages
 
-GitHub Pages is deployed by `.github/workflows/pages.yml` from the static files in `site/`.
+GitHub Pages is deployed by `.github/workflows/pages.yml` from the static files in `site/` plus a Godot Web export under `_site/play/`.
 
-The Pages site is a project status page. It is not a Godot Web export until a dedicated Web export preset and artifact pipeline are added.
+Local Web export output must stay outside the Godot project directory. Use:
+
+```bash
+cd game
+./tools/export-web.sh ../build/web
+```
+
+The script rejects output paths inside `game/`.

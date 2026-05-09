@@ -53,14 +53,15 @@ Current known test state:
 - Tower and wave values are still partly hardcoded in GDScript.
 - Test quality relies on GUT plus checklists rather than line coverage.
 - Scene tests currently emit an ObjectDB leak warning, tracked as TD-007.
-- GitHub Pages currently publishes a static project page, not a playable Godot Web export.
+- GitHub Pages publishes the static project page and a playable Godot Web export at `/play/`.
 
 ## GitHub Automation
 
 - CI workflow: `.github/workflows/ci.yml`.
 - CI uploads `check-all.log` as the `godot-check-logs` artifact.
 - GitHub Pages workflow: `.github/workflows/pages.yml`.
-- Pages source: GitHub Actions workflow deployment from `site/`.
+- Pages source: GitHub Actions workflow deployment from `site/` plus a Godot Web export under `_site/play/`.
+- Local Web export output defaults to `build/web/`, outside the Godot project directory.
 
 ## Next Best Work
 

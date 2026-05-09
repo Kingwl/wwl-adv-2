@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WWL Map Style Definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "display_name",
+    "tile_size",
+    "theme_notes",
+    "background",
+    "background_normal",
+    "lighting",
+    "tiles"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_\\-]+$"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tile_size": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "theme_notes": {
+      "type": "string"
+    },
+    "background": {
+      "type": "string",
+      "pattern": "^res://.+"
+    },
+    "background_normal": {
+      "type": "string"
+    },
+    "lighting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "normal_light_enabled",
+        "normal_light_energy",
+        "normal_light_height",
+        "normal_light_rotation_degrees",
+        "normal_light_color"
+      ],
+      "properties": {
+        "normal_light_enabled": {
+          "type": "boolean"
+        },
+        "normal_light_energy": {
+          "type": "number",
+          "minimum": 0
+        },
+        "normal_light_height": {
+          "type": "number",
+          "minimum": 0
+        },
+        "normal_light_rotation_degrees": {
+          "type": "number"
+        },
+        "normal_light_color": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "tiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["blocked", "locked"],
+      "properties": {
+        "blocked": {
+          "type": "string"
+        },
+        "locked": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

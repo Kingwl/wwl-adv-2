@@ -87,3 +87,5 @@
 - [x] Remove transparent road tile placeholders from baked-road map style.
 - [x] Remove semantic road tile styles, assets, renderer branch, and tests.
 - [x] Add Prototype rule coverage checklist under `docs/testing/`.
+- [x] Add JSON/schema asset checks for level and map style data.
+- [x] Add Godot Web export pipeline for GitHub Pages playable builds.

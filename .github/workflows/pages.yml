@@ -10,6 +10,7 @@ on:
       - "docs/**"
       - "AGENTS.md"
       - "game/README.md"
+      - "game/**"
   workflow_dispatch:
 
 permissions:
@@ -25,21 +26,55 @@ jobs:
   build:
     name: Build static site
     runs-on: ubuntu-24.04
+    env:
+      GODOT_VERSION: "4.6.2"
+      GODOT_RELEASE: stable
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
 
+      - name: Add local bin to PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Godot and export templates
+        id: cache-godot-web
+        uses: actions/cache@v5.0.5
+        with:
+          path: |
+            ~/.local/bin/godot
+            ~/.local/share/godot/export_templates/4.6.2.stable
+            build/cache/godot-export-templates
+          key: godot-web-${{ runner.os }}-${{ env.GODOT_VERSION }}-${{ env.GODOT_RELEASE }}
+
+      - name: Install Godot
+        if: steps.cache-godot-web.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64.zip" \
+            -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          mv "/tmp/godot/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64" "$HOME/.local/bin/godot"
+          chmod +x "$HOME/.local/bin/godot"
+
       - name: Configure Pages
         uses: actions/configure-pages@v6.0.0
 
-      - name: Build site artifact
+      - name: Build static shell and playable Web export
+        env:
+          GODOT_BIN: godot
+          GODOT_VERSION: ${{ env.GODOT_VERSION }}
+          GODOT_RELEASE: ${{ env.GODOT_RELEASE }}
         run: |
           set -euo pipefail
           rm -rf _site
           mkdir -p _site
           cp -R site/. _site/
+          ./game/tools/export-web.sh "$PWD/_site/play"
           touch _site/.nojekyll
+          du -sh _site _site/play
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5.0.0
