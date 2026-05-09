@@ -10,6 +10,16 @@ This directory stores project documentation that should stay close to the code.
 4. `testing/gates.md`: verification expectations for the change.
 5. `todo/backlog.md` and `tech-debt/register.md` for follow-up work.
 
+Project-specific Codex skills live outside `docs/` under `.codex/skills/`. Use them when a task matches a specialized workflow such as core gameplay rules, scene/UI validation, or harness maintenance.
+
+## Project Skills
+
+Project skills are versioned under `.codex/skills/`:
+
+- `wwl-godot-core-rules`: deterministic gameplay rule development.
+- `wwl-godot-scene-harness`: scene, UI, layout, input, and playability validation.
+- `wwl-godot-harness-maintainer`: CI, Pages, validation scripts, asset checks, docs gates, and skill maintenance.
+
 ## Structure
 
 | Path | Purpose |

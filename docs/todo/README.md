@@ -5,6 +5,7 @@ Use this directory for active work items, backlog notes, and short-lived follow-
 ## Files
 
 - `backlog.md`: project backlog and triage notes.
+- `harness-engineering-todo.md`: agent-facing validation, automation, and observability backlog.
 - `YYYY-MM-DD-sprint.md`: dated sprint or work-session todo list.
 
 ## Expectations

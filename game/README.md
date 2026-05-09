@@ -18,11 +18,14 @@ Godot 4.x project for a 2D tower defense merge game.
 
 ```bash
 ./tools/check-all.sh
+./tools/agent-preflight.sh
 ./tools/check-env.sh
 ./tools/godot-headless.sh
 ./tools/test-gut.sh
 ./tools/check-docs.sh
 ./tools/check-assets.sh
+./tools/check-ui-smoke.sh
+./tools/summarize-ui-smoke.py
 ./tools/export-web.sh ../build/web
 ```
 
@@ -33,6 +36,10 @@ Godot scene startup uses `/Applications/Godot.app/Contents/MacOS/Godot` by defau
 This project uses GDScript-first development with GUT. Keep gameplay rules in `scripts/core/` so they can be tested without depending on active scenes, real frame timing, or UI state.
 
 Use `./tools/check-all.sh` as the default verification command for substantive changes.
+
+Use `./tools/check-ui-smoke.sh` for scene, layout, rendering, input, or UI asset changes. It runs the native Godot runtime, captures desktop/mobile-landscape/square screenshots, and writes reports under `../ci-artifacts/ui-smoke/native/`.
+
+Use `./tools/agent-preflight.sh` when you want one command for agent handoff: it runs `check-all.sh`, runs native UI smoke, and prints the UI smoke summary. Use `./tools/summarize-ui-smoke.py` to reprint the latest smoke report without rerunning Godot.
 
 ## Web Export
 

@@ -49,6 +49,14 @@ jobs:
       - name: Verify Godot
         run: godot --version
 
+      - name: Install UI smoke dependencies
+        run: |
+          set -euo pipefail
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+
       - name: Run project checks
         working-directory: game
         env:
@@ -58,10 +66,17 @@ jobs:
           mkdir -p ../ci-artifacts
           ./tools/check-all.sh 2>&1 | tee ../ci-artifacts/check-all.log
 
-      - name: Upload CI logs
+      - name: Run native UI smoke
+        working-directory: game
+        env:
+          GODOT_BIN: godot
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: ./tools/check-ui-smoke.sh
+
+      - name: Upload CI artifacts
         if: always()
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: godot-check-logs
+          name: godot-check-artifacts
           path: ci-artifacts/
           if-no-files-found: warn

@@ -8,13 +8,16 @@ The playable loop is mostly present. The main remaining Prototype decision is th
 
 ## Verified Commands
 
-Last checked: 2026-05-09.
+Last checked: 2026-05-10.
 
 ```bash
 cd game
+./tools/check-all.sh
+./tools/agent-preflight.sh
 ./tools/check-env.sh
 ./tools/godot-headless.sh
 ./tools/test-gut.sh
+./tools/check-ui-smoke.sh
 ```
 
 Current known test state:
@@ -22,6 +25,8 @@ Current known test state:
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
 - GUT suite: 124 tests passing, 670 assertions.
+- Native UI smoke: desktop, mobile landscape, and square viewports passing with screenshots under `ci-artifacts/ui-smoke/native/`.
+- Agent preflight: runs `check-all.sh`, native UI smoke, and the UI smoke summary.
 - Known warning: GUT exits with an ObjectDB leaked instances warning from scene/resource cleanup. Tracked as TD-007.
 
 ## Implemented
@@ -39,6 +44,9 @@ Current known test state:
 - Three basic tower types: Single, Area, and Slow.
 - Data-driven level path/style loading for the current map.
 - Generated city defense map, road guide artifacts, UI frames, tower sprites, enemy sprites, and attack effects.
+- Native UI smoke for start-to-main playability, responsive viewports, one tower placement, and screenshot artifacts.
+- Agent preflight and UI smoke summary scripts for local agent iteration feedback.
+- Project Codex skills for core gameplay rules, scene/UI validation, and harness maintenance.
 
 ## Open Decisions
 
@@ -58,10 +66,12 @@ Current known test state:
 ## GitHub Automation
 
 - CI workflow: `.github/workflows/ci.yml`.
-- CI uploads `check-all.log` as the `godot-check-logs` artifact.
+- CI runs `check-all.sh` plus native UI smoke.
+- CI uploads `ci-artifacts/` as the `godot-check-artifacts` artifact.
 - GitHub Pages workflow: `.github/workflows/pages.yml`.
 - Pages source: GitHub Actions workflow deployment from `site/` plus a Godot Web export under `_site/play/`.
 - Local Web export output defaults to `build/web/`, outside the Godot project directory.
+- Project skills are versioned under `.codex/skills/`; link them into `$CODEX_HOME/skills` when the local Codex runtime does not auto-load repo-local skills.
 
 ## Next Best Work
 

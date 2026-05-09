@@ -31,12 +31,15 @@ Use this directory for design proposals, architecture notes, and decision record
 | `2026-05-09-path-guide-road-generation.md` | Implemented | `game/tools/generate-road-guide.py`, `game/tools/out/` | Guide/mask artifacts are generated from gameplay path data. |
 | `2026-05-09-road-ribbon-rendering-and-asset-contract.md` | Accepted | `game/tools/generate-road-guide.py`, map assets | Contract partly proven; deterministic road material generation remains future work. |
 | `2026-05-09-merge-ui-integration.md` | Deferred | Core merge only: `game/scripts/core/towers/tower_merge_service.gd` | Blocked by merge versus direct upgrade decision. |
+| `2026-05-09-ui-playability-validation.md` | Accepted | `game/tools/check-ui-smoke.sh`; proposed Web smoke | Native smoke implemented for development; Web smoke remains future publish gate. |
 
 ## Tooling Index
 
 | Tooling | Status | Implementation | Notes |
 | --- | --- | --- | --- |
 | Level and map style schema checks | Implemented | `game/data/schemas/`, `game/tools/check-assets.sh` | Runs inside `check-all.sh`. |
+| Native UI smoke | Implemented | `game/tools/check-ui-smoke.sh`, `game/tools/ui_smoke_runner.gd`, `.github/workflows/ci.yml` | Runs desktop/mobile-landscape/square playability smoke and uploads screenshots. |
+| Agent preflight | Implemented | `game/tools/agent-preflight.sh`, `game/tools/summarize-ui-smoke.py` | Local agent feedback loop for project gates plus UI smoke summary. |
 | Godot Web export and Pages playable build | Implemented | `game/export_presets.cfg`, `game/tools/export-web.sh`, `.github/workflows/pages.yml` | Export output is outside `game/`; Pages publishes it under `/play/`. |
 
 ## Expectations

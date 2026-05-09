@@ -11,11 +11,29 @@ cd game
 ./tools/check-all.sh
 ```
 
-GitHub Actions runs the same project gate in `.github/workflows/ci.yml`.
+For agent preflight before handing off a non-trivial change:
 
-CI uploads the full `check-all.log` as the `godot-check-logs` artifact on every run, including failed runs.
+```bash
+cd game
+./tools/agent-preflight.sh
+```
+
+GitHub Actions runs this project gate in `.github/workflows/ci.yml`, then runs the native UI smoke gate.
+
+CI uploads the full `ci-artifacts/` directory as the `godot-check-artifacts` artifact on every run, including failed runs.
 
 `check-all.sh` includes JSON/schema validation for `game/data/levels` and `game/data/map_styles`.
+
+For native UI/playability smoke checks:
+
+```bash
+cd game
+./tools/check-ui-smoke.sh
+```
+
+This runs the Godot desktop/native runtime without Web export, validates the start-to-main scene flow across desktop, mobile landscape, and square viewports, places one tower through the scene input path, and writes screenshots plus `report.json` under `ci-artifacts/ui-smoke/native/`.
+
+Use `./tools/summarize-ui-smoke.py` to reprint the latest smoke report without rerunning Godot.
 
 For documentation-only changes:
 
@@ -40,6 +58,8 @@ Scene/UI changes should keep rule assertions in core tests. Scene tests should c
 - UI state reflects core state.
 - Input reaches the correct core service.
 - Pause, restart, win, and lose flows preserve gameplay state.
+
+Run `./tools/check-ui-smoke.sh` for scene, layout, rendering, input, or UI asset changes, then inspect the summary and screenshots before continuing. It is a smoke test, not a pixel-perfect visual regression test.
 
 ## Bug Fixes
 
