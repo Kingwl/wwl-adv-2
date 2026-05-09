@@ -53,4 +53,15 @@ jobs:
         working-directory: game
         env:
           GODOT_BIN: godot
-        run: ./tools/check-all.sh
+        run: |
+          set -euo pipefail
+          mkdir -p ../ci-artifacts
+          ./tools/check-all.sh 2>&1 | tee ../ci-artifacts/check-all.log
+
+      - name: Upload CI logs
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: godot-check-logs
+          path: ci-artifacts/
+          if-no-files-found: warn

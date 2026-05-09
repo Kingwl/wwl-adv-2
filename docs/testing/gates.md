@@ -13,6 +13,8 @@ cd game
 
 GitHub Actions runs the same project gate in `.github/workflows/ci.yml`.
 
+CI uploads the full `check-all.log` as the `godot-check-logs` artifact on every run, including failed runs.
+
 For documentation-only changes:
 
 ```bash

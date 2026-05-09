@@ -8,3 +8,4 @@
 | TD-004 | Content Data | Hardcoded tower/wave values will make balancing and regression testing expensive. | Medium | TBD | Open | Move tower, enemy, and wave config into data resources after prototype rules stabilize. |
 | TD-005 | Scene Tests | Too many scene tests can become slow and brittle. | Medium | TBD | Open | Keep most assertions in core tests; use scene tests only for integration boundaries. |
 | TD-006 | Enemy Lifecycle | Completed and defeated enemies stay in the simulation array for now. | Low | TBD | Open | Add cleanup once longer waves or profiling show retained enemies affecting performance or scene rendering. |
+| TD-007 | Test Cleanup | GUT scene tests emit `ObjectDB instances leaked at exit`, which makes CI output noisy and can hide future leak regressions. | Medium | TBD | Open | CI uploads `check-all.log`; inspect scene tests and queued nodes/resources to remove the warning. |

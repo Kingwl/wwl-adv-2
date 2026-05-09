@@ -22,7 +22,7 @@ Current known test state:
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
 - GUT suite: 124 tests passing, 670 assertions.
-- Known warning: GUT exits with an ObjectDB leaked instances warning from scene/resource cleanup.
+- Known warning: GUT exits with an ObjectDB leaked instances warning from scene/resource cleanup. Tracked as TD-007.
 
 ## Implemented
 
@@ -52,12 +52,13 @@ Current known test state:
 - `game/scripts/board/board_view.gd` is large and mixes input, layout, rendering, resource loading, HUD state, and simulation integration.
 - Tower and wave values are still partly hardcoded in GDScript.
 - Test quality relies on GUT plus checklists rather than line coverage.
-- Scene tests currently emit an ObjectDB leak warning.
+- Scene tests currently emit an ObjectDB leak warning, tracked as TD-007.
 - GitHub Pages currently publishes a static project page, not a playable Godot Web export.
 
 ## GitHub Automation
 
 - CI workflow: `.github/workflows/ci.yml`.
+- CI uploads `check-all.log` as the `godot-check-logs` artifact.
 - GitHub Pages workflow: `.github/workflows/pages.yml`.
 - Pages source: GitHub Actions workflow deployment from `site/`.
 
