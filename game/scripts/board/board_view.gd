@@ -8,10 +8,16 @@ const BOARD_ORIGIN := Vector2(96, 96)
 const INVALID_GRID_POSITION := Vector2i(-1, -1)
 const SCREEN_PADDING := 16.0
 const HUD_RESERVED_HEIGHT := 68.0
+const HUD_COMPACT_MESSAGE_RESERVED_HEIGHT := 104.0
+const HUD_COMPACT_MESSAGE_MAX_HEIGHT := 820.0
 const SIDE_PANEL_GAP := 12.0
-const HUD_ROW_TOP := 10.0
+const HUD_STAT_ROW_TOP := 18.0
+const HUD_MESSAGE_ROW_TOP := 10.0
 const HUD_ROW_HEIGHT := 32.0
 const HUD_ROW_GAP := 10.0
+const HUD_MESSAGE_ROW_HEIGHT := 24.0
+const HUD_MESSAGE_ROW_GAP := 2.0
+const HUD_INLINE_MESSAGE_MIN_WIDTH := 420.0
 const TOWER_CARD_WIDTH := 184.0
 const TOWER_CARD_HEIGHT := 76.0
 const TOWER_CARD_GAP := 8.0
@@ -145,6 +151,9 @@ var flow_state := FlowState.PLAYING
 var gameplay_paused := false
 var selected_tower_type: GameTower.Type = GameTower.Type.SINGLE_TARGET
 var tower_deck_is_bottom := false
+var _compact_messages := false
+var _status_text := ""
+var _hint_text := ""
 
 var _status_label: Label
 var _hint_label: Label
@@ -340,6 +349,7 @@ func apply_responsive_layout(viewport_size: Vector2) -> void:
 		board_height = board.height
 
 	tower_deck_is_bottom = _should_use_bottom_tower_deck(viewport_size)
+	var hud_reserved_height := _hud_reserved_height(viewport_size)
 	var tower_reserved_width := 0.0
 	var tower_reserved_height := 0.0
 	if tower_deck_is_bottom:
@@ -353,7 +363,7 @@ func apply_responsive_layout(viewport_size: Vector2) -> void:
 	)
 	var available_height := maxf(
 		1.0,
-		viewport_size.y - HUD_RESERVED_HEIGHT - SCREEN_PADDING - tower_reserved_height
+		viewport_size.y - hud_reserved_height - SCREEN_PADDING - tower_reserved_height
 	)
 	var fit_cell_size := floorf(minf(
 		available_width / float(board_width),
@@ -364,7 +374,7 @@ func apply_responsive_layout(viewport_size: Vector2) -> void:
 	var board_size := Vector2(float(board_width) * cell_size, float(board_height) * cell_size)
 	board_origin = Vector2(
 		floorf(SCREEN_PADDING + maxf(0.0, (available_width - board_size.x) * 0.5)),
-		floorf(HUD_RESERVED_HEIGHT + maxf(0.0, (available_height - board_size.y) * 0.5))
+		floorf(hud_reserved_height + maxf(0.0, (available_height - board_size.y) * 0.5))
 	)
 	_layout_hud(viewport_size)
 
@@ -374,6 +384,12 @@ func _should_use_bottom_tower_deck(viewport_size: Vector2) -> bool:
 		return false
 
 	return viewport_size.x / viewport_size.y < BOTTOM_TOWER_DECK_ASPECT_THRESHOLD
+
+
+func _hud_reserved_height(viewport_size: Vector2) -> float:
+	if _should_use_bottom_tower_deck(viewport_size) and viewport_size.y <= HUD_COMPACT_MESSAGE_MAX_HEIGHT:
+		return HUD_COMPACT_MESSAGE_RESERVED_HEIGHT
+	return HUD_RESERVED_HEIGHT
 
 
 func try_place_at_grid(grid_position: Vector2i) -> TowerPlacementResult:
@@ -728,6 +744,8 @@ func _configure_hud_labels() -> void:
 			continue
 
 		label.clip_text = true
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		FrostRtsTheme.apply_stat_label(label)
 
 	for label in [_status_label, _hint_label]:
@@ -735,7 +753,11 @@ func _configure_hud_labels() -> void:
 			continue
 
 		label.clip_text = true
-		FrostRtsTheme.apply_body_label(label, 15, FrostRtsTheme.TEXT_DIM)
+		label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		FrostRtsTheme.apply_body_label(label, 14, FrostRtsTheme.TEXT_DIM)
 
 	FrostRtsTheme.apply_title_label(_overlay_title, 28)
 	FrostRtsTheme.apply_body_label(_overlay_message, 16, FrostRtsTheme.TEXT)
@@ -744,11 +766,16 @@ func _configure_hud_labels() -> void:
 
 	if _overlay_title != null:
 		_overlay_title.clip_text = true
+		_overlay_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_overlay_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	if _overlay_message != null:
 		_overlay_message.clip_text = true
+		_overlay_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_overlay_message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 	FrostRtsTheme.apply_button(_menu_button, 14)
 	if _menu_button != null:
+		_menu_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_menu_button.icon = _menu_icon_texture
 		_menu_button.expand_icon = true
 		_menu_button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -900,9 +927,11 @@ func _load_texture_sequence(paths: Array) -> Array:
 
 
 func _layout_hud(viewport_size: Vector2) -> void:
-	var stat_top := HUD_ROW_TOP
+	var stat_top := HUD_STAT_ROW_TOP
+	var message_top := HUD_MESSAGE_ROW_TOP
 	var left := SCREEN_PADDING
 	var gap := HUD_ROW_GAP
+	var hud_reserved_height := _hud_reserved_height(viewport_size)
 	var menu_left := viewport_size.x - SCREEN_PADDING - TOWER_CARD_WIDTH
 	var content_right := menu_left - SIDE_PANEL_GAP
 	var stat_width := minf(124.0, maxf(104.0, (content_right - left) / 5.4))
@@ -913,7 +942,7 @@ func _layout_hud(viewport_size: Vector2) -> void:
 			HUD_CHROME_MARGIN,
 			HUD_CHROME_MARGIN,
 			maxf(1.0, viewport_size.x - HUD_CHROME_MARGIN * 2.0),
-			HUD_RESERVED_HEIGHT - HUD_CHROME_MARGIN
+			hud_reserved_height - HUD_CHROME_MARGIN
 		)
 	)
 
@@ -925,13 +954,29 @@ func _layout_hud(viewport_size: Vector2) -> void:
 
 	var message_left := left + (stat_width + gap) * 3.0 + gap
 	var message_width := content_right - message_left
-	if message_width >= 220.0:
-		_set_label_rect(_status_label, Rect2(message_left, stat_top, message_width, HUD_ROW_HEIGHT))
-		_set_label_rect(_hint_label, Rect2(message_left, stat_top + HUD_ROW_HEIGHT + 2.0, message_width, HUD_ROW_HEIGHT))
+	_compact_messages = message_width < HUD_INLINE_MESSAGE_MIN_WIDTH
+	if message_width >= HUD_INLINE_MESSAGE_MIN_WIDTH:
+		_set_message_label_alignment(HORIZONTAL_ALIGNMENT_CENTER)
+		_set_label_rect(_status_label, Rect2(message_left, message_top, message_width, HUD_MESSAGE_ROW_HEIGHT))
+		_set_label_rect(_hint_label, Rect2(message_left, message_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, message_width, HUD_MESSAGE_ROW_HEIGHT))
+	elif tower_deck_is_bottom:
+		_set_message_label_alignment(HORIZONTAL_ALIGNMENT_CENTER)
+		var compact_message_width := viewport_size.x - SCREEN_PADDING * 2.0
+		var compact_status_top := message_top + HUD_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP
+		_set_label_rect(_status_label, Rect2(left, compact_status_top, compact_message_width, HUD_MESSAGE_ROW_HEIGHT))
+		_set_label_rect(_hint_label, Rect2(left, compact_status_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, compact_message_width, HUD_MESSAGE_ROW_HEIGHT))
 	else:
-		_set_label_rect(_status_label, Rect2(left, stat_top + HUD_ROW_HEIGHT + 2.0, content_right - left, HUD_ROW_HEIGHT))
-		_set_label_rect(_hint_label, Rect2(left, stat_top + (HUD_ROW_HEIGHT + 2.0) * 2.0, content_right - left, HUD_ROW_HEIGHT))
+		_set_message_label_alignment(HORIZONTAL_ALIGNMENT_CENTER)
+		var side_left := viewport_size.x - SCREEN_PADDING - TOWER_CARD_WIDTH
+		var tower_buttons_bottom := HUD_RESERVED_HEIGHT + TOWER_CARD_HEIGHT * 3.0 + TOWER_CARD_GAP * 2.0
+		var side_message_top := minf(
+			tower_buttons_bottom + HUD_CHROME_MARGIN + 4.0,
+			viewport_size.y - SCREEN_PADDING - HUD_MESSAGE_ROW_HEIGHT * 2.0 - HUD_MESSAGE_ROW_GAP
+		)
+		_set_label_rect(_status_label, Rect2(side_left, side_message_top, TOWER_CARD_WIDTH, HUD_MESSAGE_ROW_HEIGHT))
+		_set_label_rect(_hint_label, Rect2(side_left, side_message_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, TOWER_CARD_WIDTH, HUD_MESSAGE_ROW_HEIGHT))
 
+	_sync_message_labels()
 	_layout_overlay(viewport_size)
 
 
@@ -955,7 +1000,7 @@ func _layout_tower_deck(viewport_size: Vector2) -> void:
 		return
 
 	var panel_left := viewport_size.x - SCREEN_PADDING - TOWER_CARD_WIDTH
-	var tower_top := HUD_RESERVED_HEIGHT
+	var tower_top := _hud_reserved_height(viewport_size)
 	_set_control_rect(
 		_tower_deck_panel,
 		Rect2(
@@ -968,6 +1013,12 @@ func _layout_tower_deck(viewport_size: Vector2) -> void:
 	_set_label_rect(_single_tower_button, Rect2(panel_left, tower_top, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT))
 	_set_label_rect(_area_tower_button, Rect2(panel_left, tower_top + TOWER_CARD_HEIGHT + TOWER_CARD_GAP, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT))
 	_set_label_rect(_slow_tower_button, Rect2(panel_left, tower_top + (TOWER_CARD_HEIGHT + TOWER_CARD_GAP) * 2.0, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT))
+
+
+func _set_message_label_alignment(alignment: HorizontalAlignment) -> void:
+	for label in [_status_label, _hint_label]:
+		if label != null:
+			label.horizontal_alignment = alignment
 
 
 func _layout_stat(icon: TextureRect, label: Label, stat_position: Vector2, width: float) -> void:
@@ -1422,13 +1473,49 @@ func _on_overlay_secondary_pressed() -> void:
 
 
 func _set_status(text: String) -> void:
-	if _status_label != null:
-		_status_label.text = text
+	_status_text = text
+	_sync_message_labels()
 
 
 func _set_hint(text: String) -> void:
+	_hint_text = text
+	_sync_message_labels()
+
+
+func _sync_message_labels() -> void:
+	if _status_label != null:
+		_status_label.text = _compact_status_text(_status_text) if _compact_messages else _status_text
 	if _hint_label != null:
-		_hint_label.text = text
+		_hint_label.text = _compact_hint_text(_hint_text) if _compact_messages else _hint_text
+
+
+func _compact_status_text(text: String) -> String:
+	if text.begins_with("Cannot place"):
+		if text.find("buildable") != -1:
+			return "Road tile blocked."
+		if text.find("Need") != -1:
+			return text.get_slice(": ", 1)
+		return "Cannot place."
+	if text.begins_with("Placed"):
+		return "Tower placed."
+	if text.begins_with("Click a green"):
+		return "Place on green tile."
+	if text.begins_with("Select a tower"):
+		return "Select tower."
+	if text.begins_with("Defeated"):
+		return "+%s gold" % text.get_slice(" for ", 1).get_slice(" gold", 0)
+	if text.begins_with("Cleared"):
+		return "Wave clear +%s" % text.get_slice(" for ", 1).get_slice(" gold", 0)
+	if text.begins_with("Earned"):
+		return "+%s gold" % text.get_slice("Earned ", 1).get_slice(" gold", 0)
+	return text
+
+
+func _compact_hint_text(text: String) -> String:
+	var first_sentence := text.get_slice(".", 0)
+	if not first_sentence.is_empty():
+		return first_sentence
+	return text
 
 
 func _update_selected_tower_hint() -> void:

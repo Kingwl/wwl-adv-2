@@ -1,14 +1,14 @@
-# Design: 胜负条件和玩家生命
+# 设计：胜负条件和玩家生命
 
-## Status
+## 状态
 
-Implemented for the playable prototype.
+已为 playable prototype 实现。
 
-## Context
+## 背景
 
 当前核心循环已经有路径移动、波次生成、塔攻击、击杀奖励和波次奖励。要形成一局最小闭环，需要定义敌人到达终点后的处理、玩家失败条件，以及全部波次完成后的胜利条件。
 
-## Goals
+## 目标
 
 - 敌人到达路径终点时扣玩家生命。
 - 每个漏怪敌人只扣一次生命。
@@ -17,14 +17,14 @@ Implemented for the playable prototype.
 - 核心规则保持在 `scripts/core/`，方便 GUT 测试覆盖。
 - BoardView 只负责显示生命和胜负状态，不拥有胜负规则。
 
-## Non-Goals
+## 非目标
 
 - 暂不做不同敌人的不同漏怪伤害。
 - 暂不做结算面板、暂停、重开或关卡选择。
 - 暂不做失败后的资源惩罚。
 - 暂不从 `CombatSimulation.enemies` 中清理已结束敌人。
 
-## Rules
+## 规则
 
 ### Player Life
 
@@ -43,7 +43,7 @@ lives = 10
 - `lives <= 0` 时 `failed = true`。
 - 非 `EnemyLeakEvent` 对象会被忽略，避免场景层误传事件导致崩溃。
 
-### Enemy Leak
+### 敌人 Leak
 
 敌人漏怪条件：
 
@@ -73,7 +73,7 @@ lives = 10
 - 失败优先于胜利；如果最后一个敌人漏怪导致生命归零，即使波次同时清空也判定失败。
 - 一旦 `game_won` 或 `game_failed` 成立，后续 tick 不再推进战斗，只返回当前结果状态。
 
-## Core Types
+## 核心类型
 
 新增：
 
@@ -123,7 +123,7 @@ Hud/Lives
 - 失败时状态显示 `Defeat. Enemies breached the path.`。
 - 胜利时状态显示 `Victory. All waves cleared.`。
 
-## Test Coverage
+## 测试覆盖
 
 新增或扩展的 GUT 覆盖：
 
@@ -136,7 +136,7 @@ Hud/Lives
 - `BoardView` 更新 Lives HUD。
 - `BoardView` 展示漏怪、失败和胜利状态。
 
-## Follow-Ups
+## 后续项
 
 - 为不同敌人配置不同 `life_damage`。
 - 增加结算面板和重开流程。

@@ -1,198 +1,208 @@
-# Design: UI Playability Validation
+# 设计：UI 可玩性验证
 
-## Status
+## 状态
 
 Accepted
 
-## Context
+## 背景
 
-The project already has strong GUT coverage for core gameplay rules and scene integration. It also exports a playable Godot Web build to GitHub Pages under `/play/`.
+项目已经对核心玩法规则和场景集成有较强的 GUT 覆盖。它也会把可玩的 Godot Web 构建导出到 GitHub Pages 的 `/play/`。
 
-The missing harness layer is automated UI/playability validation. A scene can pass unit tests while still rendering a blank board, breaking layout at a common viewport, failing to route input, or publishing a broken Web export.
+缺失的 harness 层是自动化 UI/可玩性验证。一个场景可以通过单元测试，但仍然渲染出空白棋盘、在常见视口下布局崩坏、输入路由失败，或发布出坏掉的 Web 导出。
 
-Web validation alone is not the right development loop. Web export adds a slow build step and mostly validates export/runtime packaging. Day-to-day debugging should run against the Godot desktop/native runtime first, because it is closer to how the project is edited and much faster to iterate.
+单靠 Web 验证不是合适的开发循环。Web 导出会增加较慢的构建步骤，主要验证导出/runtime 打包。日常调试应优先直接运行 Godot desktop/native runtime，因为它更接近项目编辑方式，迭代也快得多。
 
-This design defines two validation layers:
+这个设计定义两层验证：
 
-- Native UI smoke: fast local and CI gate for development. Implemented by `game/tools/check-ui-smoke.sh`.
-- Web export smoke: slower publish gate for Web/Pages packaging. Not implemented yet.
+- Native UI smoke：用于开发的快速本地和 CI 门禁。已由 `game/tools/check-ui-smoke.sh` 实现。
+- Web export smoke：用于 Web/Pages 打包的较慢发布门禁。尚未实现。
 
-## Goals
+## 目标
 
-- Provide a fast native UI smoke command that does not require Web export.
-- Exercise real scene flow, viewport layout, basic input, and one gameplay interaction.
-- Capture screenshots and machine-readable reports for agent inspection.
-- Keep Web smoke focused on export-specific failures: missing resources, browser runtime errors, blank canvas, and Pages packaging.
-- Keep all generated artifacts outside `game/`.
+- 提供一个不需要 Web 导出的快速 native UI smoke 命令。
+- 覆盖真实场景流程、视口布局、基础输入和一次玩法交互。
+- 捕获截图、局部放大 crop、overlay 辅助线图和机器可读报告，供 agent 检查。
+- 让 Web smoke 聚焦于导出特有失败：资源缺失、浏览器 runtime 错误、空白 canvas 和 Pages 打包。
+- 所有生成产物都放在 `game/` 外。
 
-## Non-Goals
+## 非目标
 
-- Full visual regression testing with strict golden image comparison.
-- Balance or strategy validation.
-- Long-play endurance testing.
-- Custom Godot engine template size optimization.
-- Replacing GUT or deterministic core tests.
+- 带严格 golden image 比对的完整视觉回归测试。
+- 平衡性或策略验证。
+- 长时间游玩耐久测试。
+- 自定义 Godot engine template 体积优化。
+- 替代 GUT 或确定性核心测试。
 
-## Proposal
+## 方案
 
-Add a primary native smoke gate:
+添加一个主要 native smoke 门禁：
 
 ```bash
 ./game/tools/check-ui-smoke.sh
 ```
 
-The native smoke command should run the Godot project directly, without exporting. It should execute a dedicated GDScript runner under the normal desktop renderer:
+native smoke 命令应直接运行 Godot 项目，不做导出。它应在普通 desktop renderer 下执行专用 GDScript runner：
 
 ```bash
 godot --path game --script res://tools/ui_smoke_runner.gd
 ```
 
-On CI Linux, run it with a virtual display:
+在 CI Linux 上，用虚拟显示运行：
 
 ```bash
 xvfb-run -a godot --path game --script res://tools/ui_smoke_runner.gd
 ```
 
-The runner should:
+runner 应该：
 
-1. Create a viewport for each required viewport size.
-2. Load `res://scenes/start.tscn`.
-3. Verify the title and start button are present.
-4. Activate the start flow and verify `res://scenes/main.tscn` loads.
-5. Verify the board, HUD, tower deck, wave state, gold, and lives labels exist.
-6. Advance enough frames for layout and initial simulation to settle.
-7. Place one tower on a known buildable cell through the same input path used by the scene.
-8. Advance the simulation briefly and verify the board remains playable.
-9. Save screenshots and a report outside `game/`.
-10. Exit with a nonzero status on failure.
+1. 为每个必需视口尺寸创建视口。
+2. 加载 `res://scenes/start.tscn`。
+3. 验证标题和开始按钮存在。
+4. 触发开始流程，并验证 `res://scenes/main.tscn` 已加载。
+5. 验证棋盘、HUD、tower deck、波次状态、金币和生命标签存在。
+6. 推进足够帧数，让布局和初始模拟稳定。
+7. 通过场景使用的同一条输入路径，在一个已知可建造格放置一座塔。
+8. 短暂推进模拟，并验证棋盘仍可玩。
+9. 在 `game/` 外保存整屏截图、关键区域 crop、overlay 辅助线图和报告。
+10. 失败时以非零状态退出。
 
-Required native viewports:
+必需 native 视口：
 
-- Desktop: `1280x720`.
-- Mobile landscape: `896x414`.
-- Square/compact: `720x720`.
+- 桌面：`1280x720`。
+- 移动横屏：`896x414`。
+- 方形/紧凑：`720x720`。
 
-Artifacts should be written to `ci-artifacts/ui-smoke/native/`:
+产物应写入 `ci-artifacts/ui-smoke/native/`：
 
-- `report.json`: pass/fail, viewport sizes, checks, timings, and failure messages.
-- `report.md`: short human-readable summary.
+- `report.json`：通过/失败、视口尺寸、检查项、耗时和失败信息。
+- `report.md`：人类可读摘要，包含人工 UI 检查清单、crop/overlay 链接和 overlay 图例。
 - `desktop.png`.
 - `mobile-landscape.png`.
 - `square.png`.
+- 每个视口的开始界面、HUD 资源栏、Status/Hint、塔选择卡组、塔选择变体、金币不足状态、奖励/漏怪提示、暂停 overlay、胜利 overlay 和失败 overlay 局部放大 crop。
+- 每个局部 crop 对应的 `*-overlay.png`，用于展示 frame/panel、label/button、icon、group rect 和 group centerline。
 - `godot.log`.
 
-The first version should use smoke assertions, not exact pixel matching. It should fail on blank/broken output, missing nodes, impossible placement, or obvious layout collapse.
+第一版应使用 smoke 断言，而不是精确像素匹配。空白/损坏输出、节点缺失、无法放置或明显布局崩塌时应失败。
 
 ## Web Export Smoke
 
-Add a secondary Web smoke command:
+添加一个次级 Web smoke 命令：
 
 ```bash
 ./game/tools/check-web-smoke.sh
 ```
 
-This command should be slower and focused on export/deploy confidence:
+这个命令会更慢，应聚焦于导出/部署信心：
 
-1. Export to `build/web-smoke/` using `./game/tools/export-web.sh`.
-2. Serve the export over local HTTP.
-3. Check HTTP 200 responses for `/`, `/index.wasm`, and `/index.pck`.
-4. Open the page with Playwright Chromium.
-5. Assert a nonblank canvas and no critical browser errors.
-6. Save screenshots, console logs, server logs, and `report.json` under `ci-artifacts/ui-smoke/web/`.
+1. 使用 `./game/tools/export-web.sh` 导出到 `build/web-smoke/`。
+2. 通过本地 HTTP 服务导出产物。
+3. 检查 `/`、`/index.wasm` 和 `/index.pck` 返回 HTTP 200。
+4. 用 Playwright Chromium 打开页面。
+5. 断言 canvas 非空白，且没有关键浏览器错误。
+6. 将截图、console log、server log 和 `report.json` 保存到 `ci-artifacts/ui-smoke/web/`。
 
-Web smoke should not be the default development debugging path. It should run before publishing or when Web/export tooling changes.
+Web smoke 不应作为默认开发调试路径。它应在发布前，或 Web/export 工具变化时运行。
 
-## CI Integration
+## CI 集成
 
-Add native UI smoke to `.github/workflows/ci.yml` after `./tools/check-all.sh` once the runner is stable.
+runner 稳定后，在 `.github/workflows/ci.yml` 的 `./tools/check-all.sh` 后添加 native UI smoke。
 
-Upload `ci-artifacts/` even on failure. This keeps native screenshots and reports available to agents.
+即使失败也上传 `ci-artifacts/`。这样 agent 仍能获取 native 截图和报告。
 
-Keep `.github/workflows/pages.yml` focused on publishing. The Pages workflow may run Web smoke before upload, but native UI failures should be caught earlier in CI.
+保持 `.github/workflows/pages.yml` 聚焦于发布。Pages workflow 可以在上传前运行 Web smoke，但 native UI 失败应更早在 CI 中捕获。
 
-Suggested staging:
+建议分阶段：
 
-1. Implement `check-ui-smoke.sh` and run it manually/local-first.
-2. Add native UI smoke to CI as a required project gate.
-3. Add Web smoke to Pages workflow or a separate publish-check job.
-4. Only consider putting Web smoke in regular CI if export regressions become common.
+1. 实现 `check-ui-smoke.sh`，并先手工/本地运行。
+2. 将 native UI smoke 作为必需项目门禁加入 CI。
+3. 将 Web smoke 加入 Pages workflow 或独立 publish-check job。
+4. 只有当导出回归变常见时，才考虑把 Web smoke 放进常规 CI。
 
-## Failure Policy
+## 失败策略
 
-Native smoke should fail on:
+Native smoke 应在以下情况失败：
 
-- Scene load failure.
-- Missing required UI nodes.
-- Blank screenshots or zero-sized viewport content.
-- Layout values outside viewport bounds.
-- Failure to start from the start scene.
-- Failure to place one tower through the scene input path.
-- New Godot errors not explicitly allowlisted.
+- 场景加载失败。
+- 必需 UI 节点缺失。
+- 截图空白或视口内容尺寸为 0。
+- 布局值超出视口边界。
+- 无法从开始场景启动。
+- 无法通过场景输入路径放置一座塔。
+- 出现未明确 allowlist 的新 Godot 错误。
 
-Web smoke should fail on:
+Web smoke 应在以下情况失败：
 
-- Web export failure.
-- HTTP failure for `index.html`, `index.wasm`, or `index.pck`.
-- Missing browser canvas.
-- Blank canvas area.
-- Browser `pageerror`.
-- Critical console/runtime errors such as `Uncaught`, `RuntimeError`, `LinkError`, `Failed to fetch`, `404`, or `Cannot load`.
+- Web 导出失败。
+- `index.html`、`index.wasm` 或 `index.pck` 的 HTTP 失败。
+- 浏览器 canvas 缺失。
+- canvas 区域空白。
+- 浏览器 `pageerror`。
+- 关键 console/runtime 错误，例如 `Uncaught`、`RuntimeError`、`LinkError`、`Failed to fetch`、`404` 或 `Cannot load`。
 
-Do not fail either gate on:
+以下情况不应导致任一门禁失败：
 
-- Known Godot warnings already tracked in tech debt.
-- Noncritical warnings that do not affect loading or rendering.
-- Exact screenshot pixel differences.
+- 已在技术债中跟踪的已知 Godot 警告。
+- 不影响加载或渲染的非关键警告。
+- 精确截图像素差异。
 
-Maintain an explicit allowlist for known benign warnings. New warnings should be reviewed before being allowlisted.
+为已知良性警告维护明确 allowlist。新警告进入 allowlist 前应经过 review。
 
-## Implementation Shape
+## 实现形态
 
-Expected native files:
+预期 native 文件：
 
-- `game/tools/check-ui-smoke.sh`: shell orchestrator.
-- `game/tools/ui_smoke_runner.gd`: Godot runner that loads scenes, drives input, captures screenshots, and writes reports.
-- `game/tools/summarize-ui-smoke.py`: report summarizer for agent iteration.
-- `game/tools/agent-preflight.sh`: local handoff command that runs project gates, UI smoke, and artifact summaries.
-- `docs/testing/gates.md`: mention the native UI smoke gate once implemented.
+- `game/tools/check-ui-smoke.sh`：shell 编排器。
+- `game/tools/ui_smoke_runner.gd`：Godot runner，负责加载场景、驱动输入、捕获截图并写报告。
+- `game/tools/summarize-ui-smoke.py`：agent 迭代用报告摘要器。
+- `game/tools/agent-preflight.sh`：本地交付命令，运行项目门禁、UI smoke 和产物摘要。
+- `docs/testing/gates.md`：实现后记录 native UI smoke 门禁。
 
-Expected Web files:
+预期 Web 文件：
 
-- `game/tools/check-web-smoke.sh`: shell orchestrator for export and local server.
-- `tools/web-smoke/package.json`: pinned Playwright dependency, if a scoped Node tool package is chosen.
-- `tools/web-smoke/check-web-smoke.mjs`: browser assertions.
+- `game/tools/check-web-smoke.sh`：导出和本地 server 的 shell 编排器。
+- `tools/web-smoke/package.json`：如果选择 scoped Node 工具包，固定 Playwright 依赖。
+- `tools/web-smoke/check-web-smoke.mjs`：浏览器断言。
 
-Native command overrides:
+Native 命令覆盖项：
 
-- `GODOT_BIN`: Godot executable.
-- `UI_SMOKE_ARTIFACT_DIR`: default `ci-artifacts/ui-smoke/native`.
-- `UI_SMOKE_VIEWPORTS`: optional comma-separated viewport override for debugging.
+- `GODOT_BIN`：Godot 可执行文件。
+- `UI_SMOKE_ARTIFACT_DIR`：默认 `ci-artifacts/ui-smoke/native`。
+- `UI_SMOKE_VIEWPORTS`：可选，用逗号分隔的调试视口覆盖。
 
-Web command overrides:
+## UI 变更验证流程
 
-- `GODOT_BIN`: Godot executable.
-- `WEB_SMOKE_OUTPUT_DIR`: default `build/web-smoke`.
-- `WEB_SMOKE_ARTIFACT_DIR`: default `ci-artifacts/ui-smoke/web`.
-- `WEB_SMOKE_PORT`: optional fixed local port for debugging.
+新增或大改 UI 功能前，先写简短验证方案，再实现。方案应列出覆盖区域、视口、状态、交互、现有 crop/overlay 是否覆盖新增 surface，以及交付前需要人工检查的截图产物。
 
-## Alternatives
+新增 UI surface 时，应同步扩展 native smoke 的 review artifact。至少为新面板、HUD 区域或卡片添加一个局部 crop 和 overlay；如果该 surface 有关键状态，runner 应能进入至少一个代表状态。
 
-- Only use GUT scene tests: fast and useful, but they do not capture rendered screenshots or real viewport behavior.
-- Only use Web smoke: validates publishing, but it is too slow and indirect for development debugging.
-- Use strict screenshot baselines immediately: stronger visual signal, but too brittle before the UI stabilizes.
-- Run deployed Pages URL only: useful as a post-deploy check, but slower and less actionable than testing local export before deploy.
+交付 UI 改动前，检查 `docs/ui/features.md` 和 `docs/ui/test-plan.md` 是否需要更新，运行 `./tools/check-ui-smoke.sh` 或 `./tools/agent-preflight.sh`，检查 `report.md`、整屏截图、局部 crop 和 overlay。看到的每个 UI 问题或美观度问题都应单独记录到 `docs/todo/backlog.md`。
 
-## Risks
+Web 命令覆盖项：
 
-- Native smoke needs a display backend in CI, likely `xvfb-run` on Linux.
-- Screenshot checks can be flaky if captured before rendering settles.
-- The runner can become another parallel test framework if it grows too broad.
-- Playwright adds a Node/browser dependency for Web smoke.
-- Console/error allowlists can hide real issues if they are too broad.
+- `GODOT_BIN`：Godot 可执行文件。
+- `WEB_SMOKE_OUTPUT_DIR`：默认 `build/web-smoke`。
+- `WEB_SMOKE_ARTIFACT_DIR`：默认 `ci-artifacts/ui-smoke/web`。
+- `WEB_SMOKE_PORT`：可选，调试用固定本地端口。
 
-## Open Questions
+## 替代方案
 
-- Should native UI smoke enter `check-all.sh`, or remain a separate command until stable?
-- Should native smoke drive input by coordinates, grid helpers, or public scene methods?
-- Should Web smoke run in Pages only, or in CI when `game/**` changes?
-- Should the native runner eventually include deterministic replay evals, or should replay stay as a separate harness?
+- 只用 GUT 场景测试：快速且有用，但无法捕获渲染截图或真实视口行为。
+- 只用 Web smoke：能验证发布，但对开发调试来说太慢且太间接。
+- 立即使用严格截图 baseline：视觉信号更强，但在 UI 稳定前过于脆弱。
+- 只运行已部署 Pages URL：作为部署后检查有用，但比部署前测试本地导出更慢、可操作性更弱。
+
+## 风险
+
+- Native smoke 在 CI 中需要显示后端，Linux 上可能是 `xvfb-run`。
+- 如果在渲染稳定前截图，截图检查可能 flaky。
+- 如果 runner 扩张太多，可能变成另一套平行测试框架。
+- Playwright 会为 Web smoke 增加 Node/browser 依赖。
+- console/error allowlist 如果过宽，可能隐藏真实问题。
+
+## 开放问题
+
+- Native UI smoke 是否应进入 `check-all.sh`，还是稳定前保持独立命令？
+- Native smoke 应通过坐标、grid helper，还是 public scene method 驱动输入？
+- Web smoke 只在 Pages 中运行，还是在 `game/**` 变化时也进入 CI？
+- Native runner 最终是否应包含确定性 replay eval，还是 replay 保持为独立 harness？

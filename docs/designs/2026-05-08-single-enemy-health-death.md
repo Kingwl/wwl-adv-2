@@ -1,14 +1,14 @@
-# Design: 单一敌人生命与死亡事件
+# 设计：单一敌人生命与死亡事件
 
-## Status
+## 状态
 
-Implemented.
+Implemented。
 
-## Context
+## 背景
 
 当前战斗核心已经能产出 `DamageEvent`，但还没有把伤害应用到敌人，也没有死亡事件。为了保持 Playable Prototype 的范围可控，MVP 先只保留一种基础敌人，不做敌人类型表。
 
-## Goals
+## 目标
 
 - 只实现一种基础敌人。
 - 敌人拥有固定默认生命值和固定击杀奖励。
@@ -17,7 +17,7 @@ Implemented.
 - 已完成或已击败敌人不会继续移动或被索敌。
 - 场景里每个可见敌人显示血条，血条按 `health / max_health` 更新。
 
-## Non-Goals
+## 非目标
 
 - 暂不做多敌人类型。
 - 暂不做护甲、抗性、精英怪、飞行怪。
@@ -25,7 +25,7 @@ Implemented.
 - 暂不做死亡动画或移除场景节点。
 - 暂不为血条做正式美术、受击动画或数字飘字。
 
-## Basic Enemy
+## 基础敌人
 
 默认值：
 
@@ -50,7 +50,7 @@ defeated: bool
 
 `completed` 表示走到路径终点，`defeated` 表示被击杀。两者都不再作为有效攻击目标。
 
-## Damage Application
+## 伤害应用
 
 新增核心服务：
 
@@ -92,7 +92,7 @@ source_tower_id: String
 wallet.earn(reward_gold, KILL_ENEMY, enemy_id)
 ```
 
-## Scene Health Bar
+## 场景血条
 
 `BoardView` 在绘制敌人圆点后绘制一条跟随敌人的血条：
 
@@ -101,7 +101,7 @@ wallet.earn(reward_gold, KILL_ENEMY, enemy_id)
 - 比例高于 50% 显示绿色，25%-50% 显示黄色，低于 25% 显示红色。
 - 已完成或已击败敌人不在 `get_visible_enemies()` 中返回，因此不会继续显示血条。
 
-## Test Coverage
+## 测试覆盖
 
 - 默认敌人是单一 MVP 配置。
 - 非致命伤害会降低生命值。

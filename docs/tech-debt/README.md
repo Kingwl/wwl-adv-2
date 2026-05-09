@@ -1,12 +1,12 @@
-# Technical Debt
+# 技术债
 
-Use this directory to track known technical debt, cleanup plans, and engineering risks.
+这个目录用于跟踪已知技术债、清理计划和工程风险。
 
-## Suggested Files
+## 建议文件
 
-- `register.md`: central technical debt register.
-- `YYYY-MM-DD-topic.md`: detailed write-up for a specific debt item.
+- `register.md`：集中式技术债登记表。
+- `YYYY-MM-DD-topic.md`：特定技术债条目的详细说明。
 
-## Expectations
+## 期望
 
-Each debt item should include impact, affected area, proposed remediation, priority, and owner when known.
+每个技术债条目应包含影响、受影响区域、建议修复方式、优先级，以及已知负责人。

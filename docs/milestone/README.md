@@ -1,12 +1,12 @@
-# Milestones
+# 里程碑
 
-Use this directory for project milestones, delivery plans, and progress checkpoints.
+这个目录用于项目里程碑、交付计划和进度检查点。
 
-## Suggested Files
+## 建议文件
 
-- `plan.md`: current milestone plan and progress.
-- `YYYY-MM-DD-release.md`: dated release or checkpoint summary.
+- `plan.md`：当前里程碑计划和进度。
+- `YYYY-MM-DD-release.md`：带日期的发布或检查点摘要。
 
-## Expectations
+## 期望
 
-Milestone docs should identify scope, owners, target dates, risks, and completion criteria.
+里程碑文档应说明范围、负责人、目标日期、风险和完成标准。

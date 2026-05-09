@@ -1,28 +1,30 @@
-# Prototype Rule Coverage
+# Prototype 规则覆盖
 
-This checklist tracks the expected rule coverage for the Playable Prototype.
+这个 checklist 跟踪 Playable Prototype 期望的规则覆盖。
 
-| Area | Expected Coverage | Current State |
+更完整的功能到测试证据映射见 `docs/gameplay/test-plan.md`。
+
+| 区域 | 期望覆盖 | 当前状态 |
 | --- | --- | --- |
-| Board placement | Empty buildable, out of bounds, path, blocked, locked, occupied, reserved | Covered |
-| Board removal | Success, empty slot, occupant mismatch | Covered |
-| Path validation | Too short, out of bounds, non-path slot, diagonal, jump, valid path | Covered |
-| Tower merge core | Same type/tier success, type mismatch, tier mismatch, same tower | Covered in core only |
-| Tower progression UI | Player-facing merge or upgrade flow | Open decision |
-| Economy wallet | Earn, spend, insufficient funds, invalid amount | Covered |
-| Placement economy | Spend on success, no spend on invalid placement, no spend on insufficient gold | Covered |
-| Enemy movement | Segment traversal, multi-segment traversal, completed/defeated stop, deterministic same input | Covered |
-| Enemy damage/death | Damage, lethal damage, duplicate death prevention, unknown enemy damage | Covered |
-| Targeting | FIRST target, no target, completed/defeated ignored, out of range ignored | Covered |
-| Tower attack | Cooldown, no target, Single, Area, Slow projectile output | Covered |
-| Projectile hit detection | Travel before hit, hit damage, area splash, slow status, miss inactive target | Covered |
-| Wave spawning | Spawn interval, large delta, clear event, next wave, all waves cleared | Covered |
-| Player life and leaks | Leak collection, life reduction, clamp to zero, failure | Covered |
-| Victory/failure | Lives reach zero, all waves cleared with lives remaining | Covered |
-| Scene flow | Start scene, main scene, pause, restart, win, lose | Covered |
+| 棋盘放置 | 空可建造格、越界、路径、阻挡、锁定、已占用、保留格 | 已覆盖 |
+| 棋盘移除 | 成功、空格、占用者不匹配 | 已覆盖 |
+| 路径校验 | 过短、越界、非路径格、对角、跳跃、合法路径 | 已覆盖 |
+| 塔合成核心 | 同类型/同等级成功、类型不匹配、等级不匹配、同一座塔 | 仅核心层已覆盖 |
+| 塔成长 UI | 面向玩家的合成或升级流程 | 开放决策 |
+| 经济钱包 | 获得、花费、余额不足、非法数量 | 已覆盖 |
+| 放置经济 | 成功时花费、非法放置不花费、金币不足不花费 | 已覆盖 |
+| 敌人移动 | 单段移动、多段移动、完成/击败后停止、同输入确定性 | 已覆盖 |
+| 敌人伤害/死亡 | 伤害、致死伤害、防重复死亡、未知敌人伤害 | 已覆盖 |
+| 目标选择 | FIRST 目标、无目标、忽略已完成/已击败、忽略射程外 | 已覆盖 |
+| 塔攻击 | 冷却、无目标、Single/Area/Slow 投射物输出 | 已覆盖 |
+| 投射物命中检测 | 命中前飞行、命中伤害、范围溅射、减速状态、未命中非活跃目标 | 已覆盖 |
+| 波次生成 | 生成间隔、大 delta、清空事件、下一波、全部波次清空 | 已覆盖 |
+| 玩家生命和漏怪 | 漏怪收集、生命扣减、钳制到 0、失败 | 已覆盖 |
+| 胜利/失败 | 生命归零、全部波次清空且仍有生命 | 已覆盖 |
+| 场景流程 | 开始场景、主场景、暂停、重开、胜利、失败 | 已覆盖 |
 
-## Open Coverage Gaps
+## 开放覆盖缺口
 
-- Tower progression is not reachable from the playable scene until merge versus direct upgrade is decided.
-- Longer MVP content needs coverage for at least 3 enemy types and 8 waves.
-- Scene tests currently emit an ObjectDB leak warning at process exit.
+- 在决定合成还是直接升级前，塔成长还无法从可玩场景触达。
+- 更长的 MVP 内容需要至少覆盖 3 种敌人和 8 个波次。
+- 场景测试当前在进程退出时会输出 ObjectDB leak 警告。

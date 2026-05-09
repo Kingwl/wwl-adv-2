@@ -1,37 +1,37 @@
-# MVP Sprite Pack v1
+# MVP Sprite 包 v1
 
-Generated with the `generate2dsprite` skill for the first playable tower-defense prototype.
+使用 `generate2dsprite` skill 为首个可玩塔防 prototype 生成。
 
-## Units
+## 单位
 
-Located in `units/`.
+位于 `units/`。
 
-| File | Use |
+| 文件 | 用途 |
 | --- | --- |
-| `single_tower.png` | Single-target tower sprite |
-| `area_tower.png` | Area mortar tower sprite |
-| `slow_tower.png` | Slow / frost tower sprite |
-| `basic_enemy.png` | First basic enemy sprite |
-| `sheet-transparent.png` | 2x2 transparent source sheet |
-| `raw-sheet.png` | Original generated sheet copy |
+| `single_tower.png` | 单体目标塔 sprite |
+| `area_tower.png` | 范围迫击炮塔 sprite |
+| `slow_tower.png` | 减速/冰霜塔 sprite |
+| `basic_enemy.png` | 第一个基础敌人 sprite |
+| `sheet-transparent.png` | 2x2 透明源 sheet |
+| `raw-sheet.png` | 原始生成 sheet 副本 |
 
 ## FX
 
-Located in `fx/`.
+位于 `fx/`。
 
-| File | Use |
+| 文件 | 用途 |
 | --- | --- |
-| `single_projectile_1.png` ... `single_projectile_4.png` | Golden projectile frames |
-| `single_projectile_strip.png` | Golden projectile 1x4 strip |
-| `area_impact_1.png` ... `area_impact_4.png` | Orange explosion impact frames |
-| `area_impact_strip.png` | Orange explosion 1x4 strip |
-| `slow_impact_1.png` ... `slow_impact_4.png` | Ice slow impact frames |
-| `slow_impact_strip.png` | Ice slow impact 1x4 strip |
-| `sheet-transparent.png` | 3x4 transparent source sheet |
-| `raw-sheet.png` | Original generated sheet copy |
+| `single_projectile_1.png` ... `single_projectile_4.png` | 金色投射物 frame |
+| `single_projectile_strip.png` | 金色投射物 1x4 strip |
+| `area_impact_1.png` ... `area_impact_4.png` | 橙色爆炸命中特效 frame |
+| `area_impact_strip.png` | 橙色爆炸 1x4 strip |
+| `slow_impact_1.png` ... `slow_impact_4.png` | 冰霜减速命中特效 frame |
+| `slow_impact_strip.png` | 冰霜减速 1x4 strip |
+| `sheet-transparent.png` | 3x4 透明源 sheet |
+| `raw-sheet.png` | 原始生成 sheet 副本 |
 
 ## QC
 
-- `pipeline-meta.json` in each folder records frame sizes, component counts, and edge-touch checks.
-- Both generated sheets report no edge-touch frames.
-- These assets are wired into `BoardView` for tower sprites, the basic enemy sprite, and attack feedback textures.
+- 每个目录中的 `pipeline-meta.json` 记录 frame 尺寸、组件数量和 edge-touch 检查。
+- 两张生成 sheet 都报告没有 edge-touch frame。
+- 这些资产已接入 `BoardView`，用于塔 sprite、基础敌人 sprite 和攻击反馈贴图。

@@ -16,7 +16,10 @@ func test_start_scene_loads_title_and_start_button() -> void:
 
 	assert_not_null(scene as StartScreen)
 	assert_eq(title.text, "WWL 大冒险 2")
+	assert_eq(title.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
+	assert_eq(title.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
 	assert_eq(start_button.text, "Start")
+	assert_eq(start_button.alignment, HORIZONTAL_ALIGNMENT_CENTER)
 	assert_true(start_button.get_theme_stylebox("normal") is StyleBoxTexture)
 
 
@@ -47,10 +50,28 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	assert_not_null(scene.get_node_or_null("Overlay/Screen/Panel/SecondaryButton"))
 
 	var single_button: Button = scene.get_node("Hud/SingleTowerButton") as Button
+	var status_label: Label = scene.get_node("Hud/Status") as Label
+	var hint_label: Label = scene.get_node("Hud/Hint") as Label
+	var gold_label: Label = scene.get_node("Hud/Gold") as Label
+	var lives_label: Label = scene.get_node("Hud/Lives") as Label
+	var wave_label: Label = scene.get_node("Hud/Wave") as Label
+	var overlay_title: Label = scene.get_node("Overlay/Screen/Panel/Title") as Label
+	var overlay_message: Label = scene.get_node("Overlay/Screen/Panel/Message") as Label
 	assert_eq(single_button.text, "SINGLE\nFocus fire  25g")
 	assert_eq(single_button.size.x, BoardView.TOWER_CARD_WIDTH)
 	assert_eq(single_button.size.y, BoardView.TOWER_CARD_HEIGHT)
 	assert_not_null(single_button.icon)
+	assert_eq(status_label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
+	assert_eq(status_label.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
+	assert_eq(hint_label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
+	assert_eq(hint_label.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
+	assert_eq(gold_label.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
+	assert_eq(lives_label.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
+	assert_eq(wave_label.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
+	assert_eq(overlay_title.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
+	assert_eq(overlay_title.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
+	assert_eq(overlay_message.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
+	assert_eq(overlay_message.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
 	assert_true(single_button.get_theme_stylebox("normal") is StyleBoxTexture)
 	assert_true(single_button.get_theme_stylebox("pressed") is StyleBoxTexture)
 	assert_true((scene.get_node("Hud/HudFrame") as Panel).get_theme_stylebox("panel") is StyleBoxTexture)
@@ -193,6 +214,8 @@ func test_board_view_layout_fits_mobile_landscape_viewport() -> void:
 	var single_button: Button = scene.get_node("Hud/SingleTowerButton") as Button
 	var area_button: Button = scene.get_node("Hud/AreaTowerButton") as Button
 	var slow_button: Button = scene.get_node("Hud/SlowTowerButton") as Button
+	var status_label: Label = scene.get_node("Hud/Status") as Label
+	var hint_label: Label = scene.get_node("Hud/Hint") as Label
 	var mobile_landscape_size := Vector2(844, 390)
 
 	board_view.apply_responsive_layout(mobile_landscape_size)
@@ -213,6 +236,25 @@ func test_board_view_layout_fits_mobile_landscape_viewport() -> void:
 	assert_eq(single_button.size.y, BoardView.TOWER_CARD_HEIGHT)
 	assert_eq(area_button.position.y, single_button.position.y + BoardView.TOWER_CARD_HEIGHT + BoardView.TOWER_CARD_GAP)
 	assert_eq(slow_button.position.y, area_button.position.y + BoardView.TOWER_CARD_HEIGHT + BoardView.TOWER_CARD_GAP)
+	var button_rects := [
+		Rect2(single_button.position, single_button.size),
+		Rect2(area_button.position, area_button.size),
+		Rect2(slow_button.position, slow_button.size),
+	]
+	var status_rect := Rect2(status_label.position, status_label.size)
+	var hint_rect := Rect2(hint_label.position, hint_label.size)
+
+	assert_true(status_label.position.x >= 0.0)
+	assert_true(hint_label.position.x >= 0.0)
+	assert_true(status_label.position.x + status_label.size.x <= mobile_landscape_size.x)
+	assert_true(hint_label.position.x + hint_label.size.x <= mobile_landscape_size.x)
+	assert_true(status_label.position.y >= 0.0)
+	assert_true(hint_label.position.y + hint_label.size.y <= mobile_landscape_size.y)
+	assert_false(board_rect.intersects(status_rect))
+	assert_false(board_rect.intersects(hint_rect))
+	for button_rect in button_rects:
+		assert_false(status_rect.intersects(button_rect))
+		assert_false(hint_rect.intersects(button_rect))
 
 
 func test_board_view_square_layout_moves_tower_deck_to_bottom_and_expands_board() -> void:
@@ -243,6 +285,55 @@ func test_board_view_square_layout_moves_tower_deck_to_bottom_and_expands_board(
 	assert_eq(slow_button.position.y, single_button.position.y)
 	assert_true(board_rect.end.y <= single_button.position.y - BoardView.BOTTOM_TOWER_DECK_GAP)
 	assert_true(board_rect.end.x <= square_size.x - BoardView.SCREEN_PADDING)
+
+
+func test_board_view_compact_square_layout_keeps_messages_above_board() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var single_button: Button = scene.get_node("Hud/SingleTowerButton") as Button
+	var status_label: Label = scene.get_node("Hud/Status") as Label
+	var hint_label: Label = scene.get_node("Hud/Hint") as Label
+	var square_size := Vector2(720, 720)
+
+	board_view.apply_responsive_layout(square_size)
+
+	var board_size := Vector2(
+		float(board_view.board.width) * board_view.cell_size,
+		float(board_view.board.height) * board_view.cell_size
+	)
+	var board_rect := Rect2(board_view.board_origin, board_size)
+
+	assert_true(board_view.tower_deck_is_bottom)
+	assert_true(board_rect.position.y >= BoardView.HUD_COMPACT_MESSAGE_RESERVED_HEIGHT)
+	assert_true(status_label.position.y + status_label.size.y <= hint_label.position.y)
+	assert_true(hint_label.position.y + hint_label.size.y <= board_rect.position.y)
+	assert_true(board_rect.end.y <= single_button.position.y - BoardView.BOTTOM_TOWER_DECK_GAP)
+	assert_false(board_rect.intersects(Rect2(status_label.position, status_label.size)))
+	assert_false(board_rect.intersects(Rect2(hint_label.position, hint_label.size)))
+
+
+func test_board_view_compact_layout_shortens_reward_status_text() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var status_label: Label = scene.get_node("Hud/Status") as Label
+	board_view.apply_responsive_layout(Vector2(896, 414))
+
+	board_view._set_status("Defeated enemy-1 for 5 gold.")
+	assert_eq(status_label.text, "+5 gold")
+
+	board_view._set_status("Cleared wave-1 for 20 gold.")
+	assert_eq(status_label.text, "Wave clear +20")
+
+	board_view._set_status("Earned 25 gold.")
+	assert_eq(status_label.text, "+25 gold")
 
 
 func test_board_view_scaled_layout_keeps_grid_coordinate_mapping() -> void:

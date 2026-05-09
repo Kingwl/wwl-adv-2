@@ -1,16 +1,16 @@
-# Design: 资源系统
+# 设计：资源系统
 
-## Status
+## 状态
 
-Placement, kill rewards, and wave rewards implemented.
+放置、击杀奖励和波次奖励已实现。
 
-## Context
+## 背景
 
 当前已经有 `Board` 和 `BoardView`，点击格子可以直接放塔。下一步需要加入基础经济，让放塔、击杀、过波和后续合成升级都通过统一资源系统记录。
 
 资源系统必须保持可测试，不依赖 Godot 场景树。
 
-## Goals
+## 目标
 
 - 支持单一局内资源：`gold`。
 - 支持初始资源、放塔花费、击杀奖励、波次奖励。
@@ -19,14 +19,14 @@ Placement, kill rewards, and wave rewards implemented.
 - 放塔扣费与 `Board.place_tower()` 通过上层 service 编排，避免 Board 负责经济。
 - GUT 测试覆盖正常路径、失败路径和交易记录。
 
-## Non-Goals
+## 非目标
 
 - 暂不做局外货币。
 - 暂不做多资源系统。
 - 暂不做商店刷新、利息、连胜奖励。
 - 暂不做数值平衡最终版。
 
-## Resource Model
+## 资源模型
 
 MVP 只使用一种资源：
 
@@ -36,18 +36,18 @@ gold
 
 建议默认值：
 
-| Item | Value |
+| 项 | 值 |
 | --- | ---: |
-| Initial gold | 100 |
-| Basic tower cost | 25 |
-| Default kill reward | 5 |
-| Wave clear reward | 20 |
+| 初始金币 | 100 |
+| 基础塔费用 | 25 |
+| 默认击杀奖励 | 5 |
+| 波次清空奖励 | 20 |
 
 击杀奖励先不按怪物类型写死。敌人或波次系统后续负责决定 `reward_amount`，资源系统只负责把传入的奖励金额入账。怪物类型、稀有度、护甲、速度等差异会在敌人系统设计时再定义。
 
 这些数值先放在核心常量或配置类里，后续迁移到关卡配置资源。
 
-## Core Objects
+## 核心对象
 
 建议新增：
 
@@ -67,7 +67,7 @@ game/test/gut/economy/
 └── test_tower_placement_service.gd
 ```
 
-## Wallet
+## 钱包
 
 `Wallet` 负责资源余额和交易记录。
 
@@ -94,7 +94,7 @@ earn(amount: int, reason: Reason, reference_id: String = "") -> TransactionResul
 - 所有成功交易都写入 `transactions`。
 - 失败结果也要包含当前余额和失败原因。
 
-## Transaction Reasons
+## 交易原因
 
 交易原因先定义为 enum：
 
@@ -119,7 +119,7 @@ enum FailureReason {
 }
 ```
 
-## Transaction Result
+## 交易结果
 
 `TransactionResult`：
 
@@ -134,7 +134,7 @@ reference_id: String
 message: String
 ```
 
-## Transaction Record
+## 交易记录
 
 `TransactionRecord`：
 
@@ -153,7 +153,7 @@ reference_id: String
 
 为了减少早期复杂度，不引入负数交易金额。
 
-## Placement Integration
+## 放置集成
 
 放塔流程不应该由 `Board` 直接扣钱。新增 `TowerPlacementService` 编排：
 
@@ -185,7 +185,7 @@ position: Vector2i
 message: String
 ```
 
-## Scene Integration
+## 场景集成
 
 `BoardView` 后续不直接调用 `board.place_tower()`，改为调用：
 
@@ -204,11 +204,11 @@ HUD 显示：
 - 资源不足显示 `Need 25 gold.`
 - 路径/占用失败继续展示 Board 的结构化原因。
 
-## Test Cases
+## 测试用例
 
 实现前先写 GUT 测试：
 
-### Wallet
+### 钱包
 
 - 初始余额正确。
 - `earn()` 增加余额并记录交易。
@@ -224,9 +224,9 @@ HUD 显示：
 - 已占用格放置失败时：不扣费、不覆盖旧塔。
 - 成功放置记录 `PLACE_TOWER` 交易，reference id 是 tower id。
 
-## Roadmap
+## 路线图
 
-### Step 1: Wallet Core
+### 步骤 1：钱包核心
 
 - [x] 新增 `Wallet`、`TransactionResult`、`TransactionRecord`。
 - [x] 增加 GUT 测试。
@@ -235,7 +235,7 @@ HUD 显示：
 
 - 收入、支出、余额不足、非法数量都有测试。
 
-### Step 2: Placement Service
+### 步骤 2：放置服务
 
 - [x] 给 `Board` 增加 `can_place_tower()` 或等价校验结果。
 - [x] 新增 `TowerPlacementService`。
@@ -246,7 +246,7 @@ HUD 显示：
 
 - 放塔费用不由 `Board` 或 `BoardView` 直接处理。
 
-### Step 3: HUD Integration
+### 步骤 3：HUD 集成
 
 - [x] `BoardView` 使用 `TowerPlacementService`。
 - [x] HUD 显示 gold 和放塔成本。
@@ -258,7 +258,7 @@ HUD 显示：
 - 玩家能看到资源变化。
 - 资源不足时不能继续放塔。
 
-### Step 4: Enemy/Wave Rewards
+### 步骤 4：敌人/波次奖励
 
 - [x] 敌人死亡时调用 `wallet.earn(reward_amount, KILL_ENEMY, enemy_id)`。
 - [x] 波次结束时调用 `wallet.earn(CLEAR_WAVE)`。
@@ -269,7 +269,7 @@ HUD 显示：
 
 - 资源系统可以支撑基础战斗循环和后续波次奖励。
 
-## Open Questions
+## 开放问题
 
 - 合成是否需要消耗 gold，还是只消耗塔。
 - 是否需要出售/回收塔，回收比例是多少。

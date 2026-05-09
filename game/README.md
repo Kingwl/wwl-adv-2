@@ -1,20 +1,20 @@
 # WWL Advanced 2D Tower Merge
 
-Godot 4.x project for a 2D tower defense merge game.
+用于 2D 塔防合成游戏的 Godot 4.x 项目。
 
-## Layout
+## 布局
 
-- `project.godot`: Godot project file.
-- `scenes/`: Godot scenes.
-- `scripts/`: Godot scene scripts and testable GDScript gameplay rules.
-- `scripts/core/`: deterministic gameplay rules kept separate from scene nodes.
-- `assets/`: art, audio, fonts, and other imported game assets.
-- `addons/gut/`: GUT test framework.
-- `test/gut/`: GUT unit and integration tests.
-- `test/godot/`: broader Godot integration test notes.
-- `tools/`: local development scripts.
+- `project.godot`：Godot 项目文件。
+- `scenes/`：Godot 场景。
+- `scripts/`：Godot 场景脚本和可测试的 GDScript 玩法规则。
+- `scripts/core/`：与场景节点分离的确定性玩法规则。
+- `assets/`：美术、音频、字体和其他导入的游戏资产。
+- `addons/gut/`：GUT 测试框架。
+- `test/gut/`：GUT 单元和集成测试。
+- `test/godot/`：更广泛的 Godot 集成测试记录。
+- `tools/`：本地开发脚本。
 
-## Current Bootstrap Commands
+## 当前 Bootstrap 命令
 
 ```bash
 ./tools/check-all.sh
@@ -29,26 +29,26 @@ Godot 4.x project for a 2D tower defense merge game.
 ./tools/export-web.sh ../build/web
 ```
 
-Godot scene startup uses `/Applications/Godot.app/Contents/MacOS/Godot` by default. Override it with `GODOT_BIN=/path/to/Godot`.
+Godot 场景启动默认使用 `/Applications/Godot.app/Contents/MacOS/Godot`。可用 `GODOT_BIN=/path/to/Godot` 覆盖。
 
-## Testing Policy
+## 测试策略
 
-This project uses GDScript-first development with GUT. Keep gameplay rules in `scripts/core/` so they can be tested without depending on active scenes, real frame timing, or UI state.
+这个项目使用 GDScript 优先开发，并用 GUT 测试。玩法规则放在 `scripts/core/`，这样测试不依赖活跃场景、真实帧时间或 UI 状态。
 
-Use `./tools/check-all.sh` as the default verification command for substantive changes.
+实质性改动默认使用 `./tools/check-all.sh` 验证。
 
-Use `./tools/check-ui-smoke.sh` for scene, layout, rendering, input, or UI asset changes. It runs the native Godot runtime, captures desktop/mobile-landscape/square screenshots, and writes reports under `../ci-artifacts/ui-smoke/native/`.
+场景、布局、渲染、输入或 UI 资产改动时，使用 `./tools/check-ui-smoke.sh`。它运行 native Godot runtime，捕获桌面/移动横屏/方形截图，并在 `../ci-artifacts/ui-smoke/native/` 下写入报告。
 
-Use `./tools/agent-preflight.sh` when you want one command for agent handoff: it runs `check-all.sh`, runs native UI smoke, and prints the UI smoke summary. Use `./tools/summarize-ui-smoke.py` to reprint the latest smoke report without rerunning Godot.
+需要一个 agent 交付前总入口时，使用 `./tools/agent-preflight.sh`：它会运行 `check-all.sh`、运行 native UI smoke，并打印 UI smoke 摘要。使用 `./tools/summarize-ui-smoke.py` 可在不重跑 Godot 的情况下重新打印最近一次 smoke 报告。
 
-## Web Export
+## Web 导出
 
-The Web export preset is stored in `export_presets.cfg`. Local Web export output must stay outside the Godot project directory:
+Web 导出 preset 存放在 `export_presets.cfg`。本地 Web 导出产物必须位于 Godot 项目目录外：
 
 ```bash
 ./tools/export-web.sh ../build/web
 ```
 
-The script refuses paths inside `game/` to avoid imported export artifacts affecting the Godot project. GitHub Pages exports to `_site/play/` in CI.
+脚本会拒绝 `game/` 内的路径，避免导入的导出产物影响 Godot 项目。CI 中 GitHub Pages 会导出到 `_site/play/`。
 
-The Web preset excludes GUT, tests, tools, raw/generated art sources, map pipeline contracts, schema files, and other non-runtime metadata to keep `index.pck` focused on playable assets. The remaining size floor is mostly the Godot Web runtime `index.wasm`.
+Web preset 排除了 GUT、测试、工具、原始/生成美术源文件、地图流水线契约、schema 文件和其他非运行时元数据，让 `index.pck` 聚焦于可玩资产。剩余体积下限主要来自 Godot Web runtime `index.wasm`。

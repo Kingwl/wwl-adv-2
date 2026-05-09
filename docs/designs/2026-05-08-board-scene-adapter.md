@@ -1,16 +1,16 @@
-# Design: 格子场景接入
+# 设计：格子场景接入
 
-## Status
+## 状态
 
-Implemented. BoardView now uses a responsive landscape layout for desktop and mobile-style wide viewports.
+Implemented。 BoardView now uses a responsive landscape layout for desktop and mobile-style wide viewports.
 
-## Context
+## 背景
 
 核心 `Board` 规则已经实现并通过 GUT 测试。下一步需要在 Godot 场景中把棋盘可视化，并把玩家点击转换成核心规则调用。
 
 目标是先做一个可观察、可点击、可验证的 Prototype 场景，而不是完整美术。
 
-## Goals
+## 目标
 
 - 在主场景显示 `10x8` 格子地图。
 - 显示路径格、可建造格、已占用格的不同状态。
@@ -20,14 +20,14 @@ Implemented. BoardView now uses a responsive landscape layout for desktop and mo
 - 用 GUT 增加一个主场景加载/基础节点存在的集成测试。
 - 棋盘和 HUD 需要适配手机横屏，不依赖单一固定坐标。
 
-## Non-Goals
+## 非目标
 
 - 暂不做最终美术。
 - 暂不做拖拽合成。
 - 暂不做竖屏布局。
 - 暂不做安全区刘海/圆角的最终适配。
 
-## Scene Structure
+## 场景结构
 
 建议主场景结构：
 
@@ -42,7 +42,7 @@ Main (Node2D)
     └── Hint (Label)
 ```
 
-## Scripts
+## 脚本
 
 建议新增：
 
@@ -74,7 +74,7 @@ game/test/gut/scenes/
 
 MVP 可以先把配置写在 `board_view.gd`，但不要把核心放置规则写在场景脚本里。
 
-## Visual Rules
+## 视觉规则
 
 先用 `draw_rect` 做占位视觉：
 
@@ -95,7 +95,7 @@ MVP 可以先把配置写在 `board_view.gd`，但不要把核心放置规则写
 - 哪些格子已经占用。
 - 最近一次点击是否成功。
 
-## Input Rules
+## 输入规则
 
 点击流程：
 
@@ -191,7 +191,7 @@ BoardView 每次 viewport 变化时重新计算：
 - 模拟手机横屏 viewport，棋盘不超出屏幕。
 - 缩放布局后，格子中心仍能映射回正确坐标。
 
-## Roadmap
+## 路线图
 
 ### Step 1: BoardView Skeleton
 
@@ -253,7 +253,7 @@ BoardView 每次 viewport 变化时重新计算：
 - `844x390` 这类手机横屏尺寸下，棋盘完整落在 viewport 内。
 - 缩放后点击坐标仍能映射到正确格子。
 
-## Open Questions
+## 开放问题
 
 - BoardView 是否先用纯 `_draw()`，还是直接用 TileMapLayer。建议 Prototype 用 `_draw()`，后续关卡编辑再评估 TileMapLayer。
 - 点击放塔的 tower 类型是否先固定为 `SINGLE_TARGET`。建议先固定，等经济和塔选择 UI 再扩展。

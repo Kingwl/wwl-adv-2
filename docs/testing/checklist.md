@@ -1,23 +1,25 @@
-# Testing Checklist
+# 测试 Checklist
 
-## Before Implementing A Gameplay Rule
+## 实现玩法规则前
 
-- [ ] Write the rule inputs, outputs, and failure reasons.
-- [ ] Add a failing GUT test before implementation.
-- [ ] Confirm the test does not depend on real frame rate.
-- [ ] Inject a fixed seed when randomness is involved.
+- [ ] 写清规则输入、输出和失败原因。
+- [ ] 实现前先添加一个失败的 GUT 测试。
+- [ ] 确认测试不依赖真实帧率。
+- [ ] 涉及随机性时注入固定 seed。
 
-## Before Completing A Feature
+## 完成功能前
 
-- [ ] Core GUT tests pass.
-- [ ] Godot headless startup passes.
-- [ ] New or changed rules have tests.
-- [ ] Bug fixes include a regression test.
-- [ ] Relevant documentation is updated.
+- [ ] 核心 GUT 测试通过。
+- [ ] Godot headless 启动通过。
+- [ ] 新增或修改的规则有测试。
+- [ ] 影响玩家可见玩法结果时，gameplay smoke 已运行并检查报告和 overlay。
+- [ ] Bug 修复包含回归测试。
+- [ ] `docs/gameplay/features.md` 和 `docs/gameplay/test-plan.md` 已检查，必要时已更新。
+- [ ] 其他相关文档已更新。
 
-## Manual Playtest Notes
+## 手工试玩记录
 
-- [ ] The first wave makes placement and tower progression understandable.
-- [ ] The first 3 minutes have clear decisions.
-- [ ] Failure reasons are understandable.
-- [ ] Tower progression feedback is clear.
+- [ ] 第一波能让放置和塔成长规则易于理解。
+- [ ] 前 3 分钟有清晰决策。
+- [ ] 失败原因可理解。
+- [ ] 塔成长反馈清晰。

@@ -1,39 +1,39 @@
-# Milestone Plan
+# 里程碑计划
 
-Current project state is summarized in `docs/status.md`. Keep this file as the historical Milestone 0 bootstrap checkpoint instead of a second live status source.
+当前项目状态汇总在 `docs/status.md`。这个文件保留为历史 Milestone 0 bootstrap 检查点，不作为第二个实时状态来源。
 
-## Current Milestone
+## 当前里程碑
 
-- Name: Milestone 0 - Project Bootstrap
-- Status: Complete
-- Target date: TBD
-- Owner: TBD
+- 名称：Milestone 0 - Project Bootstrap
+- 状态：完成
+- 目标日期：TBD
+- 负责人：TBD
 
-## Scope
+## 范围
 
-- Create the Godot 4.x GDScript project.
-- Build a testable `scripts/core/` rule layer.
-- Add GUT tests and Godot headless checks.
-- Pick one Godot scene testing plugin.
+- 创建 Godot 4.x GDScript 项目。
+- 构建可测试的 `scripts/core/` 规则层。
+- 添加 GUT 测试和 Godot headless 检查。
+- 选择一个 Godot 场景测试插件。
 
-## Completion Criteria
+## 完成标准
 
-- Command line can run GUT tests.
-- Godot project can start in headless mode.
-- First TDD flow is complete: failing merge-rule test, implementation, passing test.
+- 命令行可以运行 GUT 测试。
+- Godot 项目可以在 headless 模式启动。
+- 首个 TDD 流程完成：失败的合成规则测试、实现、测试通过。
 
-## Risks
+## 风险
 
-- Godot scene logic may leak into core rules and reduce testability.
-- GDScript-only implementation would make strict code coverage harder.
-- Test discipline must be enforced through rule coverage checklists and regression tests.
+- Godot 场景逻辑可能泄漏到核心规则中，降低可测试性。
+- 纯 GDScript 实现会让严格代码覆盖率更难做。
+- 测试纪律必须通过规则覆盖 checklist 和回归测试来约束。
 
-## Progress
+## 进度
 
-- [x] Documented gameplay direction and testing strategy.
-- [x] Create Godot project skeleton.
-- [x] Add GUT test project.
-- [x] Run Godot headless startup check.
-- [x] Run first core unit tests.
-- [x] Add Godot scene test plugin.
-- [x] Switch project direction to GDScript-first.
+- [x] 记录玩法方向和测试策略。
+- [x] 创建 Godot 项目骨架。
+- [x] 添加 GUT 测试项目。
+- [x] 运行 Godot headless 启动检查。
+- [x] 运行首批核心单元测试。
+- [x] 添加 Godot 场景测试插件。
+- [x] 将项目方向切换为 GDScript 优先。

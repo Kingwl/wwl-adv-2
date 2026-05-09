@@ -1,54 +1,58 @@
-# Agents Guide
+# Agents 指南
 
-## First Read
+## 优先阅读
 
-Start with `docs/status.md`. It is the current one-page project state for agents.
+先阅读 `docs/status.md`。它是给 agent 使用的一页式当前项目状态。
 
-Use `docs/README.md` as the documentation map. Do not rely on a hand-maintained full file tree; use `find` or `rg --files` when you need the exact current layout.
+把 `docs/README.md` 当作文档地图。不要依赖手工维护的完整文件树；需要精确当前布局时，用 `find` 或 `rg --files`。
 
-## Project Direction
+## 项目方向
 
-This project is a Godot 2D tower defense merge game. Development should stay test-driven:
+这是一个 Godot 2D 塔防合成游戏。开发应保持测试驱动：
 
-- Keep gameplay rules in `game/scripts/core/` instead of embedding them directly in Godot scenes.
-- Prefer deterministic simulations with fixed ticks and seeded randomness.
-- Add or update GUT tests before changing merge, combat, wave, economy, placement, or targeting rules.
-- Use scene tests only for integration boundaries: nodes, resources, UI state sync, scene flow, and Godot-specific wiring.
+- 玩法规则放在 `game/scripts/core/`，不要直接嵌进 Godot 场景。
+- 优先使用固定 tick 和带 seed 的随机数，保持模拟确定性。
+- 修改合成、战斗、波次、经济、放置或目标选择规则前，先新增或更新 GUT 测试。
+- 场景测试只用于集成边界：节点、资源、UI 状态同步、场景流程和 Godot 特有连接。
 
-## Documentation Routes
+## 文档路线
 
-| Need | Read or update |
+| 需求 | 阅读或更新 |
 | --- | --- |
-| Current state, open decisions, verified commands | `docs/status.md` |
-| Documentation map | `docs/README.md` |
-| Project skills for specialized agents | `.codex/skills/` |
-| Architecture decisions and proposals | `docs/designs/` and `docs/designs/README.md` |
-| Delivery scope and roadmap | `docs/milestone/` |
-| Active work queue | `docs/todo/backlog.md` |
-| Harness engineering automation gaps | `docs/todo/harness-engineering-todo.md` |
-| Testing policy and gates | `docs/testing/` |
-| Risks and cleanup work | `docs/tech-debt/register.md` |
+| 当前状态、开放决策、已验证命令 | `docs/status.md` |
+| 文档地图 | `docs/README.md` |
+| 专用 agent 的项目 skills | `.codex/skills/` |
+| 架构决策和提案 | `docs/designs/` 和 `docs/designs/README.md` |
+| 当前核心玩法功能、状态和测试计划 | `docs/gameplay/features.md` 和 `docs/gameplay/test-plan.md` |
+| 当前 UI surface、状态、验证覆盖和测试计划 | `docs/ui/features.md` 和 `docs/ui/test-plan.md` |
+| 交付范围和路线图 | `docs/milestone/` |
+| 当前工作队列 | `docs/todo/backlog.md` |
+| Harness engineering 自动化缺口 | `docs/todo/harness-engineering-todo.md` |
+| 测试策略和门禁 | `docs/testing/` |
+| 风险和清理工作 | `docs/tech-debt/register.md` |
 
-## Documentation Rules
+## 文档规则
 
-- Add long-lived architecture or gameplay decisions to `docs/designs/` using `docs/designs/template.md`.
-- Update `docs/designs/README.md` when adding, deferring, superseding, or implementing a design.
-- Update `docs/status.md` when current milestone status, verified commands, open decisions, or major risks change.
-- Keep temporary task lists in `docs/todo/`; move durable testing guidance to `docs/testing/`.
-- Track agent-facing harness automation follow-ups in `docs/todo/harness-engineering-todo.md` until they become implemented gates or durable testing policy.
-- Record cleanup work and engineering risks in `docs/tech-debt/register.md`.
+- 使用 `docs/designs/template.md`，把长期架构或玩法决策加入 `docs/designs/`。
+- 新增、延后、替代或实现设计时，更新 `docs/designs/README.md`。
+- 当前里程碑状态、已验证命令、开放决策或主要风险变化时，更新 `docs/status.md`。
+- 新增或改变核心玩法功能、规则状态、配置形状、数值来源或测试覆盖时，检查并更新 `docs/gameplay/features.md` 和 `docs/gameplay/test-plan.md`。
+- 临时任务列表放在 `docs/todo/`；持久测试指导迁移到 `docs/testing/`。
+- agent 在截图、smoke、试玩或审查中看到的任何 UI 问题或 UI 美观度问题，都必须作为单独 checkbox 条目记录到 `docs/todo/backlog.md`；不要只写在对话总结里，也不要和其他问题合并成一条。
+- 面向 agent 的 harness 自动化后续项放在 `docs/todo/harness-engineering-todo.md`，直到它们变成已实现门禁或持久测试策略。
+- 清理工作和工程风险记录在 `docs/tech-debt/register.md`。
 
-## Project Skills
+## 项目 Skills
 
-Project skills are versioned under `.codex/skills/`.
+项目 skills 版本化存放在 `.codex/skills/`。
 
-- Use `wwl-godot-core-rules` for deterministic gameplay rule work under `game/scripts/core/`.
-- Use `wwl-godot-scene-harness` for scene, UI, layout, input, screenshot, or playability validation work.
-- Use `wwl-godot-harness-maintainer` for CI, GitHub Pages, validation scripts, asset checks, docs gates, or project skill maintenance.
+- 处理 `game/scripts/core/` 下的确定性玩法规则时，使用 `wwl-godot-core-rules`。
+- 处理场景、UI、布局、输入、截图或可玩性验证时，使用 `wwl-godot-scene-harness`。
+- 处理 CI、GitHub Pages、验证脚本、资产检查、文档门禁或项目 skill 维护时，使用 `wwl-godot-harness-maintainer`。
 
-If the current Codex runtime does not auto-load repo-local skills, treat those files as the canonical workflow references and optionally link them into `$CODEX_HOME/skills` for local use.
+如果当前 Codex runtime 不会自动加载仓库内 skills，把这些文件视为权威工作流参考，并可按需链接到 `$CODEX_HOME/skills` 供本机使用。
 
-## Project Layout
+## 项目布局
 
 ```text
 .codex/
@@ -67,25 +71,27 @@ game/
 └── tools/
 ```
 
-## Verification
+## 验证
 
-For substantive changes, run:
+实质性改动运行：
 
 ```bash
 cd game
 ./tools/check-all.sh
 ```
 
-For agent iteration before handing off a non-trivial change, run:
+agent 交付非平凡改动前运行：
 
 ```bash
 cd game
 ./tools/agent-preflight.sh
 ```
 
-For scene, layout, rendering, input, or UI asset changes, run `./tools/check-ui-smoke.sh` and inspect the printed summary plus screenshots under `../ci-artifacts/ui-smoke/native/`. Treat this as part of the agent feedback loop, not only as a CI check.
+场景、布局、渲染、输入或 UI 资产改动时，遵循 `docs/testing/gates.md` 的 UI 变更验证流程，运行 `./tools/check-ui-smoke.sh`，并检查打印摘要、`../ci-artifacts/ui-smoke/native/report.md`、整屏截图、局部 crop 和 overlay 辅助线图。
 
-Individual checks:
+核心玩法改动影响玩家可见结果、战斗表现、奖励、漏怪或胜负状态时，运行 `./tools/check-gameplay-smoke.sh`，并检查 `../ci-artifacts/gameplay-smoke/native/report.md`、scenario 截图、board crop 和 overlay。
+
+单项检查：
 
 ```bash
 cd game
@@ -96,8 +102,9 @@ cd game
 ./tools/check-docs.sh
 ./tools/check-assets.sh
 ./tools/check-ui-smoke.sh
+./tools/check-gameplay-smoke.sh
 ./tools/summarize-ui-smoke.py
 ./tools/export-web.sh ../build/web
 ```
 
-If a check cannot be run, note the reason in the final response.
+如果某项检查无法运行，在最终回复中说明原因。

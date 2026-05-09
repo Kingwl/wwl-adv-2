@@ -1,44 +1,44 @@
-# MMO v1 Sprite Assets
+# MMO v1 Sprite 资产
 
-This pack contains original high-fantasy MMO style assets for the tower-defense prototype. The visual direction borrows broad Warcraft-like fantasy archetypes, but avoids exact World of Warcraft units, buildings, logos, named creatures, or recognizable silhouettes.
+这个包包含用于塔防 prototype 的原创 high-fantasy MMO 风格资产。视觉方向借鉴广义 Warcraft-like 奇幻原型，但避免精确的 World of Warcraft 单位、建筑、logo、命名生物或可识别轮廓。
 
-## Towers
+## 塔
 
-All tower frames are 128x128 transparent PNGs.
+所有塔 frame 都是 128x128 透明 PNG。
 
-- `towers/single_tower.png`: static human kingdom ballista guard tower.
+- `towers/single_tower.png`：静态人类王国弩炮守卫塔。
 - `towers/single_tower_attack_1.png` ... `single_tower_attack_4.png`
-- `towers/single_tower_attack_strip.png`: 4-frame horizontal strip.
-- `towers/area_tower.png`: static dwarven-style siege mortar tower.
+- `towers/single_tower_attack_strip.png`：4-frame 横向 strip。
+- `towers/area_tower.png`：静态矮人风格攻城迫击炮塔。
 - `towers/area_tower_attack_1.png` ... `area_tower_attack_4.png`
-- `towers/area_tower_attack_strip.png`: 4-frame horizontal strip.
-- `towers/slow_tower.png`: static frost crystal spire tower.
+- `towers/area_tower_attack_strip.png`：4-frame 横向 strip。
+- `towers/slow_tower.png`：静态冰霜水晶尖塔。
 - `towers/slow_tower_attack_1.png` ... `slow_tower_attack_4.png`
-- `towers/slow_tower_attack_strip.png`: 4-frame horizontal strip.
+- `towers/slow_tower_attack_strip.png`：4-frame 横向 strip。
 
-## Enemy
+## 敌人
 
-The first enemy is an original goblin-wolf raider creature.
+第一个敌人是原创 goblin-wolf raider 生物。
 
-- `enemies/basic_enemy.png`: static frame.
+- `enemies/basic_enemy.png`：静态 frame。
 - `enemies/enemy_walk_1.png` ... `enemy_walk_4.png`
-- `enemies/enemy_walk_strip.png`: 4-frame horizontal strip.
+- `enemies/enemy_walk_strip.png`：4-frame 横向 strip。
 - `enemies/enemy_death_1.png` ... `enemy_death_6.png`
-- `enemies/enemy_death_strip.png`: 6-frame horizontal strip.
+- `enemies/enemy_death_strip.png`：6-frame 横向 strip。
 
-## Source Outputs
+## 源输出
 
-The processor outputs are kept for traceability:
+保留处理器输出以便追溯：
 
-- `raw-sheet.png`: original generated image copied into the asset folder.
-- `raw-sheet-clean.png`: magenta background cleaned.
-- `sheet-transparent.png`: full transparent processed sheet.
-- `pipeline-meta.json`: frame extraction and QC metadata.
-- `prompt-used.txt`: generation prompt summary.
-- `animation.gif`: quick visual preview.
+- `raw-sheet.png`：复制进资产目录的原始生成图片。
+- `raw-sheet-clean.png`：清理洋红背景后的图片。
+- `sheet-transparent.png`：完整透明处理 sheet。
+- `pipeline-meta.json`：frame 提取和 QC 元数据。
+- `prompt-used.txt`：生成 prompt 摘要。
+- `animation.gif`：快速视觉预览。
 
-`sprite_manifest.json` provides stable paths and concepts for game integration.
+`sprite_manifest.json` 为游戏集成提供稳定路径和概念。
 
 ## QC
 
-Semantic animation frames were checked at 128x128. No final frame alpha content touches the output edge.
+语义动画 frame 已按 128x128 检查。最终 frame 的 alpha 内容没有触碰输出边缘。

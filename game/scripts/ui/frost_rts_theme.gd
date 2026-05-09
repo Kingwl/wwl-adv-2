@@ -29,6 +29,8 @@ static func apply_title_label(label: Label, font_size: int = 42) -> void:
 	label.add_theme_color_override("font_outline_color", Color(0.0, 0.02, 0.04, 1.0))
 	label.add_theme_constant_override("outline_size", 7)
 	label.add_theme_font_size_override("font_size", font_size)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 
 static func apply_body_label(label: Label, font_size: int = 16, color: Color = TEXT) -> void:

@@ -1,14 +1,14 @@
-# Design: 固定 Tick 战斗模拟
+# 设计：固定 Tick 战斗模拟
 
-## Status
+## 状态
 
 Core and BoardView runtime integration implemented. Default runtime step reduced to 60 Hz after the 0.1s prototype step felt visibly choppy. BoardView now renders short-lived visual attack feedback from successful attacks.
 
-## Context
+## 背景
 
 战斗核心已经有路径移动、塔索敌攻击、伤害应用和死亡事件。现在需要一个统一编排层，让这些规则按固定步长运行，而不是直接依赖 Godot 每帧 `delta`。
 
-## Goals
+## 目标
 
 - 使用固定 tick 推进战斗核心。
 - 累积真实帧 delta，只在累计值达到固定步长时结算。
@@ -16,13 +16,13 @@ Core and BoardView runtime integration implemented. Default runtime step reduced
 - 每个 tick 串起敌人移动、塔攻击、伤害结算和死亡事件。
 - 输出结构化结果，供场景层后续绘制攻击反馈或死亡反馈。
 
-## Non-Goals
+## 非目标
 
 - 暂不做波次生成。
 - 暂不做状态效果持续时间结算。
 - 暂不做攻击轨迹或命中特效。
 
-## Fixed Step
+## 固定步长
 
 MVP 默认：
 
@@ -48,7 +48,7 @@ func _process(delta: float) -> void:
 - `delta == fixed_step`：推进一次。
 - `delta > fixed_step`：推进多次，并保留余量。
 
-## Tick Order
+## Tick 顺序
 
 单个 tick 顺序：
 
@@ -61,7 +61,7 @@ func _process(delta: float) -> void:
 7. 产出死亡事件。
 8. 判定胜利或失败。
 
-## Core Types
+## 核心类型
 
 新增：
 
@@ -92,7 +92,7 @@ status_events: Array[StatusEvent]
 damage_result: EnemyDamageResult
 ```
 
-## Test Coverage
+## 测试覆盖
 
 - 不足一个 fixed step 时只累积，不推进。
 - 大 delta 会推进多个 fixed step，并保留余量。

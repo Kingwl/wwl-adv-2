@@ -26,10 +26,12 @@ func _ready() -> void:
 	if _title_label != null:
 		_title_label.text = "WWL 大冒险 2"
 		_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		FrostRtsTheme.apply_title_label(_title_label, 46)
 
 	if _start_button != null:
 		_start_button.text = "Start"
+		_start_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		FrostRtsTheme.apply_button(_start_button, 17)
 		if not _start_button.pressed.is_connected(_on_start_button_pressed):
 			_start_button.pressed.connect(_on_start_button_pressed)

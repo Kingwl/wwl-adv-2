@@ -1,34 +1,34 @@
-# Design: Title
+# 设计：标题
 
-## Status
+## 状态
 
 Draft
 
-## Context
+## 背景
 
-Describe the problem, background, and why this design is needed.
+描述问题、背景，以及为什么需要这个设计。
 
-## Goals
+## 目标
 
-- Goal 1
-- Goal 2
+- 目标 1
+- 目标 2
 
-## Non-Goals
+## 非目标
 
-- Non-goal 1
+- 非目标 1
 
-## Proposal
+## 方案
 
-Describe the intended design and major implementation choices.
+描述预期设计和主要实现选择。
 
-## Alternatives
+## 替代方案
 
-- Alternative considered and why it was not chosen.
+- 考虑过的替代方案，以及为什么没有选择它。
 
-## Risks
+## 风险
 
-- Risk or tradeoff to monitor.
+- 需要关注的风险或取舍。
 
-## Open Questions
+## 开放问题
 
-- Question that still needs an answer.
+- 仍需要回答的问题。

@@ -1,16 +1,16 @@
-# Design: 塔种类与框架
+# 设计：塔种类与框架
 
-## Status
+## 状态
 
-Core implemented; BoardView supports selecting and placing all three MVP tower types.
+核心已实现；BoardView 支持选择和放置全部三种 MVP 塔类型。
 
-## Context
+## 背景
 
 当前已有棋盘、放塔、资源和敌人路径移动。下一步要做塔的索敌和攻击，但在实现前需要先定塔的种类、共享属性、配置方式和行为边界。
 
 本设计服务 Playable Prototype：先做可测、可扩展的塔框架，不追求最终数值。
 
-## Goals
+## 目标
 
 - 定义 MVP 三种基础塔。
 - 统一塔的配置、运行时状态和战斗行为输入输出。
@@ -18,60 +18,60 @@ Core implemented; BoardView supports selecting and placing all three MVP tower t
 - 支持后续合成后阶级提升。
 - 支持后续状态效果和更多塔族扩展。
 
-## Non-Goals
+## 非目标
 
 - 暂不做完整技能树。
 - 暂不做随机词条。
 - 暂不做投射物飞行和命中特效。
 - 暂不做最终数值平衡。
 
-## MVP Tower Types
+## MVP 塔类型
 
-### Single Target
+### 单体目标
 
 定位：稳定单体输出。
 
 建议基础值：
 
-| Stat | Tier 1 |
+| 属性 | 1 级 |
 | --- | ---: |
-| Damage | 10 |
-| Range | 2.5 cells |
-| Attack interval | 1.0s |
-| Targeting | First |
-| Effect | None |
+| 伤害 | 10 |
+| 射程 | 2.5 cells |
+| 攻击间隔 | 1.0s |
+| 目标选择 | First |
+| 效果 | 无 |
 
-### Area
+### 范围
 
 定位：低频范围伤害。
 
 建议基础值：
 
-| Stat | Tier 1 |
+| 属性 | 1 级 |
 | --- | ---: |
-| Damage | 6 |
-| Range | 2.0 cells |
-| Attack interval | 1.4s |
-| Splash radius | 0.75 cells |
-| Targeting | First |
-| Effect | Damage all enemies near target |
+| 伤害 | 6 |
+| 射程 | 2.0 cells |
+| 攻击间隔 | 1.4s |
+| 溅射半径 | 0.75 cells |
+| 目标选择 | First |
+| 效果 | 伤害目标附近所有敌人 |
 
-### Slow
+### 减速
 
 定位：控制塔，低伤害，减速敌人。
 
 建议基础值：
 
-| Stat | Tier 1 |
+| 属性 | 1 级 |
 | --- | ---: |
-| Damage | 3 |
-| Range | 2.25 cells |
-| Attack interval | 1.2s |
-| Slow multiplier | 0.6 |
-| Slow duration | 1.5s |
-| Targeting | First |
+| 伤害 | 3 |
+| 射程 | 2.25 cells |
+| 攻击间隔 | 1.2s |
+| 减速倍率 | 0.6 |
+| 减速持续时间 | 1.5s |
+| 目标选择 | First |
 
-## Tier Scaling
+## 等级缩放
 
 MVP 使用简单倍率：
 
@@ -90,7 +90,7 @@ slow_multiplier 不随 tier 变化
 
 后续可以改成配置表。
 
-## Runtime Tower
+## 运行时塔
 
 现有 `GameTower` 扩展为运行时塔对象：
 
@@ -108,7 +108,7 @@ cooldown_remaining: float
 - `grid_position` 由放置服务或战斗系统设置。
 - 合成服务负责生成高阶塔，但位置更新由上层编排。
 
-## Tower Config
+## 塔配置
 
 建议新增：
 
@@ -135,7 +135,7 @@ slow_duration: float
 targeting: Targeting
 ```
 
-## Targeting
+## 目标选择
 
 MVP 先只实现 `FIRST`，但 enum 预留：
 
@@ -158,7 +158,7 @@ enum Targeting {
 targeting_service.gd
 ```
 
-## Combat Output
+## 战斗输出
 
 塔攻击不直接播放动画，不直接销毁敌人。核心层只输出事件：
 
@@ -191,7 +191,7 @@ source_tower_id: String
 
 这样后续场景层可以根据事件画特效，经济系统可以根据死亡事件发奖励。
 
-## Attack Timing
+## 攻击时序
 
 塔有冷却：
 
@@ -208,7 +208,7 @@ cooldown_remaining
 
 为了测试稳定，战斗系统使用固定 tick，不依赖真实帧率。
 
-## Proposed Files
+## 建议文件
 
 ```text
 game/scripts/core/towers/
@@ -229,22 +229,22 @@ game/test/gut/towers/
 └── test_tower_attack_service.gd
 ```
 
-## Test Cases
+## 测试用例
 
-### Tower Config
+### 塔配置
 
 - 每种 MVP 塔类型能返回 tier 1 stats。
 - tier 提升会增加伤害。
 - range 按规则提升。
 
-### Targeting
+### 目标选择
 
 - 范围内没有敌人时返回 `null`。
 - `FIRST` 选择 `path_distance` 最大的敌人。
 - 完成的敌人不会被选中。
 - 范围外敌人不会被选中。
 
-### Attack
+### 攻击
 
 - 冷却未好时不能攻击。
 - 有目标时产生 damage event。
@@ -253,38 +253,38 @@ game/test/gut/towers/
 - 减速塔产生 damage event 和 slow status event。
 - 没有目标时不重置冷却。
 
-## Implementation Roadmap
+## 实现路线图
 
-### Step 1: Tower Config
+### 步骤 1：塔配置
 
 - [x] 增加 `TowerStats`。
 - [x] 增加 `TowerConfig`。
 - [x] 为三种 MVP 塔写 GUT 测试。
 
-### Step 2: Runtime Tower Position
+### 步骤 2：运行时塔位置
 
 - [x] 给 `GameTower` 增加 `grid_position` 和 `cooldown_remaining`。
 - [x] 更新合成测试，确保旧逻辑不破。
 - [x] 放塔服务创建 tower registry 时使用该位置。
 
-### Step 3: Targeting
+### 步骤 3：目标选择
 
 - [x] 增加 `TargetingService`。
 - [x] 基于塔位置、range 和敌人位置选择目标。
 - [x] 先实现 `FIRST`。
 
-### Step 4: Attack Events
+### 步骤 4：攻击事件
 
 - [x] 增加 `AttackResult`、`DamageEvent`、`StatusEvent`。
 - [x] 增加 `TowerAttackService`。
 - [x] 实现单体、范围、减速三类攻击事件。
 
-### Step 5: Scene Feedback
+### 步骤 5：场景反馈
 
 - [x] BoardView 根据攻击事件显示简单线条和命中点。
 - [x] 改为核心层 `CombatProjectile` 飞行，命中后再结算伤害和场景命中特效。
 
-### Step 6: Scene Tower Selection
+### 步骤 6：场景塔选择
 
 - [x] HUD 增加固定塔栏，包含 Single、Area、Slow 三个塔卡。
 - [x] 塔卡显示塔名、价格、当前选中态；暂停或金币不足时不可购买。
@@ -292,7 +292,7 @@ game/test/gut/towers/
 - [x] BoardView 按塔型显示不同颜色。
 - [x] 场景测试覆盖 Area 和 Slow 的放置结果。
 
-## Open Questions
+## 开放问题
 
 - 合成后的塔是否继承第一个塔的冷却，还是重置冷却。
 - 范围塔 splash 是以目标为中心，还是以塔为中心。

@@ -5,6 +5,21 @@ const MAIN_SCENE_PATH := "res://scenes/main.tscn"
 const DEFAULT_ARTIFACT_DIR := "res://../ci-artifacts/ui-smoke/native"
 const MIN_NON_DARK_RATIO := 0.05
 const MIN_LUMINANCE_RANGE := 0.05
+const REVIEW_CROP_SCALE := 2
+const REVIEW_CROP_MARGIN := 18.0
+const OVERLAY_FRAME_COLOR := Color(0.10, 0.70, 1.0, 1.0)
+const OVERLAY_CONTROL_COLOR := Color(1.0, 0.15, 0.80, 1.0)
+const OVERLAY_ICON_COLOR := Color(1.0, 0.78, 0.12, 1.0)
+const OVERLAY_GROUP_COLOR := Color(0.20, 1.0, 0.35, 1.0)
+const OVERLAY_CENTER_COLOR := Color(1.0, 1.0, 1.0, 1.0)
+
+enum ReviewSpecKind {
+	MAIN,
+	START,
+	TOWER_DECK,
+	STATUS_HINT,
+	OVERLAY,
+}
 
 var _artifact_dir := ""
 var _report := {}
@@ -96,6 +111,7 @@ func _run_viewport(viewport: Dictionary) -> Dictionary:
 		_check(result, start_button.visible, "start button visible")
 		_check(result, start_button.size.x >= 120.0 and start_button.size.y >= 36.0, "start button clickable size")
 		_check_control_rect(result, start_button, viewport_size, "start button in viewport")
+		await _capture_current_review_artifacts(result, viewport_name, start_scene, "start screen", ReviewSpecKind.START)
 		start_button.emit_signal("pressed")
 
 	var main_loaded := await _wait_for_scene(MAIN_SCENE_PATH, 30)
@@ -118,7 +134,8 @@ func _run_viewport(viewport: Dictionary) -> Dictionary:
 	_check_main_state(result, board_view)
 	_check_layout(result, main_scene, board_view, viewport_size)
 	await _exercise_minimum_play(result, main_scene, board_view)
-	await _capture_screenshot(result, viewport_name)
+	await _capture_screenshot(result, viewport_name, main_scene)
+	await _capture_visual_state_artifacts(result, viewport_name, main_scene, board_view)
 
 	return _finalize_viewport(result)
 
@@ -218,6 +235,17 @@ func _check_layout(result: Dictionary, main_scene: Node, board_view: BoardView, 
 			var control_rect := Rect2(control.global_position, control.size)
 			_check(result, not board_rect.intersects(control_rect), "%s does not overlap board" % node_path)
 
+	var message_paths := [
+		"Hud/Status",
+		"Hud/Hint",
+	]
+	for node_path in message_paths:
+		var control := main_scene.get_node_or_null(node_path) as Control
+		_check_control_rect(result, control, viewport_size, "%s in viewport" % node_path)
+		if control != null:
+			var control_rect := Rect2(control.global_position, control.size)
+			_check(result, not board_rect.intersects(control_rect), "%s does not overlap board" % node_path)
+
 
 func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: BoardView) -> void:
 	var gold_label := main_scene.get_node_or_null("Hud/Gold") as Label
@@ -273,7 +301,7 @@ func _click_grid_cell(board_view: BoardView, grid_position: Vector2i) -> void:
 	board_view._unhandled_input(event)
 
 
-func _capture_screenshot(result: Dictionary, viewport_name: String) -> void:
+func _capture_screenshot(result: Dictionary, viewport_name: String, main_scene: Node) -> void:
 	await RenderingServer.frame_post_draw
 	var image := get_root().get_texture().get_image()
 	_check(result, image != null, "capture screenshot")
@@ -293,6 +321,532 @@ func _capture_screenshot(result: Dictionary, viewport_name: String) -> void:
 	}
 	_check(result, stats["non_dark_ratio"] >= MIN_NON_DARK_RATIO, "screenshot is not blank")
 	_check(result, stats["luminance_range"] >= MIN_LUMINANCE_RANGE, "screenshot has visual contrast")
+	_capture_review_artifacts(result, image, viewport_name, main_scene)
+
+
+func _capture_review_artifacts(result: Dictionary, image: Image, viewport_name: String, main_scene: Node) -> void:
+	_append_review_artifacts(
+		result,
+		image,
+		viewport_name,
+		main_scene,
+		_review_crop_specs(main_scene, Vector2i(image.get_width(), image.get_height()))
+	)
+
+
+func _capture_current_review_artifacts(
+	result: Dictionary,
+	viewport_name: String,
+	scene: Node,
+	check_name: String,
+	spec_kind: int,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> void:
+	await RenderingServer.frame_post_draw
+	var image := get_root().get_texture().get_image()
+	_check(result, image != null, "capture review image %s" % check_name)
+	if image == null:
+		return
+
+	var image_size := Vector2i(image.get_width(), image.get_height())
+	_append_review_artifacts(
+		result,
+		image,
+		viewport_name,
+		scene,
+		_review_specs_for_kind(scene, image_size, spec_kind, spec_name, spec_title)
+	)
+
+
+func _capture_visual_state_artifacts(
+	result: Dictionary,
+	viewport_name: String,
+	main_scene: Node,
+	board_view: BoardView
+) -> void:
+	board_view.select_tower_type(GameTower.Type.AREA)
+	await _settle_frames(2)
+	await _capture_current_review_artifacts(
+		result,
+		viewport_name,
+		main_scene,
+		"area tower selected",
+		ReviewSpecKind.TOWER_DECK,
+		"tower-deck-area-selected",
+		"Tower deck: Area selected"
+	)
+
+	board_view.select_tower_type(GameTower.Type.SLOW)
+	await _settle_frames(2)
+	await _capture_current_review_artifacts(
+		result,
+		viewport_name,
+		main_scene,
+		"slow tower selected",
+		ReviewSpecKind.TOWER_DECK,
+		"tower-deck-slow-selected",
+		"Tower deck: Slow selected"
+	)
+
+	board_view.wallet.gold = 0
+	board_view._update_gold_label()
+	board_view._sync_tower_button_state()
+	await _settle_frames(2)
+	await _capture_current_review_artifacts(
+		result,
+		viewport_name,
+		main_scene,
+		"tower deck insufficient gold",
+		ReviewSpecKind.TOWER_DECK,
+		"tower-deck-insufficient-gold",
+		"Tower deck: insufficient gold"
+	)
+
+	board_view.wallet.gold = 100
+	board_view._update_gold_label()
+	board_view._sync_tower_button_state()
+	board_view._set_status("Defeated enemy-1 for 5 gold.")
+	await _settle_frames(2)
+	await _capture_current_review_artifacts(
+		result,
+		viewport_name,
+		main_scene,
+		"reward status",
+		ReviewSpecKind.STATUS_HINT,
+		"status-reward",
+		"Status and hint: reward"
+	)
+
+	board_view._set_status("Enemy leaked. Lives: 9")
+	await _settle_frames(2)
+	await _capture_current_review_artifacts(
+		result,
+		viewport_name,
+		main_scene,
+		"leak status",
+		ReviewSpecKind.STATUS_HINT,
+		"status-leak",
+		"Status and hint: leak"
+	)
+
+	board_view.start_game()
+	await _settle_frames(2)
+	board_view.open_pause_menu()
+	await _settle_frames(2)
+	await _capture_current_review_artifacts(
+		result,
+		viewport_name,
+		main_scene,
+		"pause overlay",
+		ReviewSpecKind.OVERLAY,
+		"pause-overlay",
+		"Pause overlay"
+	)
+
+	board_view.resume_game()
+	await _settle_frames(2)
+	board_view.show_victory_screen()
+	await _settle_frames(2)
+	await _capture_current_review_artifacts(
+		result,
+		viewport_name,
+		main_scene,
+		"victory overlay",
+		ReviewSpecKind.OVERLAY,
+		"victory-overlay",
+		"Victory overlay"
+	)
+
+	board_view.show_defeat_screen()
+	await _settle_frames(2)
+	await _capture_current_review_artifacts(
+		result,
+		viewport_name,
+		main_scene,
+		"defeat overlay",
+		ReviewSpecKind.OVERLAY,
+		"defeat-overlay",
+		"Defeat overlay"
+	)
+
+
+func _append_review_artifacts(
+	result: Dictionary,
+	image: Image,
+	viewport_name: String,
+	scene: Node,
+	specs: Array
+) -> void:
+	var artifacts: Array = result.get("review_artifacts", [])
+	for spec in specs:
+		var artifact := _write_review_crop(result, image, viewport_name, scene, spec)
+		if not artifact.is_empty():
+			artifacts.append(artifact)
+	result["review_artifacts"] = artifacts
+
+
+func _review_specs_for_kind(
+	scene: Node,
+	image_size: Vector2i,
+	spec_kind: int,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> Array:
+	match spec_kind:
+		ReviewSpecKind.START:
+			return [_start_screen_review_spec(scene, image_size, spec_name, spec_title)]
+		ReviewSpecKind.TOWER_DECK:
+			return [_tower_deck_review_spec(scene, image_size, spec_name, spec_title)]
+		ReviewSpecKind.STATUS_HINT:
+			return [_status_hint_review_spec(scene, image_size, spec_name, spec_title)]
+		ReviewSpecKind.OVERLAY:
+			return [_overlay_review_spec(scene, image_size, spec_name, spec_title)]
+		_:
+			return _review_crop_specs(scene, image_size)
+
+
+func _review_crop_specs(main_scene: Node, image_size: Vector2i) -> Array:
+	return [
+		_hud_resources_review_spec(main_scene, image_size),
+		_status_hint_review_spec(main_scene, image_size),
+		_tower_deck_review_spec(main_scene, image_size),
+	]
+
+
+func _hud_resources_review_spec(main_scene: Node, image_size: Vector2i) -> Dictionary:
+	return {
+		"name": "hud-resources",
+		"title": "HUD resources",
+		"rect": _stat_resources_crop_rect(main_scene, image_size),
+		"controls": [
+			{"path": "Hud/HudFrame", "kind": "frame"},
+			{"path": "Hud/GoldIcon", "kind": "icon"},
+			{"path": "Hud/Gold", "kind": "control"},
+			{"path": "Hud/LivesIcon", "kind": "icon"},
+			{"path": "Hud/Lives", "kind": "control"},
+			{"path": "Hud/WaveIcon", "kind": "icon"},
+			{"path": "Hud/Wave", "kind": "control"},
+		],
+		"groups": [
+			["Hud/GoldIcon", "Hud/Gold"],
+			["Hud/LivesIcon", "Hud/Lives"],
+			["Hud/WaveIcon", "Hud/Wave"],
+		],
+	}
+
+
+func _status_hint_review_spec(
+	main_scene: Node,
+	image_size: Vector2i,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> Dictionary:
+	return {
+		"name": spec_name if not spec_name.is_empty() else "status-hint",
+		"title": spec_title if not spec_title.is_empty() else "Status and hint",
+		"rect": _status_hint_crop_rect(main_scene, image_size),
+		"controls": [
+			{"path": "Hud/HudFrame", "kind": "frame"},
+			{"path": "Hud/Status", "kind": "control"},
+			{"path": "Hud/Hint", "kind": "control"},
+			{"path": "Hud/MenuButton", "kind": "control"},
+		],
+		"groups": [
+			["Hud/Status"],
+			["Hud/Hint"],
+		],
+	}
+
+
+func _tower_deck_review_spec(
+	main_scene: Node,
+	image_size: Vector2i,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> Dictionary:
+	return {
+		"name": spec_name if not spec_name.is_empty() else "tower-deck",
+		"title": spec_title if not spec_title.is_empty() else "Tower deck",
+		"rect": _expanded_control_group_rect(main_scene, [
+			"Hud/TowerDeck",
+			"Hud/SingleTowerButton",
+			"Hud/AreaTowerButton",
+			"Hud/SlowTowerButton",
+		], image_size),
+		"controls": [
+			{"path": "Hud/TowerDeck", "kind": "frame"},
+			{"path": "Hud/SingleTowerButton", "kind": "control"},
+			{"path": "Hud/AreaTowerButton", "kind": "control"},
+			{"path": "Hud/SlowTowerButton", "kind": "control"},
+		],
+		"groups": [
+			["Hud/SingleTowerButton"],
+			["Hud/AreaTowerButton"],
+			["Hud/SlowTowerButton"],
+		],
+	}
+
+
+func _start_screen_review_spec(
+	start_scene: Node,
+	image_size: Vector2i,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> Dictionary:
+	return {
+		"name": spec_name if not spec_name.is_empty() else "start-screen",
+		"title": spec_title if not spec_title.is_empty() else "Start screen",
+		"rect": _expanded_control_group_rect(start_scene, [
+			"MenuFrame",
+			"CrestIcon",
+			"Title",
+			"StartButton",
+		], image_size),
+		"controls": [
+			{"path": "MenuFrame", "kind": "frame"},
+			{"path": "CrestIcon", "kind": "icon"},
+			{"path": "Title", "kind": "control"},
+			{"path": "StartButton", "kind": "control"},
+		],
+		"groups": [
+			["MenuFrame", "CrestIcon", "Title", "StartButton"],
+			["Title"],
+			["StartButton"],
+		],
+	}
+
+
+func _overlay_review_spec(
+	main_scene: Node,
+	image_size: Vector2i,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> Dictionary:
+	return {
+		"name": spec_name if not spec_name.is_empty() else "overlay",
+		"title": spec_title if not spec_title.is_empty() else "Overlay",
+		"rect": _expanded_control_group_rect(main_scene, [
+			"Overlay/Screen/Panel",
+			"Overlay/Screen/Panel/Title",
+			"Overlay/Screen/Panel/Message",
+			"Overlay/Screen/Panel/PrimaryButton",
+			"Overlay/Screen/Panel/SecondaryButton",
+		], image_size),
+		"controls": [
+			{"path": "Overlay/Screen/Panel", "kind": "frame"},
+			{"path": "Overlay/Screen/Panel/Title", "kind": "control"},
+			{"path": "Overlay/Screen/Panel/Message", "kind": "control"},
+			{"path": "Overlay/Screen/Panel/PrimaryButton", "kind": "control"},
+			{"path": "Overlay/Screen/Panel/SecondaryButton", "kind": "control"},
+		],
+		"groups": [
+			["Overlay/Screen/Panel/Title"],
+			["Overlay/Screen/Panel/Message"],
+			["Overlay/Screen/Panel/PrimaryButton", "Overlay/Screen/Panel/SecondaryButton"],
+		],
+	}
+
+
+func _write_review_crop(result: Dictionary, image: Image, viewport_name: String, main_scene: Node, spec: Dictionary) -> Dictionary:
+	var rect := spec["rect"] as Rect2
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		_check(result, false, "review crop has valid rect: %s" % spec["name"])
+		return {}
+
+	var crop_rect := _image_crop_rect(rect, Vector2i(image.get_width(), image.get_height()))
+	var crop := image.get_region(crop_rect)
+	var overlay := crop.duplicate()
+	overlay.convert(Image.FORMAT_RGBA8)
+	_draw_review_overlay(overlay, Vector2(crop_rect.position), main_scene, spec)
+
+	var crop_scaled := _scaled_review_image(crop)
+	var overlay_scaled := _scaled_review_image(overlay)
+	var crop_path := _artifact_dir.path_join("%s-%s.png" % [viewport_name, spec["name"]])
+	var overlay_path := _artifact_dir.path_join("%s-%s-overlay.png" % [viewport_name, spec["name"]])
+	var crop_error := crop_scaled.save_png(crop_path)
+	var overlay_error := overlay_scaled.save_png(overlay_path)
+	_check(result, crop_error == OK, "save review crop %s" % spec["name"])
+	_check(result, overlay_error == OK, "save review overlay %s" % spec["name"])
+
+	return {
+		"name": spec["name"],
+		"title": spec["title"],
+		"crop": {
+			"path": crop_path,
+			"width": crop_scaled.get_width(),
+			"height": crop_scaled.get_height(),
+			"scale": REVIEW_CROP_SCALE,
+		},
+		"overlay": {
+			"path": overlay_path,
+			"width": overlay_scaled.get_width(),
+			"height": overlay_scaled.get_height(),
+			"scale": REVIEW_CROP_SCALE,
+		},
+	}
+
+
+func _stat_resources_crop_rect(main_scene: Node, image_size: Vector2i) -> Rect2:
+	var resources_rect := _control_group_rect(main_scene, [
+		"Hud/GoldIcon",
+		"Hud/Gold",
+		"Hud/LivesIcon",
+		"Hud/Lives",
+		"Hud/WaveIcon",
+		"Hud/Wave",
+	])
+	if resources_rect.size.x <= 0.0 or resources_rect.size.y <= 0.0:
+		return Rect2()
+
+	var hud_frame := _control_rect(main_scene, "Hud/HudFrame")
+	var top := resources_rect.position.y - REVIEW_CROP_MARGIN
+	var bottom := resources_rect.end.y + REVIEW_CROP_MARGIN
+	if hud_frame.size.y > 0.0:
+		top = hud_frame.position.y - REVIEW_CROP_MARGIN * 0.5
+		bottom = hud_frame.end.y + REVIEW_CROP_MARGIN * 0.5
+
+	return _clamp_rect(
+		Rect2(
+			Vector2(resources_rect.position.x - REVIEW_CROP_MARGIN, top),
+			Vector2(resources_rect.size.x + REVIEW_CROP_MARGIN * 2.0, bottom - top)
+		),
+		image_size
+	)
+
+
+func _status_hint_crop_rect(main_scene: Node, image_size: Vector2i) -> Rect2:
+	var message_rect := _control_group_rect(main_scene, [
+		"Hud/Status",
+		"Hud/Hint",
+	])
+	if message_rect.size.x <= 0.0 or message_rect.size.y <= 0.0:
+		return Rect2()
+
+	var hud_frame := _control_rect(main_scene, "Hud/HudFrame")
+	if hud_frame.size.y > 0.0 and message_rect.position.y <= hud_frame.end.y + REVIEW_CROP_MARGIN:
+		message_rect = Rect2(
+			Vector2(message_rect.position.x, minf(message_rect.position.y, hud_frame.position.y)),
+			Vector2(message_rect.size.x, maxf(message_rect.end.y, hud_frame.end.y) - minf(message_rect.position.y, hud_frame.position.y))
+		)
+	return _clamp_rect(message_rect.grow(REVIEW_CROP_MARGIN), image_size)
+
+
+func _expanded_control_group_rect(main_scene: Node, paths: Array, image_size: Vector2i) -> Rect2:
+	var rect := _control_group_rect(main_scene, paths)
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return Rect2()
+	return _clamp_rect(rect.grow(REVIEW_CROP_MARGIN), image_size)
+
+
+func _control_group_rect(main_scene: Node, paths: Array) -> Rect2:
+	var has_rect := false
+	var merged := Rect2()
+	for node_path in paths:
+		var rect := _control_rect(main_scene, String(node_path))
+		if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+			continue
+		if has_rect:
+			merged = merged.merge(rect)
+		else:
+			merged = rect
+			has_rect = true
+	return merged if has_rect else Rect2()
+
+
+func _control_rect(main_scene: Node, node_path: String) -> Rect2:
+	var control := main_scene.get_node_or_null(node_path) as Control
+	if control == null:
+		return Rect2()
+	return Rect2(control.global_position, control.size)
+
+
+func _clamp_rect(rect: Rect2, image_size: Vector2i) -> Rect2:
+	var x0 := clampf(rect.position.x, 0.0, float(maxi(0, image_size.x - 1)))
+	var y0 := clampf(rect.position.y, 0.0, float(maxi(0, image_size.y - 1)))
+	var x1 := clampf(rect.end.x, x0 + 1.0, float(image_size.x))
+	var y1 := clampf(rect.end.y, y0 + 1.0, float(image_size.y))
+	return Rect2(Vector2(x0, y0), Vector2(x1 - x0, y1 - y0))
+
+
+func _image_crop_rect(rect: Rect2, image_size: Vector2i) -> Rect2i:
+	var x0 := clampi(floori(rect.position.x), 0, maxi(0, image_size.x - 1))
+	var y0 := clampi(floori(rect.position.y), 0, maxi(0, image_size.y - 1))
+	var x1 := clampi(ceili(rect.end.x), x0 + 1, image_size.x)
+	var y1 := clampi(ceili(rect.end.y), y0 + 1, image_size.y)
+	return Rect2i(Vector2i(x0, y0), Vector2i(x1 - x0, y1 - y0))
+
+
+func _scaled_review_image(image: Image) -> Image:
+	var scaled := image.duplicate()
+	scaled.resize(
+		maxi(1, scaled.get_width() * REVIEW_CROP_SCALE),
+		maxi(1, scaled.get_height() * REVIEW_CROP_SCALE),
+		Image.INTERPOLATE_NEAREST
+	)
+	return scaled
+
+
+func _draw_review_overlay(image: Image, crop_origin: Vector2, main_scene: Node, spec: Dictionary) -> void:
+	for entry in spec["controls"]:
+		var node_path := String(entry["path"])
+		var rect := _control_rect(main_scene, node_path)
+		if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+			continue
+		var local_rect := Rect2(rect.position - crop_origin, rect.size)
+		var color := _overlay_color_for_kind(String(entry["kind"]))
+		_draw_rect_outline(image, local_rect, color, 2)
+
+	for group in spec["groups"]:
+		var group_rect := _control_group_rect(main_scene, group)
+		if group_rect.size.x <= 0.0 or group_rect.size.y <= 0.0:
+			continue
+		var local_group := Rect2(group_rect.position - crop_origin, group_rect.size)
+		_draw_rect_outline(image, local_group, OVERLAY_GROUP_COLOR, 1)
+		_draw_horizontal_line(image, local_group.get_center().y, local_group.position.x, local_group.end.x, OVERLAY_CENTER_COLOR, 1)
+
+
+func _overlay_color_for_kind(kind: String) -> Color:
+	match kind:
+		"frame":
+			return OVERLAY_FRAME_COLOR
+		"icon":
+			return OVERLAY_ICON_COLOR
+		_:
+			return OVERLAY_CONTROL_COLOR
+
+
+func _draw_rect_outline(image: Image, rect: Rect2, color: Color, thickness: int) -> void:
+	_draw_horizontal_line(image, rect.position.y, rect.position.x, rect.end.x, color, thickness)
+	_draw_horizontal_line(image, rect.end.y, rect.position.x, rect.end.x, color, thickness)
+	_draw_vertical_line(image, rect.position.x, rect.position.y, rect.end.y, color, thickness)
+	_draw_vertical_line(image, rect.end.x, rect.position.y, rect.end.y, color, thickness)
+
+
+func _draw_horizontal_line(image: Image, y: float, x0: float, x1: float, color: Color, thickness: int) -> void:
+	var yy := roundi(y)
+	var start_x := clampi(floori(minf(x0, x1)), 0, image.get_width() - 1)
+	var end_x := clampi(ceili(maxf(x0, x1)), 0, image.get_width() - 1)
+	var half := maxi(0, thickness / 2)
+	for offset in range(-half, half + 1):
+		var line_y := yy + offset
+		if line_y < 0 or line_y >= image.get_height():
+			continue
+		for x in range(start_x, end_x + 1):
+			image.set_pixel(x, line_y, color)
+
+
+func _draw_vertical_line(image: Image, x: float, y0: float, y1: float, color: Color, thickness: int) -> void:
+	var xx := roundi(x)
+	var start_y := clampi(floori(minf(y0, y1)), 0, image.get_height() - 1)
+	var end_y := clampi(ceili(maxf(y0, y1)), 0, image.get_height() - 1)
+	var half := maxi(0, thickness / 2)
+	for offset in range(-half, half + 1):
+		var line_x := xx + offset
+		if line_x < 0 or line_x >= image.get_width():
+			continue
+		for y in range(start_y, end_y + 1):
+			image.set_pixel(line_x, y, color)
 
 
 func _image_stats(image: Image) -> Dictionary:
@@ -402,6 +956,19 @@ func _render_markdown_report() -> String:
 	lines.append("- Viewports: %d" % _report["viewports"].size())
 	lines.append("- Failures: %d" % _report["failures"].size())
 	lines.append("")
+	lines.append("## Manual UI Review Checklist")
+	lines.append("")
+	lines.append("Use the crop and overlay artifacts below before accepting UI or visual polish changes.")
+	lines.append("")
+	lines.append("- [ ] HUD resources: Gold/Lives/Wave text and icons sit visually centered in the HUD slot.")
+	lines.append("- [ ] Status/hint: text is readable, centered in its intended area, and not clipped or crowded by Menu, board, or tower deck.")
+	lines.append("- [ ] Status variants: reward and leak messages remain readable in compact and desktop layouts.")
+	lines.append("- [ ] Tower deck: cards fit the viewport, selected/disabled states are readable, and card text does not collide with icons or frames.")
+	lines.append("- [ ] Start and overlays: start, pause, victory, and defeat panels keep title, message, and buttons centered and readable.")
+	lines.append("- [ ] Compact viewports: top HUD, board, and bottom/side tower deck remain visually separated.")
+	lines.append("")
+	lines.append("Overlay legend: cyan = frame/panel rect, magenta = label/button rect, amber = icon rect, green = grouped control rect, white = grouped control centerline.")
+	lines.append("")
 	for viewport in _report["viewports"]:
 		lines.append("## %s" % viewport["name"])
 		lines.append("")
@@ -415,8 +982,23 @@ func _render_markdown_report() -> String:
 			lines.append("- Failed checks:")
 			for failure in viewport["failures"]:
 				lines.append("  - %s" % failure["name"])
+		if viewport.has("review_artifacts") and not viewport["review_artifacts"].is_empty():
+			lines.append("- Review crops:")
+			for artifact in viewport["review_artifacts"]:
+				lines.append(
+					"  - %s: [crop](%s), [overlay](%s)"
+					% [
+						artifact["title"],
+						_artifact_link(artifact["crop"]["path"]),
+						_artifact_link(artifact["overlay"]["path"]),
+					]
+				)
 		lines.append("")
 	return "\n".join(lines)
+
+
+func _artifact_link(path: String) -> String:
+	return path.get_file()
 
 
 func _resolve_artifact_dir() -> String:

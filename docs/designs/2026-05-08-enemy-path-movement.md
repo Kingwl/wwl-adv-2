@@ -1,16 +1,16 @@
-# Design: 敌人路径移动
+# 设计：敌人路径移动
 
-## Status
+## 状态
 
-Implemented; BoardView now uses wave-spawned enemies.
+已实现；BoardView 现在使用波次生成的敌人。
 
-## Context
+## 背景
 
 当前已有 Board 路径、可视化格子、点击放塔和基础资源。下一步需要敌人沿路径移动，形成塔防循环的运动基础。
 
 本设计先实现确定性的路径推进，不处理攻击、生命、伤害和波次生成。
 
-## Goals
+## 目标
 
 - 敌人可以沿 `Array[Vector2i]` 路径按固定速度推进。
 - 移动核心不依赖 Godot 场景树。
@@ -19,14 +19,14 @@ Implemented; BoardView now uses wave-spawned enemies.
 - 到达终点后标记 `completed`。
 - BoardView 可以渲染一个敌人占位点。
 
-## Non-Goals
+## 非目标
 
 - 暂不做多敌人波次。
 - 暂不做碰撞体、寻路、绕路。
 - 暂不做敌人生命、护甲、状态效果。
 - 暂不做到达终点扣生命。
 
-## Movement Model
+## 移动模型
 
 路径由连续格子组成：
 
@@ -52,7 +52,7 @@ grid_space_position: Vector2
 world_position = board_origin + grid_space_position * cell_size
 ```
 
-## Enemy
+## 敌人
 
 建议新增：
 
@@ -92,7 +92,7 @@ game/scripts/core/movement/path_follower.gd
 
 路径每段先只支持正交相邻，长度为 `1.0` cell。
 
-## Rules
+## 规则
 
 - `delta_seconds` 必须大于等于 `0`。
 - 敌人完成后继续 tick 不再移动。
@@ -100,7 +100,7 @@ game/scripts/core/movement/path_follower.gd
 - 当前 grid position 可以使用当前段起点；到达终点后返回路径最后一个格子。
 - 位置插值使用线性插值。
 
-## Test Cases
+## 测试用例
 
 实现前先写 GUT 测试：
 
@@ -111,7 +111,7 @@ game/scripts/core/movement/path_follower.gd
 - completed 后继续 tick 位置不再变化。
 - 同样输入重复运行结果一致。
 
-## Scene Integration
+## 场景集成
 
 BoardView 最初持有一个 prototype enemy；当前实现已经升级为使用 `CombatSimulation.enemies` 中由 `WaveSpawner` 生成的敌人：
 
@@ -131,7 +131,7 @@ path_follower: PathFollower
 - `_process(delta)` 调用 `path_follower.advance(enemy, delta)`。
 - 如果 enemy completed，可以停在终点。
 
-## Roadmap
+## 路线图
 
 ### Step 1: Core Movement
 
@@ -162,7 +162,7 @@ path_follower: PathFollower
 
 - `./tools/test-gut.sh` 全部通过。
 
-## Open Questions
+## 开放问题
 
 - 敌人到达终点后是立即销毁，还是停留一小段时间用于反馈。
 - 波次系统是否复用同一个 `PathFollower`，还是每个敌人持有自己的 follower。

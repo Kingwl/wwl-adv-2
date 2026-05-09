@@ -1,16 +1,16 @@
-# Design: 波次系统
+# 设计：波次系统
 
-## Status
+## 状态
 
-Core wave spawning, CombatSimulation integration, wave rewards, BoardView enemy rendering, Wave HUD, leak handling, and outcome state implemented.
+核心波次生成、CombatSimulation 集成、波次奖励、BoardView 敌人渲染、Wave HUD、漏怪处理和结果状态已实现。
 
-## Context
+## 背景
 
 当前已经有单一敌人、路径移动、固定 tick 战斗模拟、塔攻击、伤害结算和击杀奖励。下一步需要把“一个 prototype enemy”扩展成可生成多个敌人的波次系统。
 
 本设计服务 Playable Prototype：先做可测试、确定性的最小波次，不做复杂关卡编辑器。
 
-## Goals
+## 目标
 
 - 支持按固定间隔生成一波敌人。
 - 支持多波顺序执行。
@@ -20,7 +20,7 @@ Core wave spawning, CombatSimulation integration, wave rewards, BoardView enemy 
 - 能输出波次完成事件，用于后续发放波次奖励。
 - 能被 `CombatSimulation` 使用：生成出的敌人进入 simulation 的 `enemies` 数组。
 
-## Non-Goals
+## 非目标
 
 - 暂不做多敌人类型。
 - 暂不做随机生成。
@@ -28,11 +28,11 @@ Core wave spawning, CombatSimulation integration, wave rewards, BoardView enemy 
 - 暂不做难度曲线和最终数值平衡。
 - 暂不做结算面板、暂停、重开或关卡选择。
 
-## MVP Wave Rules
+## MVP 波次规则
 
 一局先规划 3 波：
 
-| Wave | Enemy count | Spawn interval | Enemy HP | Speed | Kill reward | Wave reward |
+| 波次 | 敌人数量 | 生成间隔 | 敌人 HP | 速度 | 击杀奖励 | 波次奖励 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | 5 | 0.8s | 20 | 1.0 | 5 | 20 |
 | 2 | 7 | 0.7s | 24 | 1.0 | 5 | 25 |
@@ -40,7 +40,7 @@ Core wave spawning, CombatSimulation integration, wave rewards, BoardView enemy 
 
 虽然仍然是同一种基础敌人，但允许波次覆盖 HP、速度和奖励，用于形成最小成长压力。后续如果引入敌人类型，这些字段可以迁移到 enemy config。
 
-## Core Types
+## 核心类型
 
 建议新增：
 
@@ -135,7 +135,7 @@ wave-1-enemy-2
 - 当当前波清完，产出 `WaveClearEvent`。
 - 下一波启动策略先用自动启动：上一波 clear 后，下一个 tick 开始下一波。
 
-## Integration With CombatSimulation
+## 与 CombatSimulation 集成
 
 推荐在 `CombatSimulation.tick()` 的最前面执行 wave spawn：
 
@@ -157,7 +157,7 @@ wave_clear_events: Array[WaveClearEvent]
 all_waves_cleared: bool
 ```
 
-## Enemy Lifecycle
+## 敌人 Lifecycle
 
 MVP 不立即从 `enemies` 数组中删除敌人，先保留对象并通过状态过滤：
 
@@ -166,7 +166,7 @@ MVP 不立即从 `enemies` 数组中删除敌人，先保留对象并通过状�
 
 `WaveSpawner` 通过状态判断 active enemy 是否结束。后续性能或渲染需要时，再加 cleanup service。
 
-## Life and Outcome Integration
+## 生命和结果集成
 
 胜负规则详见 `docs/designs/2026-05-08-victory-failure-conditions.md`。
 
@@ -178,7 +178,7 @@ MVP 决策：
 - 全部波次清完且玩家未失败时胜利。
 - 失败优先于胜利。
 
-## Rewards
+## 奖励
 
 奖励分两层：
 
@@ -187,7 +187,7 @@ MVP 决策：
 
 MVP 建议新增 `WaveRewardService`，避免把两个 reason 混在一个方法里。
 
-## Test Cases
+## 测试用例
 
 先写 GUT 测试：
 
@@ -200,39 +200,39 @@ MVP 建议新增 `WaveRewardService`，避免把两个 reason 混在一个方法
 - 波清完后自动进入下一波。
 - 所有波清完后 `all_waves_cleared = true`。
 
-## Implementation Roadmap
+## 实现路线图
 
-### Step 1: Core Wave Spawner
+### 步骤 1：核心波次生成器
 
 - [x] 增加 `WaveDefinition`。
 - [x] 增加 `WaveSpawner` 和 `WaveSpawnResult`。
 - [x] 用 GUT 覆盖生成间隔、敌人数和敌人属性。
 
-### Step 2: Wave Clear
+### 步骤 2：波次清空
 
 - [x] 增加 `WaveClearEvent`。
 - [x] 根据 `defeated/completed` 判断波次完成。
 - [x] 增加 GUT 测试确保 clear event 只产出一次。
 
-### Step 3: Combat Integration
+### 步骤 3：战斗集成
 
 - [x] `CombatSimulation` 接入 `WaveSpawner`。
 - [x] `CombatTickResult` 返回 spawned enemies 和 wave clear events。
 - [x] 更新核心战斗测试。
 
-### Step 4: Economy Integration
+### 步骤 4：经济集成
 
 - [x] 增加波次奖励服务。
 - [x] BoardView 根据 wave clear event 发放 `CLEAR_WAVE` 奖励。
 - [x] HUD 后续显示当前波次。
 
-### Step 5: BoardView Integration
+### 步骤 5：BoardView 集成
 
 - [x] BoardView 使用 `WaveSpawner` 初始化 `CombatSimulation`。
 - [x] BoardView 渲染 `combat_simulation.enemies` 中的可见敌人。
 - [x] 默认关卡使用 3 波 MVP 配置。
 
-## Decisions
+## 决策s
 
 - 敌人到达终点会扣玩家生命。
 - 波次自动开始。

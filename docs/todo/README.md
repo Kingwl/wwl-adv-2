@@ -1,15 +1,17 @@
 # Todo
 
-Use this directory for active work items, backlog notes, and short-lived follow-up lists.
+这个目录用于当前工作项、backlog 记录和短期后续列表。
 
-## Files
+## 文件
 
-- `backlog.md`: project backlog and triage notes.
-- `harness-engineering-todo.md`: agent-facing validation, automation, and observability backlog.
-- `YYYY-MM-DD-sprint.md`: dated sprint or work-session todo list.
+- `backlog.md`：项目 backlog 和 triage 记录。
+- `harness-engineering-todo.md`：面向 agent 的验证、自动化和可观测性 backlog。
+- `YYYY-MM-DD-sprint.md`：带日期的 sprint 或工作会话 todo 列表。
 
-## Expectations
+## 期望
 
-Todo docs should be short-lived when possible.
+Todo 文档应尽量短期存在。
 
-Move durable decisions into `docs/designs/`, durable testing policy into `docs/testing/`, and completed delivery notes into `docs/milestone/` or `docs/status.md`.
+把持久决策移入 `docs/designs/`，把持久测试策略移入 `docs/testing/`，把已完成的交付记录移入 `docs/milestone/` 或 `docs/status.md`。
+
+截图、smoke、试玩或审查中发现的 UI 问题和 UI 美观度问题，应在 `backlog.md` 中一事一条地记录为独立 checkbox。

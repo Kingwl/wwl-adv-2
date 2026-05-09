@@ -76,6 +76,9 @@ def main() -> int:
             line += f", screenshot={rel(screenshot_path)}"
         if isinstance(non_dark, (int, float)) and isinstance(contrast, (int, float)):
             line += f", non_dark={non_dark:.3f}, contrast={contrast:.3f}"
+        review_artifacts = viewport.get("review_artifacts", [])
+        if isinstance(review_artifacts, list) and review_artifacts:
+            line += f", review_crops={len(review_artifacts)}"
         print(line)
 
     if failures:

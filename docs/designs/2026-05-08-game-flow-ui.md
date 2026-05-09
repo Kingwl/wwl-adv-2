@@ -1,14 +1,14 @@
-# Design: 游戏流程 UI
+# 设计：游戏流程 UI
 
-## Status
+## 状态
 
-Implemented for the playable prototype.
+已为 playable prototype 实现。
 
-## Context
+## 背景
 
 当前游戏场景已经可以放塔、出怪、攻击、漏怪、胜利和失败。流程 UI 需要区分开始界面和游戏内菜单，避免 BoardView 同时承担入口页和游戏状态。
 
-## Goals
+## 目标
 
 - 项目入口是单独的 `start.tscn`。
 - 开始界面显示标题 `WWL 大冒险 2`。
@@ -19,7 +19,7 @@ Implemented for the playable prototype.
 - 胜利/失败面板支持重开和返回开始界面。
 - 这些流程属于场景 UI，不改变核心战斗规则。
 
-## Rules
+## 规则
 
 场景切换规则：
 
@@ -46,7 +46,7 @@ LOST
 - `_process(delta)` 在 `gameplay_paused == true` 时不推进 `CombatSimulation`。
 - 暂停时不处理棋盘点击输入。
 
-## UI Structure
+## UI 结构
 
 新增开始场景：
 
@@ -82,7 +82,7 @@ Overlay/Screen/Panel/SecondaryButton
 - `ui_cancel` 在游戏中打开暂停菜单。
 - `ui_cancel` 在暂停菜单中继续游戏。
 
-## Test Coverage
+## 测试覆盖
 
 场景测试覆盖：
 
@@ -98,7 +98,7 @@ Overlay/Screen/Panel/SecondaryButton
 - 胜利时显示 Victory 面板并暂停。
 - 胜利面板提供返回开始界面入口。
 
-## Follow-Ups
+## 后续项
 
 - 增加更完整的结算统计。
 - 增加设置入口，例如音量和速度。

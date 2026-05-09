@@ -23,6 +23,9 @@ require_file "${REPO_DIR}/AGENTS.md"
 require_file "${DOCS_DIR}/README.md"
 require_file "${DOCS_DIR}/status.md"
 require_file "${DOCS_DIR}/designs/README.md"
+require_file "${DOCS_DIR}/gameplay/README.md"
+require_file "${DOCS_DIR}/gameplay/features.md"
+require_file "${DOCS_DIR}/gameplay/test-plan.md"
 require_file "${DOCS_DIR}/testing/README.md"
 require_file "${DOCS_DIR}/testing/checklist.md"
 require_file "${DOCS_DIR}/testing/gates.md"
@@ -56,7 +59,7 @@ if [[ -f "${DOCS_DIR}/designs/README.md" ]]; then
 fi
 
 if [[ -f "${DOCS_DIR}/README.md" ]]; then
-  for required_entry in "status.md" "designs/" "testing/" "todo/" "tech-debt/"; do
+  for required_entry in "status.md" "designs/" "gameplay/" "ui/" "testing/" "todo/" "tech-debt/"; do
     if ! grep -Fq "${required_entry}" "${DOCS_DIR}/README.md"; then
       fail "docs README missing ${required_entry}"
     fi

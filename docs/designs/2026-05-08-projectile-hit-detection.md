@@ -1,14 +1,14 @@
-# Design: 投射物命中判断
+# 设计：投射物命中判断
 
-## Status
+## 状态
 
-Implemented.
+Implemented。
 
-## Context
+## 背景
 
 之前塔攻击在核心战斗里会立即产出 `DamageEvent`，场景层只画一段飞行反馈。这让投射物只是表现层效果，不能支持飞行时间、目标提前死亡、漏怪导致丢失、真正命中后再爆炸等规则。
 
-## Goals
+## 目标
 
 - 塔攻击先创建核心层 `CombatProjectile`。
 - 投射物按固定 tick 在格子空间移动。
@@ -17,7 +17,7 @@ Implemented.
 - 范围塔在命中点按 splash 半径找敌人。
 - 场景层绘制当前 active projectiles，并只在 `ProjectileImpactEvent` 出现时播放命中特效。
 
-## Core Types
+## 核心类型
 
 ```text
 CombatProjectile
@@ -44,7 +44,7 @@ ProjectileAdvanceResult
 └── missed_projectile_ids
 ```
 
-## Tick Order
+## Tick 顺序
 
 `CombatSimulation.tick()` 当前顺序：
 
@@ -64,7 +64,7 @@ ProjectileAdvanceResult
 - 命中特效来自 `CombatTickResult.projectile_impact_events`。
 - 命中特效生成后不会在同一个 `_process(delta)` 中立刻衰减，确保至少显示一帧。
 
-## Tests
+## 测试
 
 - `test_projectile_service.gd` 覆盖移动、命中、范围伤害、减速状态和 miss。
 - `test_combat_simulation.gd` 覆盖发射与命中分离。

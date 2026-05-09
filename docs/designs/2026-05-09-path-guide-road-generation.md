@@ -1,48 +1,48 @@
-# Design: Path Guide Road Generation
+# 设计：Path Guide 道路生成
 
-## Status
+## 状态
 
-Accepted.
+Accepted。
 
-## Context
+## 背景
 
-The original map road used a small road-tile overlay atlas. That kept gameplay aligned to `path_cells`, but the visual quality depended on generated turn tiles being exactly wide enough and cleanly connected. In practice the corners were too narrow, and draw padding only hid part of the problem.
+原始地图道路使用小型 road-tile overlay atlas。这让玩法和 `path_cells` 保持对齐，但视觉质量依赖生成的转弯 tile 是否足够宽、连接是否干净。实际效果中，拐角太窄，draw padding 也只能隐藏部分问题。
 
-The current map style uses a better workflow:
+当前 map style 使用更好的工作流：
 
-1. Generate a precise road guide from gameplay data.
-2. Ask image generation to style that guide into a complete board image.
-3. Keep gameplay path data unchanged.
-4. Integrate the generated result as the runtime baked map style.
+1. 从玩法数据生成精确道路 guide。
+2. 让图像生成基于该 guide 风格化出完整棋盘图。
+3. 保持玩法路径数据不变。
+4. 将生成结果集成为运行时 baked map style。
 
-This document records that workflow so future map generation is guided by project rules instead of repeated manual prompt tuning.
+这个文档记录该工作流，让未来地图生成受项目规则指导，而不是重复手工调 prompt。
 
-## Current Implementation
+## 当前实现
 
-Active level:
+活跃关卡：
 
 - `res://data/levels/level_001.json`
 - `style_id`: `stormwind_city_v3`
 
-Generated path-guide style:
+生成的 path-guide style：
 
 - `res://data/map_styles/stormwind_city_v3.json`
 - `res://assets/tilesets/stormwind_city_v3/background_frame.png`
 - `res://assets/tilesets/stormwind_city_v3/background_frame_normal.png`
 
-The generated road is baked into `background_frame.png`. `BoardMapRenderer` keeps gameplay path slots intact for movement and placement, but it does not draw road overlay tiles on top.
+生成道路已烘焙进 `background_frame.png`。`BoardMapRenderer` 保持玩法 path slots 不变，用于移动和放置；但它不再在上层绘制 road overlay tiles。
 
-Tooling:
+工具：
 
 - `game/tools/generate-road-guide.py`
-- Default output: `game/tools/out/road_guides/<level_id>/`
-- The output directory is ignored by git because generated guide images are review artifacts.
+- 默认输出：`game/tools/out/road_guides/<level_id>/`
+- 输出目录被 git 忽略，因为生成的 guide 图片是 review 产物。
 
-## Pipeline
+## 流水线
 
-### 1. Generate The Guide From Gameplay Data
+### 1. 从玩法数据生成 Guide
 
-Use `level_001.json` as the source of truth:
+使用 `level_001.json` 作为事实来源：
 
 - grid size: `10 x 8`
 - board image size: `1280 x 1024`
@@ -55,26 +55,26 @@ Use `level_001.json` as the source of truth:
                                     (4,4) -> (5,4) -> (6,4) -> (7,4) -> (8,4) -> (9,4)
 ```
 
-The guide generator draws:
+guide generator 会绘制：
 
-- road body mask from the path centerline.
-- curb mask around the body.
-- optional shadow mask.
-- a visible guide preview with clear colors:
-  - cream road body.
-  - blue curb zone.
-  - red enemy centerline.
+- 从路径中心线生成的 road body mask。
+- body 周围的 curb mask。
+- 可选 shadow mask。
+- 带清晰颜色的可见 guide preview：
+  - 奶油色道路主体。
+  - 蓝色 curb 区域。
+  - 红色敌人中心线。
 
-The guide must be produced by code, not by hand. This guarantees the guide matches gameplay `path_cells`.
+guide 必须由代码生成，不能手画。这样能保证 guide 匹配玩法 `path_cells`。
 
-Current command:
+当前命令：
 
 ```bash
 game/tools/generate-road-guide.py \
   --overlay-image res://assets/tilesets/stormwind_city_v3/background_frame.png
 ```
 
-Generated files:
+生成文件：
 
 - `road_body_mask.png`
 - `road_curb_mask.png`
@@ -85,30 +85,30 @@ Generated files:
 - `game_path_overlay.png`
 - `road_guide_manifest.json`
 
-### 2. Generate The Styled Board Image
+### 2. 生成风格化棋盘图
 
-Use image generation with the guide visible as the layout reference.
+使用图像生成，并让 guide 作为可见布局参考。
 
-Prompt requirements:
+Prompt 要求：
 
-- Preserve the exact road route, road width, rounded turns, start edge, and exit edge from the guide.
-- Convert the road body into pale warm stone paving.
-- Convert the curb zone into raised white-stone borders with small edge decoration.
-- Remove guide markings: no red centerline, no blue overlay color, no labels, no dots.
-- Do not add extra roads, branches, intersections, UI, text, logos, or characters.
-- Keep the same top-down / slightly 3/4 board perspective.
+- 精确保留 guide 中的道路路线、道路宽度、圆角转弯、入口边和出口边。
+- 将道路主体转换为浅暖色石板路。
+- 将 curb 区域转换为凸起白石边界，并带少量边缘装饰。
+- 移除 guide 标记：不要红色中心线、不要蓝色 overlay 色、不要标签、不要点。
+- 不添加额外道路、分支、路口、UI、文字、logo 或角色。
+- 保持相同的 top-down / slightly 3/4 棋盘视角。
 
-The generated image is treated as a background candidate. It is not allowed to change gameplay data.
+生成图片会作为背景候选。它不允许改变玩法数据。
 
-### 3. Normalize And Integrate
+### 3. 标准化并集成
 
-Normalize the generated image to the board asset size:
+将生成图片标准化到棋盘资产尺寸：
 
 ```text
 1280 x 1024
 ```
 
-Place it under a new style folder:
+放到新的 style 目录下：
 
 ```text
 game/assets/tilesets/stormwind_city_v3/
@@ -116,70 +116,70 @@ game/assets/tilesets/stormwind_city_v3/
 └── background_frame_normal.png
 ```
 
-Create a dedicated style JSON:
+创建专用 style JSON：
 
 ```text
 game/data/map_styles/stormwind_city_v3.json
 ```
 
-The style JSON should point at the baked background and normal map only. Path and buildable terrain are part of the background, so the style does not define semantic road tile mappings.
+style JSON 应只指向 baked background 和 normal map。路径和可建造地形已属于背景的一部分，因此该 style 不定义语义化 road tile 映射。
 
-This keeps runtime loading simple while avoiding double-drawn roads and transparent placeholder assets.
+这样能让运行时加载保持简单，同时避免重复绘制道路和透明 placeholder 资产。
 
-### 4. Switch The Level
+### 4. 切换关卡
 
-For the active level, set:
+对活跃关卡设置：
 
 ```json
 "style_id": "stormwind_city_v3"
 ```
 
-in:
+位置：
 
 ```text
 game/data/levels/level_001.json
 ```
 
-## Why This Works Better
+## 为什么更好
 
-- The path shape starts from game data, so the generated image has a stronger spatial target.
-- The generated result can look hand-painted and cohesive, unlike a small tile atlas with visible repeated pieces.
-- Existing gameplay path, tower placement, targeting, and enemy movement do not change.
-- The workflow is compatible with a future deterministic road-ribbon renderer. The guide/mask generator can become that renderer's preview/bake tool.
+- 路径形状来自游戏数据，因此生成图片有更强的空间目标。
+- 生成结果可以像手绘一样整体一致，不像小 tile atlas 那样有明显重复。
+- 现有玩法路径、塔放置、目标选择和敌人移动都不变。
+- 该工作流兼容未来确定性 road-ribbon renderer。guide/mask generator 可以变成该 renderer 的 preview/bake 工具。
 
-## Validation
+## 验证
 
-Required checks:
+必需检查：
 
-- `LevelDefinition.style_id` points to `stormwind_city_v3`.
-- `MapStyleDefinition` can load the generated style.
-- `BoardMapRenderer` loads the generated background and normal textures.
-- Map rendering does not depend on road overlay, transparent placeholder, or semantic tile assets.
-- `game/tools/test-gut.sh` passes.
+- `LevelDefinition.style_id` 指向 `stormwind_city_v3`。
+- `MapStyleDefinition` 可以加载生成的 style。
+- `BoardMapRenderer` 可以加载生成背景和 normal 贴图。
+- 地图渲染不依赖 road overlay、透明 placeholder 或语义化 tile 资产。
+- `game/tools/test-gut.sh` 通过。
 
-Current validation:
+当前验证：
 
 ```text
 128/128 GUT tests passing
 ```
 
-## Known Limitations
+## 已知限制
 
-- The road geometry is visually baked into one image. Changing `path_cells` requires regenerating the guide and image.
-- Image generation can still drift from the guide. For production quality, enforce masks or use the deterministic road-ribbon renderer.
-- Because the road is part of the background, path tile overlays are disabled. Any future blocked/locked/road overlay polish should account for this style mode.
+- 道路几何被视觉烘焙进一张图片。修改 `path_cells` 需要重新生成 guide 和图片。
+- 图像生成仍可能偏离 guide。生产质量应强制 mask，或使用确定性 road-ribbon renderer。
+- 因为道路是背景的一部分，path tile overlay 已禁用。未来任何 blocked/locked/road overlay polish 都应考虑这种 style mode。
 
-## Relationship To Road Ribbon Rendering
+## 与 Road Ribbon Rendering 的关系
 
-This is the short-term art workflow for fast evaluation.
+这是用于快速评估的短期美术工作流。
 
-The longer-term engineering direction remains:
+更长期的工程方向仍是：
 
-- Generate road geometry from `path_cells`.
-- Fill it with generated pavement/curb materials.
-- Validate width and corner radius programmatically.
+- 从 `path_cells` 生成道路几何。
+- 用生成的 pavement/curb 材质填充。
+- 用程序验证宽度和转弯半径。
 
-That direction is documented in:
+该方向记录在：
 
 ```text
 docs/designs/2026-05-09-road-ribbon-rendering-and-asset-contract.md

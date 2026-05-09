@@ -22,13 +22,17 @@ echo "== Native UI smoke =="
 "${ROOT_DIR}/tools/check-ui-smoke.sh"
 
 echo
+echo "== Native gameplay smoke =="
+"${ROOT_DIR}/tools/check-gameplay-smoke.sh"
+
+echo
 echo "== Changed files =="
 git -C "${REPO_DIR}" status --short || true
 
 echo
 echo "== Generated artifacts =="
 if [[ -d "${REPO_DIR}/ci-artifacts" ]]; then
-  find "${REPO_DIR}/ci-artifacts" -maxdepth 3 -type f -print \
+  find "${REPO_DIR}/ci-artifacts" -maxdepth 5 -type f -print \
     | sed "s#^${REPO_DIR}/#- #"
 else
   echo "- none"

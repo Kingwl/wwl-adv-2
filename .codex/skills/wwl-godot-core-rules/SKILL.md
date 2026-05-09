@@ -1,65 +1,69 @@
 ---
 name: wwl-godot-core-rules
-description: Use when changing deterministic gameplay rules in the WWL Advanced 2D Tower Merge Godot repo, including board placement, merge behavior, towers, targeting, combat, projectiles, economy, waves, enemies, player life, victory or failure state, and data-driven rule behavior.
+description: 当修改 WWL Advanced 2D Tower Merge Godot 仓库中的确定性玩法规则时使用，包括棋盘放置、合成行为、塔、目标选择、战斗、投射物、经济、波次、敌人、玩家生命、胜利或失败状态，以及数据驱动规则行为。
 metadata:
-  short-description: WWL Godot core gameplay rule workflow
+  short-description: WWL Godot 核心玩法规则工作流
 ---
 
-# WWL Godot Core Rules
+# WWL Godot 核心规则
 
-Use this skill for gameplay rule work in `/Users/bytedance/opensource/wwl-adv-2`.
+在 `/Users/bytedance/opensource/wwl-adv-2` 中处理玩法规则时使用这个 skill。
 
-## First Reads
+## 优先阅读
 
-1. Read `AGENTS.md`.
-2. Read `docs/status.md`.
-3. Read the relevant design under `docs/designs/` when the change touches an existing decision.
-4. Read `docs/testing/gates.md` before choosing the verification command.
+1. 阅读 `AGENTS.md`。
+2. 阅读 `docs/status.md`。
+3. 如果改动触及已有决策，阅读 `docs/designs/` 下相关设计。
+4. 阅读 `docs/gameplay/features.md` 和 `docs/gameplay/test-plan.md` 中相关条目。
+5. 在选择验证命令前阅读 `docs/testing/gates.md`。
 
-## Development Rules
+## 开发规则
 
-- Keep deterministic gameplay logic in `game/scripts/core/`.
-- Keep scene nodes, HUD labels, input coordinates, rendering, and frame timing out of core rule services.
-- Prefer `RefCounted` rule/service classes for core logic unless the local pattern requires otherwise.
-- Add or update focused GUT tests before changing merge, combat, wave, economy, placement, targeting, enemy movement, player life, or win/loss rules.
-- Test both success and structured failure paths when the rule returns a result object.
-- If a rule change affects the playable scene state, update the scene adapter after the core tests are passing.
+- 确定性玩法逻辑放在 `game/scripts/core/`。
+- 核心规则服务不要依赖场景节点、HUD 文本、输入坐标、渲染和帧时间。
+- 除非局部模式另有要求，核心逻辑优先使用 `RefCounted` 规则/服务类。
+- 修改合成、战斗、波次、经济、放置、目标选择、敌人移动、玩家生命或胜负规则前，先新增或更新聚焦的 GUT 测试。
+- 如果规则返回结果对象，同时测试成功路径和结构化失败路径。
+- 如果规则改动影响可玩场景状态，等核心测试通过后再更新场景适配层。
+- 新增或改变核心玩法功能、规则状态、配置形状、数值来源或测试覆盖时，更新 `docs/gameplay/features.md` 和 `docs/gameplay/test-plan.md`。
 
-## Usual File Targets
+## 常见文件目标
 
-- Core code: `game/scripts/core/<domain>/`.
-- Rule tests: `game/test/gut/<domain>/`.
-- Scene adapter only when needed: `game/scripts/board/board_view.gd`.
-- Data/schema changes: `game/data/`, `game/tools/check-assets.sh`, and related schemas.
+- 核心代码：`game/scripts/core/<domain>/`。
+- 规则测试：`game/test/gut/<domain>/`。
+- 仅在必要时改场景适配层：`game/scripts/board/board_view.gd`。
+- 数据/schema 改动：`game/data/`、`game/tools/check-assets.sh` 和相关 schema。
+- 玩法功能和测试计划：`docs/gameplay/features.md`、`docs/gameplay/test-plan.md`。
 
-## Verification
+## 验证
 
-For focused rule iteration:
+聚焦规则迭代时：
 
 ```bash
 cd game
 ./tools/test-gut.sh
 ```
 
-For substantive changes:
+实质性改动：
 
 ```bash
 cd game
 ./tools/check-all.sh
 ```
 
-If the rule change affects UI state, placement input, rendering, or scene flow:
+如果规则改动影响 UI 状态、放置输入、渲染或场景流程：
 
 ```bash
 cd game
+./tools/check-gameplay-smoke.sh
 ./tools/check-ui-smoke.sh
 ```
 
-Before handing off a non-trivial change:
+交付非平凡改动前：
 
 ```bash
 cd game
 ./tools/agent-preflight.sh
 ```
 
-Report which tests were added or changed, which commands ran, and any known warning such as TD-007.
+最终说明新增或修改了哪些测试、运行了哪些命令，以及是否有 TD-007 这类已知警告。

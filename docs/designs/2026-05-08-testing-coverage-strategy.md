@@ -1,10 +1,10 @@
-# Design: 测试驱动和覆盖率策略
+# 设计：测试驱动和覆盖率策略
 
-## Status
+## 状态
 
 Draft
 
-## Decision
+## 决策
 
 默认采用“GDScript 核心规则 + GUT 测试”的测试策略。
 
@@ -15,7 +15,7 @@ Draft
 - 核心规则仍要和场景节点分离，放在 `scripts/core/`，便于用 GUT 做快速测试。
 - Godot 场景测试用于验证节点、信号、资源加载、动画触发和场景装配，不承担全部规则验证。
 
-## Test Pyramid
+## 测试金字塔
 
 ```text
 Manual Playtest
@@ -23,7 +23,7 @@ Scene / Integration Tests
 Core Unit Tests
 ```
 
-## Core Unit Tests
+## 核心单元测试
 
 范围：
 
@@ -41,7 +41,7 @@ Core Unit Tests
 - 同一输入和同一 seed 必须得到同一结果。
 - 规则测试要覆盖正常路径、边界、失败原因。
 
-## Scene And Integration Tests
+## 场景和集成测试
 
 范围：
 
@@ -56,7 +56,7 @@ Core Unit Tests
 - GUT 9.6.x，用于 Godot 4.6.x 的 GDScript 单元测试和集成测试。
 - 不同时引入 GdUnit4，避免两套测试框架并存导致维护成本上升。
 
-## Coverage Policy
+## 覆盖策略
 
 GDScript 当前不采用强制行覆盖率门槛。质量门槛改为“关键规则测试覆盖清单 + GUT 测试通过”。
 
@@ -68,7 +68,7 @@ GDScript 当前不采用强制行覆盖率门槛。质量门槛改为“关键�
 
 任何 bug 修复都要先补一个会失败的回归测试。
 
-## Suggested Commands
+## 建议命令
 
 当前命令：
 
@@ -83,7 +83,7 @@ cd game
 
 实际命令以项目安装的 Godot 版本、插件版本和 CI 环境为准。
 
-## CI Gates
+## CI 门禁
 
 每个提交或 PR 至少执行：
 
@@ -92,7 +92,7 @@ cd game
 - GUT 测试。
 - 新增或修改的核心规则有对应测试。
 
-## File Layout Recommendation
+## 文件布局建议
 
 ```text
 game/

@@ -1,50 +1,50 @@
-# Design: Merge UI Integration
+# 设计：合成 UI 集成
 
-## Status
+## 状态
 
-Deferred. Keep this as a reference option until the Prototype progression model is decided.
+Deferred。保留为参考方案，直到 Prototype 成长模型决策完成。
 
-## Context
+## 背景
 
-Core merge rules already exist in `TowerMergeService`: two towers can merge only when they are different instances with the same type and same tier. Board rules also define the MVP merge position: the merged tower stays in the first selected tower's grid cell, and the second tower's cell is cleared.
+核心合成规则已经存在于 `TowerMergeService`：只有同类型、同等级且不是同一实例的两座塔可以合成。棋盘规则也定义了 MVP 合成位置：合成后的塔留在第一个选中塔的格子里，第二座塔所在格子清空。
 
-`BoardView` currently treats every left click as a placement attempt. Clicking an occupied slot returns an occupied-placement failure, so the core merge rule is not reachable from the playable scene.
+`BoardView` 当前把每次左键点击都当成放置尝试。点击已占用格会返回 occupied-placement 失败，因此核心合成规则无法从可玩场景触达。
 
-As of 2026-05-09, implementation is paused because the project has not committed to merge versus direct tower upgrade as the Prototype's tower progression model.
+截至 2026-05-09，具体实现暂停，因为项目尚未决定 Prototype 的塔成长模型是合成还是直接升级。
 
-## Goals
+## 目标
 
-- Add scene-level merge interaction without introducing drag-and-drop.
-- Keep merge mutation testable in the core layer instead of embedding it in `BoardView`.
-- Make valid merge targets obvious after selecting a tower.
-- Keep empty-grid placement behavior unchanged.
-- Keep tower-card selection for future placements independent from merge selection.
-- Preserve deterministic combat state after a merge.
+- 添加场景级合成交互，同时不引入拖拽。
+- 合成 mutation 保持在可测试核心层，不嵌入 `BoardView`。
+- 选中一座塔后，让合法合成目标明显可见。
+- 保持空格放置行为不变。
+- 让用于未来放置的 tower-card 选择独立于合成选择。
+- 合成后保持确定性战斗状态。
 
-## Non-Goals
+## 非目标
 
-- No drag merge in Prototype.
-- No tower movement.
-- No gold cost or refund for merging.
-- No random summon probabilities in this step.
-- No merge animation beyond highlight/status feedback in the first implementation.
+- Prototype 不做拖拽合成。
+- 不做塔移动。
+- 合成不消耗或返还金币。
+- 此步骤不做随机召唤概率。
+- 第一版除高亮/status 反馈外，不做合成动画。
 
-## Proposal
+## 方案
 
-Use a two-click merge flow:
+使用两次点击的合成流程：
 
-1. Click an occupied buildable slot to select that tower as the merge source.
-2. Highlight the selected tower and all compatible merge targets.
-3. Click a compatible occupied slot to merge it into the source slot.
-4. Click an incompatible occupied slot to switch the source selection to that tower and show a short hint.
-5. Click the selected source again, press Escape, restart, pause, or return to start to clear merge selection.
-6. Click an empty buildable slot to place a tower as today and clear any merge selection.
+1. 点击一个已占用可建造格，将该塔选为合成源。
+2. 高亮选中塔和所有兼容合成目标。
+3. 点击兼容的已占用格，将它合成进源格。
+4. 点击不兼容的已占用格，将源选择切换到该塔，并显示短提示。
+5. 再次点击已选源塔、按 Escape、重开、暂停或返回开始时，清除合成选择。
+6. 点击空可建造格时，按当前行为放置塔，并清除任何合成选择。
 
-The merged tower stays at the source position. The clicked target tower is consumed. Tower-card selection remains the selected type for new placements; it does not change when selecting a tower on the board.
+合成后的塔保留在源位置。被点击的目标塔被消耗。Tower-card selection 仍表示新放置的选中类型；选择棋盘上的塔不会改变它。
 
-## Core Service
+## 核心服务
 
-Add a small orchestration service outside the scene:
+在场景外添加一个小型编排服务：
 
 ```text
 game/scripts/core/placement/
@@ -52,27 +52,27 @@ game/scripts/core/placement/
 └── tower_merge_placement_result.gd
 ```
 
-`TowerMergePlacementService` owns board and registry mutation:
+`TowerMergePlacementService` 负责棋盘和 registry mutation：
 
 ```text
 try_merge_positions(source_position: Vector2i, target_position: Vector2i) -> TowerMergePlacementResult
 ```
 
-Responsibilities:
+职责：
 
-- Validate both positions are in bounds.
-- Validate both slots contain towers.
-- Resolve both tower ids through `TowerRegistry`.
-- Call `TowerMergeService.try_merge(source_tower, target_tower)`.
-- On success:
-  - remove source and target ids from `TowerRegistry`;
-  - clear the target board slot;
-  - replace the source board slot occupant with the merged tower id;
-  - set `merged_tower.grid_position = source_position`;
-  - add merged tower to `TowerRegistry`;
-  - return consumed ids and merged id.
+- 校验两个位置都在边界内。
+- 校验两个格子都包含塔。
+- 通过 `TowerRegistry` 解析两个 tower id。
+- 调用 `TowerMergeService.try_merge(source_tower, target_tower)`。
+- 成功时：
+  - 从 `TowerRegistry` 移除 source 和 target id；
+  - 清空目标棋盘格；
+  - 将源棋盘格占用者替换为合成塔 id；
+  - 设置 `merged_tower.grid_position = source_position`；
+  - 将合成塔加入 `TowerRegistry`；
+  - 返回被消耗 id 和合成 id。
 
-The service should return structured failure reasons for scene feedback:
+服务应返回结构化失败原因，用于场景反馈：
 
 ```text
 NONE
@@ -88,28 +88,28 @@ TIER_MISMATCH
 BOARD_UPDATE_FAILED
 ```
 
-Existing `TowerMergeResult.FailureReason` should be preserved and mapped into the placement-level result instead of duplicated in `BoardView`.
+现有 `TowerMergeResult.FailureReason` 应保留，并映射到 placement-level result，而不是在 `BoardView` 中重复实现。
 
 ## Board API
 
-Prefer adding one explicit board helper instead of mutating slot internals from scene code:
+优先添加一个明确的 board helper，而不是从场景代码直接修改 slot 内部状态：
 
 ```text
 replace_tower(position: Vector2i, expected_occupant_id: String, new_occupant_id: String) -> PlacementResult
 ```
 
-Rules:
+规则：
 
-- Position must be in bounds.
-- Slot must currently contain `expected_occupant_id`.
-- New occupant id must be non-empty.
-- Slot type must still be buildable.
+- 位置必须在边界内。
+- 格子当前必须包含 `expected_occupant_id`。
+- 新 occupant id 不能为空。
+- 格子类型仍必须是 buildable。
 
-This keeps the merge service atomic enough for MVP: validate both slots, replace source, clear target, then update the registry. If a board update fails, no scene UI should guess at recovery.
+这让合成服务对 MVP 来说足够原子：校验两个格子，替换 source，清空 target，然后更新 registry。如果 board update 失败，场景 UI 不应猜测如何恢复。
 
-## BoardView State
+## BoardView 状态
 
-Add scene state only for interaction and drawing:
+只为交互和绘制添加场景状态：
 
 ```text
 var merge_source_position := INVALID_GRID_POSITION
@@ -118,7 +118,7 @@ var last_merge_result: TowerMergePlacementResult
 var merge_feedback_elapsed_seconds := 0.0
 ```
 
-Add helpers:
+添加 helper：
 
 ```text
 has_merge_source() -> bool
@@ -128,106 +128,106 @@ try_merge_with_source(target_position: Vector2i) -> TowerMergePlacementResult
 is_compatible_merge_target(position: Vector2i) -> bool
 ```
 
-`BoardView._unhandled_input()` should route left clicks through one method:
+`BoardView._unhandled_input()` 应通过一个方法路由左键点击：
 
 ```text
 handle_board_click(grid_position)
 ```
 
-Click routing:
+点击路由：
 
-- Out of bounds: call placement path or show existing invalid feedback.
-- Empty slot: clear merge selection and call `try_place_at_grid()`.
-- Occupied slot with no merge source: select source.
-- Occupied selected source: clear source.
-- Occupied compatible target: call merge service.
-- Occupied incompatible target: select the clicked tower as the new source and show why it cannot merge with the previous source.
+- 越界：走放置路径或显示现有非法反馈。
+- 空格：清除合成选择，并调用 `try_place_at_grid()`。
+- 已占用且没有合成源：选择源。
+- 已占用且是当前选中源：清除源。
+- 已占用且是兼容目标：调用合成服务。
+- 已占用但不兼容：将被点击塔设为新源，并显示它为什么不能和之前的源合成。
 
-After a successful merge:
+成功合成后：
 
-- Clear merge selection.
-- Call `_sync_combat_towers()`.
-- Clear tower attack animation entries for consumed tower ids.
-- Keep existing projectiles alive; projectile damage already carries its own tower type and damage.
-- Update status with the merged type and tier.
-- Redraw.
+- 清除合成选择。
+- 调用 `_sync_combat_towers()`。
+- 清理被消耗 tower id 的攻击动画条目。
+- 保留现有投射物；投射物伤害已经携带自身塔类型和伤害。
+- 用合成后的类型和等级更新 status。
+- 重绘。
 
-Merged towers reset cooldown because `TowerMergeService` creates a new `GameTower`. This is acceptable for Prototype and should be noted as a balancing choice.
+合成后的塔会重置冷却，因为 `TowerMergeService` 会创建新的 `GameTower`。这对 Prototype 可以接受，并应作为平衡选择记录。
 
-## Visual Feedback
+## 视觉反馈
 
-Use lightweight drawing in `BoardView` before adding dedicated nodes:
+在添加专用节点前，先在 `BoardView` 中使用轻量绘制：
 
-- Selected source: bright gold outline around the source slot.
-- Compatible targets: cyan or green outline around matching occupied slots.
-- Incompatible occupied hover while source selected: red outline.
-- Successful merge: brief pulse at the source slot.
-- Failed merge: status text plus red outline at the target slot.
+- 选中源：源格周围明亮金色描边。
+- 兼容目标：匹配的已占用格显示青色或绿色描边。
+- 源已选中时，hover 不兼容已占用格：红色描边。
+- 合成成功：源格短暂 pulse。
+- 合成失败：status 文本加目标格红色描边。
 
-Tower sprites should show tier without requiring new art immediately. First pass:
+塔 sprite 应在无需立即新增美术的情况下显示等级。第一版：
 
-- Draw a small tier badge in the top-right of the slot for `tier > 1`.
-- Keep tower type sprite unchanged.
-- Later art can add tier-specific sprites or shader tinting.
+- 对 `tier > 1` 的塔，在格子右上角绘制小等级徽章。
+- 塔类型 sprite 保持不变。
+- 后续美术可以添加分等级 sprite 或 shader tint。
 
-HUD copy:
+HUD 文案：
 
-- Source selected: `Selected Single T1. Pick another Single T1 to merge.`
-- Success: `Merged tower-1 + tower-2 into Single T2.`
-- Incompatible: `Area T1 cannot merge with Single T1.`
-- Same tower: `Select a different tower to merge.`
+- 选中源：`Selected Single T1. Pick another Single T1 to merge.`
+- 成功：`Merged tower-1 + tower-2 into Single T2.`
+- 不兼容：`Area T1 cannot merge with Single T1.`
+- 同一座塔：`Select a different tower to merge.`
 
-## Tests
+## 测试
 
-Add tests before scene wiring.
+先加测试，再接场景。
 
-Core tests:
+核心测试：
 
-- Same type and tier at two occupied positions merge into the source position.
-- Target position is cleared after success.
-- Registry removes consumed ids and registers the merged tower.
-- Different types fail without board or registry mutation.
-- Different tiers fail without board or registry mutation.
-- Empty source fails.
-- Empty target fails.
-- Missing registry tower fails.
-- Same position fails.
+- 两个已占用位置的同类型同等级塔，合成为源位置的塔。
+- 成功后目标位置清空。
+- Registry 移除被消耗 id，并注册合成塔。
+- 不同类型失败，且不改变 board 或 registry。
+- 不同等级失败，且不改变 board 或 registry。
+- 空 source 失败。
+- 空 target 失败。
+- registry 中缺失 tower 时失败。
+- 同一位置失败。
 
-Scene tests:
+场景测试：
 
-- Clicking an occupied slot selects merge source without spending gold.
-- Clicking a compatible occupied slot merges and keeps wallet unchanged.
-- Merged tower appears at the first selected slot.
-- Target slot becomes empty.
-- Combat simulation tower list is resynced after merge.
-- Clicking empty slot while a source is selected places normally and clears merge source.
-- Restart clears merge source and last merge result.
+- 点击已占用格会选择合成源，不花费金币。
+- 点击兼容已占用格会合成，钱包不变。
+- 合成塔出现在第一个选中的格子。
+- 目标格变为空。
+- 合成后 combat simulation 塔列表重新同步。
+- 源已选中时点击空格，正常放置并清除合成源。
+- 重开会清除合成源和最后合成结果。
 
-## Implementation Order
+## 实现顺序
 
-1. Add `Board.replace_tower()` and GUT tests.
-2. Add `TowerMergePlacementResult`.
-3. Add `TowerMergePlacementService` and core GUT tests.
-4. Add `BoardView` merge source state and click routing.
-5. Add selection/target highlight drawing.
-6. Add tier badge drawing.
-7. Add scene tests for source selection and successful merge.
-8. Mark Milestone 1 `二合一合成` complete when tests pass.
+1. 添加 `Board.replace_tower()` 和 GUT 测试。
+2. 添加 `TowerMergePlacementResult`。
+3. 添加 `TowerMergePlacementService` 和核心 GUT 测试。
+4. 添加 `BoardView` 合成源状态和点击路由。
+5. 添加选择/目标高亮绘制。
+6. 添加等级徽章绘制。
+7. 添加源选择和成功合成的场景测试。
+8. 测试通过后，将 Milestone 1 `二合一合成` 标记完成。
 
-## Alternatives
+## 替代方案
 
-- Drag-and-drop merge: more direct on desktop, but worse for mobile landscape and requires pointer capture, drag preview, and cancellation states.
-- Dedicated merge mode button: less accidental, but adds an extra mode and competes with the tower-card bar.
-- Auto-merge on placing onto occupied slot: too easy to confuse with placement failure and does not let the player inspect possible targets.
+- 拖拽合成：桌面上更直接，但移动横屏更差，而且需要 pointer capture、拖拽预览和取消状态。
+- 专用合成模式按钮：更不容易误触，但会增加额外模式，并和 tower-card 栏竞争。
+- 放置到已占用格时自动合成：容易和放置失败混淆，也不允许玩家检查可选目标。
 
-## Risks
+## 风险
 
-- Occupied-slot clicks changing from placement failure to selection will alter one existing scene test. Update it to assert the new selection behavior instead of occupied placement failure.
-- Replacing source/target ids in board and registry must remain consistent. Keep mutation in the core service and assert no partial mutation on failure paths.
-- Tier badge text can clutter small mobile cells. Only draw it for `tier > 1` and keep the badge size tied to `cell_size`.
+- 已占用格点击从放置失败改为选择，会改变一个现有场景测试。应更新它，让它断言新的选择行为，而不是 occupied placement failure。
+- Board 和 registry 中替换 source/target id 必须保持一致。mutation 放在核心服务中，并断言失败路径不会出现部分 mutation。
+- 等级徽章文本可能让小移动端格子拥挤。只对 `tier > 1` 绘制，并让徽章尺寸绑定 `cell_size`。
 
-## Open Questions
+## 开放问题
 
-- Should a successful merge reset cooldown permanently for Prototype, or inherit the lower cooldown of the consumed towers?
-- Should incompatible target clicks switch source selection, or keep the old source and show an error only?
-- Should merge success create a small gold cost later for economy pacing?
+- Prototype 中成功合成是否应永久重置冷却，还是继承被消耗塔中较低的冷却？
+- 不兼容目标点击应切换源选择，还是保留旧源并只显示错误？
+- 合成成功后，后续是否应为经济节奏添加少量金币消耗？

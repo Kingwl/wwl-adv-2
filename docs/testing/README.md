@@ -1,25 +1,34 @@
-# Testing
+# 测试
 
-This directory contains durable testing policy and project gates.
+这个目录存放持久测试策略和项目门禁。
 
-## Files
+## 文件
 
-- `checklist.md`: feature-level checklist for rule, scene, and manual testing.
-- `gates.md`: required verification gates for code and documentation changes.
-- `prototype-rule-coverage.md`: current Prototype rule coverage map.
+- `checklist.md`：规则、场景和手工测试的功能级 checklist。
+- `gates.md`：代码和文档改动需要满足的验证门禁。
+- `prototype-rule-coverage.md`：当前 Prototype 规则覆盖图。
 
-## Commands
+核心玩法的功能级测试计划位于 `docs/gameplay/test-plan.md`；UI 的功能级测试计划位于 `docs/ui/test-plan.md`。
 
-Prefer the aggregate command:
+## 命令
+
+优先使用聚合命令：
 
 ```bash
 cd game
 ./tools/check-all.sh
 ```
 
-For documentation-only changes:
+仅文档改动：
 
 ```bash
 cd game
 ./tools/check-docs.sh
+```
+
+玩法场景视觉/trace smoke：
+
+```bash
+cd game
+./tools/check-gameplay-smoke.sh
 ```

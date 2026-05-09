@@ -1,11 +1,11 @@
-# Technical Debt Register
+# 技术债登记表
 
-| ID | Area | Impact | Priority | Owner | Status | Notes |
+| ID | 区域 | 影响 | 优先级 | 负责人 | 状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| TD-001 | Testability | Gameplay rules coupled to Godot nodes would make unit tests slow and brittle. | High | TBD | Open | Keep combat, merge, economy, wave, and RNG rules in `scripts/core/`. |
-| TD-002 | Coverage | GDScript line coverage is not as straightforward as .NET coverage. | High | TBD | Open | Use GUT test coverage checklists, branch/edge-case tests, and regression tests instead of line coverage gates. |
-| TD-003 | Determinism | Frame-rate dependent combat simulation will create flaky tests and inconsistent balance. | High | TBD | Mitigated | Core combat uses fixed tick simulation; scene integration still needs to route through it. |
-| TD-004 | Content Data | Hardcoded tower/wave values will make balancing and regression testing expensive. | Medium | TBD | Open | Move tower, enemy, and wave config into data resources after prototype rules stabilize. |
-| TD-005 | Scene Tests | Too many scene tests can become slow and brittle. | Medium | TBD | Open | Keep most assertions in core tests; use scene tests only for integration boundaries. |
-| TD-006 | Enemy Lifecycle | Completed and defeated enemies stay in the simulation array for now. | Low | TBD | Open | Add cleanup once longer waves or profiling show retained enemies affecting performance or scene rendering. |
-| TD-007 | Test Cleanup | GUT scene tests emit `ObjectDB instances leaked at exit`, which makes CI output noisy and can hide future leak regressions. | Medium | TBD | Open | CI uploads `check-all.log`; inspect scene tests and queued nodes/resources to remove the warning. |
+| TD-001 | 可测试性 | 玩法规则耦合到 Godot 节点会让单元测试变慢且脆弱。 | High | TBD | Open | 将战斗、合成、经济、波次和 RNG 规则保留在 `scripts/core/`。 |
+| TD-002 | 覆盖率 | GDScript 行覆盖率不像 .NET 覆盖率那样直接。 | High | TBD | Open | 用 GUT 测试覆盖 checklist、分支/边界测试和回归测试替代行覆盖率门禁。 |
+| TD-003 | 确定性 | 依赖帧率的战斗模拟会制造 flaky 测试和不一致平衡。 | High | TBD | Mitigated | 核心战斗使用固定 tick 模拟；场景集成仍需通过它路由。 |
+| TD-004 | 内容数据 | 硬编码塔/波次数值会让平衡和回归测试变贵。 | Medium | TBD | Open | Prototype 规则稳定后，将塔、敌人和波次配置迁移到数据资源。 |
+| TD-005 | 场景测试 | 过多场景测试会变慢且脆弱。 | Medium | TBD | Open | 大多数断言保留在核心测试；场景测试只用于集成边界。 |
+| TD-006 | 敌人生命周期 | 已完成和已击败敌人目前仍保留在 simulation array 中。 | Low | TBD | Open | 当更长波次或 profiling 显示保留敌人影响性能或场景渲染时，再添加清理。 |
+| TD-007 | 测试清理 | GUT 场景测试输出 `ObjectDB instances leaked at exit`，让 CI 输出变吵，也可能隐藏未来 leak 回归。 | Medium | TBD | Open | CI 上传 `check-all.log`；检查场景测试和 queued node/resource，移除该警告。 |
