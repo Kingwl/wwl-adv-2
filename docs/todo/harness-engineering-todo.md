@@ -23,11 +23,13 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
   - 断言 canvas 存在、非空白，并且没有关键 console 错误。
   - 把它当作 export/Pages 门禁，而不是默认本地调试循环。
 
-- [ ] 添加 Godot 架构边界 structural lint。
+- [x] 添加 Godot 架构边界 structural lint。
   - 保持 `game/scripts/core/` 独立于场景/UI 节点。
-  - 标记直接新增到 `BoardView` 的玩法规则逻辑。
-  - 跟踪 `BoardView` 体积/耦合度，避免它无感继续膨胀。
+  - 阻止 `BoardView` 重新持有资产/data 资源路径或直接 `load()` / `preload()`。
+  - 要求棋盘场景资产通过 `BoardAssetCatalog` 管理。
+  - 用 warning 跟踪 `BoardView` 体积/耦合度，避免它无感继续膨胀。
   - 将违规报告为清晰的 CI 失败。
+  - 命令：`game/tools/check-structure.sh`；报告：`ci-artifacts/structure/report.md`。
 
 - [x] 添加确定性 gameplay smoke/replay eval 的第一版。
   - 使用脚本化 gameplay scenario 和固定 tick。
@@ -44,6 +46,11 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
 - [ ] 将塔、敌人和波次配置迁移到带 schema 检查的数据文件。
   - 扩展 `check-assets.sh`，不只校验关卡和 map style 定义。
   - 校验数据文件和运行时资产之间的引用。
+
+- [ ] 将 structural lint 的 warning 分阶段收敛成更严格规则。
+  - 先拆出 `BoardView` 的 HUD、输入、渲染和 game flow adapter。
+  - 将默认经济配置和波次定义迁移到数据/配置层。
+  - 将 `BoardMapRenderer` 从 `game/scripts/core/` 迁出到场景/渲染 adapter。
 
 - [x] 添加 agent preflight 命令。
   - 运行标准本地门禁。

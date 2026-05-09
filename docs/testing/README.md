@@ -32,3 +32,10 @@ cd game
 cd game
 ./tools/check-gameplay-smoke.sh
 ```
+
+架构边界和 BoardView 结构检查：
+
+```bash
+cd game
+./tools/check-structure.sh
+```

@@ -101,6 +101,7 @@ cd game
 ./tools/test-gut.sh
 ./tools/check-docs.sh
 ./tools/check-assets.sh
+./tools/check-structure.sh
 ./tools/check-ui-smoke.sh
 ./tools/check-gameplay-smoke.sh
 ./tools/summarize-ui-smoke.py

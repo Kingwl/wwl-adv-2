@@ -24,6 +24,7 @@ metadata:
 - shell 工具要可移植：支持 `GODOT_BIN`，失败时明确报错，避免机器本地假设。
 - CI 应调用仓库脚本，不要在 workflow 里重复实现逻辑。
 - 当失败需要 agent 检查时，CI 应上传日志、报告和截图。
+- 架构边界检查通过 `game/tools/check-structure.sh` 维护；Tree-sitter cache 放在 `build/structure-cache/`，报告放在 `ci-artifacts/structure/`。
 - 新增持久策略时更新 `docs/testing/`；新增待跟进工作时更新 `docs/todo/harness-engineering-todo.md`。
 - 项目状态变化时更新 `docs/status.md`。
 
@@ -53,6 +54,13 @@ cd game
 ```bash
 cd game
 ./tools/check-all.sh
+```
+
+只验证 structural lint 改动：
+
+```bash
+cd game
+./tools/check-structure.sh
 ```
 
 UI smoke、场景验证或 agent 反馈环改动：

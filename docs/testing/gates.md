@@ -24,6 +24,28 @@ CI 每次运行都会把完整 `ci-artifacts/` 目录上传为 `godot-check-arti
 
 `check-all.sh` 包含对 `game/data/levels` 和 `game/data/map_styles` 的 JSON/schema 校验。
 
+`check-all.sh` 还包含 Tree-sitter structural lint：
+
+```bash
+cd game
+./tools/check-structure.sh
+```
+
+这个命令会解析项目 GDScript，报告写入 `ci-artifacts/structure/`。Tree-sitter 的本地 venv 和 grammar cache 位于 `build/structure-cache/`，不会进入 Godot 项目目录或 CI artifact。
+
+当前 structural lint 会失败的情况：
+
+- `game/scripts/core/` 下新增场景树、输入、节点查找、节点生命周期或 UI 节点依赖。
+- `BoardView` 重新持有多个 `res://` 资源路径常量。
+- `BoardView` 直接调用 `load()` 或 `preload()` 加载资产。
+- `BoardAssetCatalog` 缺失，或 `BoardView` 不再通过它管理棋盘场景资产。
+
+当前 structural lint 会以 warning 跟踪但不阻塞的技术债：
+
+- `BoardView` 仍超过 1200 行，且函数数量偏多。
+- `BoardView` 仍构造默认经济配置和波次定义。
+- `game/scripts/core/maps/BoardMapRenderer` 仍包含渲染和资源加载耦合。
+
 native UI/可玩性 smoke 检查：
 
 ```bash
@@ -71,6 +93,8 @@ cd game
 - UI 状态反映核心状态。
 - 输入到达正确的核心服务。
 - 暂停、重开、胜利和失败流程保持玩法状态一致。
+
+新增场景资产、数据加载或 BoardView 集成职责时，不要把新的资源路径和加载逻辑直接塞回 `BoardView`。优先放入 `BoardAssetCatalog` 或新的小型 adapter，并运行 `./tools/check-structure.sh`。
 
 新增或大改 UI 功能前，先写简短验证方案。适用范围包括新增可见 UI 区域、按钮、面板、HUD 状态、弹窗、卡片、菜单，修改布局或响应式行为，修改素材框、字体、图标、按钮状态、可读性，或修改输入流程和可玩路径。
 

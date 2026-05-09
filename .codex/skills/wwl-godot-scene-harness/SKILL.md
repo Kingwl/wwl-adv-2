@@ -22,6 +22,7 @@ metadata:
 
 - 把场景脚本视为渲染、输入、信号、资源加载和状态同步的适配层。
 - 玩法规则放在 `game/scripts/core/`；不要把重规则逻辑继续塞进 `BoardView`。
+- 棋盘场景资产和 data resource 加载归 `BoardAssetCatalog` 或小型 adapter；不要把新的 `res://` 资产路径和直接 `load()` 调用塞回 `BoardView`。
 - 修改场景契约时，更新或新增 `game/test/gut/scenes/` 下的 GUT 场景测试。
 - 新增或大改 UI 功能前，先按 `docs/testing/gates.md` 写验证方案：覆盖区域、视口、状态、交互、已有 crop/overlay 覆盖情况，以及需要人工检查的产物。
 - 新增 UI surface 时，同步补 `game/tools/ui_smoke_runner.gd` 的局部 crop/overlay；关键状态至少覆盖一个代表状态。
@@ -65,6 +66,13 @@ cd game
 ```bash
 cd game
 ./tools/agent-preflight.sh
+```
+
+修改 BoardView 结构、资源加载或场景/核心边界时：
+
+```bash
+cd game
+./tools/check-structure.sh
 ```
 
 ## 覆盖边界

@@ -38,67 +38,6 @@ const TOWER_ATTACK_ANIMATION_SECONDS := 0.32
 const ENEMY_WALK_FRAME_SECONDS := 0.16
 const ENEMY_DEATH_ANIMATION_SECONDS := 0.54
 const START_SCENE_PATH := "res://scenes/start.tscn"
-const DEFAULT_LEVEL_DEFINITION_PATH := "res://data/levels/level_001.json"
-const MAP_STYLE_DEFINITION_TEMPLATE := "res://data/map_styles/%s.json"
-const GOLD_ICON_PATH := "res://assets/ui/frost_rts/gold_icon.png"
-const LIVES_ICON_PATH := "res://assets/ui/frost_rts/lives_icon.png"
-const WAVE_ICON_PATH := "res://assets/ui/frost_rts/wave_icon.png"
-const MENU_ICON_PATH := "res://assets/ui/frost_rts/menu_icon.png"
-const SCENE_BACKGROUND_TEXTURE_PATH := "res://assets/ui/frost_rts/frost_stone_bg.png"
-const SINGLE_TOWER_TEXTURE_PATH := "res://assets/sprites/mmo-v1/towers/single_tower.png"
-const AREA_TOWER_TEXTURE_PATH := "res://assets/sprites/mmo-v1/towers/area_tower.png"
-const SLOW_TOWER_TEXTURE_PATH := "res://assets/sprites/mmo-v1/towers/slow_tower.png"
-const BASIC_ENEMY_TEXTURE_PATH := "res://assets/sprites/mmo-v1/enemies/basic_enemy.png"
-const SINGLE_TOWER_ATTACK_TEXTURE_PATHS := [
-	"res://assets/sprites/mmo-v1/towers/single_tower_attack_1.png",
-	"res://assets/sprites/mmo-v1/towers/single_tower_attack_2.png",
-	"res://assets/sprites/mmo-v1/towers/single_tower_attack_3.png",
-	"res://assets/sprites/mmo-v1/towers/single_tower_attack_4.png",
-]
-const AREA_TOWER_ATTACK_TEXTURE_PATHS := [
-	"res://assets/sprites/mmo-v1/towers/area_tower_attack_1.png",
-	"res://assets/sprites/mmo-v1/towers/area_tower_attack_2.png",
-	"res://assets/sprites/mmo-v1/towers/area_tower_attack_3.png",
-	"res://assets/sprites/mmo-v1/towers/area_tower_attack_4.png",
-]
-const SLOW_TOWER_ATTACK_TEXTURE_PATHS := [
-	"res://assets/sprites/mmo-v1/towers/slow_tower_attack_1.png",
-	"res://assets/sprites/mmo-v1/towers/slow_tower_attack_2.png",
-	"res://assets/sprites/mmo-v1/towers/slow_tower_attack_3.png",
-	"res://assets/sprites/mmo-v1/towers/slow_tower_attack_4.png",
-]
-const ENEMY_WALK_TEXTURE_PATHS := [
-	"res://assets/sprites/mmo-v1/enemies/enemy_walk_1.png",
-	"res://assets/sprites/mmo-v1/enemies/enemy_walk_2.png",
-	"res://assets/sprites/mmo-v1/enemies/enemy_walk_3.png",
-	"res://assets/sprites/mmo-v1/enemies/enemy_walk_4.png",
-]
-const ENEMY_DEATH_TEXTURE_PATHS := [
-	"res://assets/sprites/mmo-v1/enemies/enemy_death_1.png",
-	"res://assets/sprites/mmo-v1/enemies/enemy_death_2.png",
-	"res://assets/sprites/mmo-v1/enemies/enemy_death_3.png",
-	"res://assets/sprites/mmo-v1/enemies/enemy_death_4.png",
-	"res://assets/sprites/mmo-v1/enemies/enemy_death_5.png",
-	"res://assets/sprites/mmo-v1/enemies/enemy_death_6.png",
-]
-const SINGLE_PROJECTILE_TEXTURE_PATHS := [
-	"res://assets/sprites/mvp-v1/fx/single_projectile_1.png",
-	"res://assets/sprites/mvp-v1/fx/single_projectile_2.png",
-	"res://assets/sprites/mvp-v1/fx/single_projectile_3.png",
-	"res://assets/sprites/mvp-v1/fx/single_projectile_4.png",
-]
-const AREA_IMPACT_TEXTURE_PATHS := [
-	"res://assets/sprites/mvp-v1/fx/area_impact_1.png",
-	"res://assets/sprites/mvp-v1/fx/area_impact_2.png",
-	"res://assets/sprites/mvp-v1/fx/area_impact_3.png",
-	"res://assets/sprites/mvp-v1/fx/area_impact_4.png",
-]
-const SLOW_IMPACT_TEXTURE_PATHS := [
-	"res://assets/sprites/mvp-v1/fx/slow_impact_1.png",
-	"res://assets/sprites/mvp-v1/fx/slow_impact_2.png",
-	"res://assets/sprites/mvp-v1/fx/slow_impact_3.png",
-	"res://assets/sprites/mvp-v1/fx/slow_impact_4.png",
-]
 
 enum FlowState {
 	PLAYING,
@@ -177,6 +116,7 @@ var _gold_icon_rect: TextureRect
 var _lives_icon_rect: TextureRect
 var _wave_icon_rect: TextureRect
 var _map_normal_light: DirectionalLight2D
+var _asset_catalog: BoardAssetCatalog
 var _gold_icon_texture: Texture2D
 var _lives_icon_texture: Texture2D
 var _wave_icon_texture: Texture2D
@@ -855,43 +795,52 @@ func _ensure_hud_icon(parent: Node, node_name: String, texture: Texture2D) -> Te
 
 
 func _load_level_definition() -> void:
-	level_definition = LevelDefinition.load_from_path(DEFAULT_LEVEL_DEFINITION_PATH)
+	_ensure_asset_catalog()
+	_asset_catalog.load_level_definition()
+	_sync_asset_catalog()
 
 
 func _load_map_style_assets() -> void:
-	if level_definition == null:
-		_load_level_definition()
-
-	if level_definition == null:
-		map_style_definition = null
-		board_map_renderer = null
-		return
-
-	var style_path := MAP_STYLE_DEFINITION_TEMPLATE % level_definition.style_id
-	map_style_definition = MapStyleDefinition.load_from_path(style_path)
-	board_map_renderer = BoardMapRenderer.new()
-	board_map_renderer.load_style(map_style_definition)
+	_ensure_asset_catalog()
+	_asset_catalog.load_map_style_assets()
+	_sync_asset_catalog()
 
 
 func _load_sprite_assets() -> void:
-	_load_map_style_assets()
-	_gold_icon_texture = load(GOLD_ICON_PATH) as Texture2D
-	_lives_icon_texture = load(LIVES_ICON_PATH) as Texture2D
-	_wave_icon_texture = load(WAVE_ICON_PATH) as Texture2D
-	_menu_icon_texture = load(MENU_ICON_PATH) as Texture2D
-	_scene_background_texture = load(SCENE_BACKGROUND_TEXTURE_PATH) as Texture2D
-	_single_tower_texture = load(SINGLE_TOWER_TEXTURE_PATH) as Texture2D
-	_area_tower_texture = load(AREA_TOWER_TEXTURE_PATH) as Texture2D
-	_slow_tower_texture = load(SLOW_TOWER_TEXTURE_PATH) as Texture2D
-	_basic_enemy_texture = load(BASIC_ENEMY_TEXTURE_PATH) as Texture2D
-	_single_tower_attack_textures = _load_texture_sequence(SINGLE_TOWER_ATTACK_TEXTURE_PATHS)
-	_area_tower_attack_textures = _load_texture_sequence(AREA_TOWER_ATTACK_TEXTURE_PATHS)
-	_slow_tower_attack_textures = _load_texture_sequence(SLOW_TOWER_ATTACK_TEXTURE_PATHS)
-	_enemy_walk_textures = _load_texture_sequence(ENEMY_WALK_TEXTURE_PATHS)
-	_enemy_death_textures = _load_texture_sequence(ENEMY_DEATH_TEXTURE_PATHS)
-	_single_projectile_textures = _load_texture_sequence(SINGLE_PROJECTILE_TEXTURE_PATHS)
-	_area_impact_textures = _load_texture_sequence(AREA_IMPACT_TEXTURE_PATHS)
-	_slow_impact_textures = _load_texture_sequence(SLOW_IMPACT_TEXTURE_PATHS)
+	_ensure_asset_catalog()
+	_asset_catalog.load_all()
+	_sync_asset_catalog()
+
+
+func _ensure_asset_catalog() -> void:
+	if _asset_catalog == null:
+		_asset_catalog = BoardAssetCatalog.new()
+
+
+func _sync_asset_catalog() -> void:
+	if _asset_catalog == null:
+		return
+
+	level_definition = _asset_catalog.level_definition
+	map_style_definition = _asset_catalog.map_style_definition
+	board_map_renderer = _asset_catalog.board_map_renderer
+	_gold_icon_texture = _asset_catalog.gold_icon_texture
+	_lives_icon_texture = _asset_catalog.lives_icon_texture
+	_wave_icon_texture = _asset_catalog.wave_icon_texture
+	_menu_icon_texture = _asset_catalog.menu_icon_texture
+	_scene_background_texture = _asset_catalog.scene_background_texture
+	_single_tower_texture = _asset_catalog.single_tower_texture
+	_area_tower_texture = _asset_catalog.area_tower_texture
+	_slow_tower_texture = _asset_catalog.slow_tower_texture
+	_basic_enemy_texture = _asset_catalog.basic_enemy_texture
+	_single_tower_attack_textures = _asset_catalog.single_tower_attack_textures
+	_area_tower_attack_textures = _asset_catalog.area_tower_attack_textures
+	_slow_tower_attack_textures = _asset_catalog.slow_tower_attack_textures
+	_enemy_walk_textures = _asset_catalog.enemy_walk_textures
+	_enemy_death_textures = _asset_catalog.enemy_death_textures
+	_single_projectile_textures = _asset_catalog.single_projectile_textures
+	_area_impact_textures = _asset_catalog.area_impact_textures
+	_slow_impact_textures = _asset_catalog.slow_impact_textures
 
 
 func _sync_map_normal_light() -> void:
@@ -914,16 +863,6 @@ func _sync_map_normal_light() -> void:
 	_map_normal_light.height = map_style_definition.normal_light_height
 	_map_normal_light.rotation_degrees = map_style_definition.normal_light_rotation_degrees
 	_map_normal_light.color = map_style_definition.normal_light_color
-
-
-func _load_texture_sequence(paths: Array) -> Array:
-	var textures := []
-	for path in paths:
-		var texture := load(path) as Texture2D
-		if texture != null:
-			textures.append(texture)
-
-	return textures
 
 
 func _layout_hud(viewport_size: Vector2) -> void:

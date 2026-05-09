@@ -31,7 +31,7 @@
 | `ui/` | 当前 UI surface、玩家可见状态、交互、验证覆盖和测试计划。 |
 | `milestone/` | 路线图、交付计划和进度检查点。 |
 | `todo/` | 当前工作项、backlog 记录和短期后续项。 |
-| `testing/` | 测试策略、门禁和覆盖清单。 |
+| `testing/` | 测试策略、门禁、structural lint 和覆盖清单。 |
 | `tech-debt/` | 已知技术债、清理计划和风险跟踪。 |
 
 ## 维护
