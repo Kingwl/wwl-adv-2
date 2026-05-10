@@ -58,8 +58,8 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	var overlay_title: Label = scene.get_node("Overlay/Screen/Panel/Title") as Label
 	var overlay_message: Label = scene.get_node("Overlay/Screen/Panel/Message") as Label
 	assert_eq(single_button.text, "SINGLE\nFocus fire  25g")
-	assert_eq(single_button.size.x, BoardView.TOWER_CARD_WIDTH)
-	assert_eq(single_button.size.y, BoardView.TOWER_CARD_HEIGHT)
+	assert_eq(single_button.size.x, BoardLayoutService.TOWER_CARD_WIDTH)
+	assert_eq(single_button.size.y, BoardLayoutService.TOWER_CARD_HEIGHT)
 	assert_not_null(single_button.icon)
 	assert_eq(status_label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
 	assert_eq(status_label.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
@@ -86,34 +86,34 @@ func test_board_view_loads_mmo_sprite_assets() -> void:
 
 	var board_view: BoardView = scene.get_node("BoardView") as BoardView
 
-	assert_not_null(board_view.get_level_definition())
-	assert_eq(board_view.get_level_definition().style_id, "stormwind_city_v3")
-	assert_not_null(board_view.get_map_style_definition())
-	assert_eq(board_view.get_map_style_definition().id, "stormwind_city_v3")
-	assert_not_null(board_view.board_map_renderer)
-	assert_true(board_view.board_map_renderer.has_texture("res://assets/tilesets/stormwind_city_v3/background_frame.png"))
-	assert_true(board_view.board_map_renderer.has_texture("res://assets/tilesets/stormwind_city_v3/background_frame_normal.png"))
-	assert_not_null(board_view._gold_icon_texture)
-	assert_not_null(board_view._lives_icon_texture)
-	assert_not_null(board_view._wave_icon_texture)
-	assert_not_null(board_view._menu_icon_texture)
-	assert_not_null(board_view._scene_background_texture)
+	assert_not_null(board_view.get_asset_catalog().level_definition)
+	assert_eq(board_view.get_asset_catalog().level_definition.style_id, "stormwind_city_v3")
+	assert_not_null(board_view.get_asset_catalog().map_style_definition)
+	assert_eq(board_view.get_asset_catalog().map_style_definition.id, "stormwind_city_v3")
+	assert_not_null(board_view.get_asset_catalog().board_map_renderer)
+	assert_true(board_view.get_asset_catalog().board_map_renderer.has_texture("res://assets/tilesets/stormwind_city_v3/background_frame.png"))
+	assert_true(board_view.get_asset_catalog().board_map_renderer.has_texture("res://assets/tilesets/stormwind_city_v3/background_frame_normal.png"))
+	assert_not_null(board_view.get_asset_catalog().gold_icon_texture)
+	assert_not_null(board_view.get_asset_catalog().lives_icon_texture)
+	assert_not_null(board_view.get_asset_catalog().wave_icon_texture)
+	assert_not_null(board_view.get_asset_catalog().menu_icon_texture)
+	assert_not_null(board_view.get_asset_catalog().scene_background_texture)
 	var map_light := board_view.get_node_or_null("MapNormalLight") as DirectionalLight2D
 	assert_not_null(map_light)
 	assert_true(map_light.enabled)
 	assert_almost_eq(map_light.energy, 0.28, 0.00001)
-	assert_not_null(board_view.get_tower_sprite_texture(GameTower.Type.SINGLE_TARGET))
-	assert_not_null(board_view.get_tower_sprite_texture(GameTower.Type.AREA))
-	assert_not_null(board_view.get_tower_sprite_texture(GameTower.Type.SLOW))
-	assert_not_null(board_view.get_enemy_sprite_texture())
-	assert_not_null(board_view.get_attack_feedback_texture(GameTower.Type.SINGLE_TARGET, 0.0))
-	assert_not_null(board_view.get_attack_feedback_texture(GameTower.Type.AREA, 0.5))
-	assert_not_null(board_view.get_attack_feedback_texture(GameTower.Type.SLOW, 0.99))
-	assert_eq(board_view._single_tower_attack_textures.size(), 4)
-	assert_eq(board_view._area_tower_attack_textures.size(), 4)
-	assert_eq(board_view._slow_tower_attack_textures.size(), 4)
-	assert_eq(board_view._enemy_walk_textures.size(), 4)
-	assert_eq(board_view._enemy_death_textures.size(), 6)
+	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.SINGLE_TARGET, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
+	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.AREA, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
+	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.SLOW, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
+	assert_not_null(board_view.get_renderer().get_enemy_sprite_texture(null, board_view.get_visual_state(), board_view.get_asset_catalog()))
+	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.SINGLE_TARGET, 0.0, board_view.get_asset_catalog()))
+	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.AREA, 0.5, board_view.get_asset_catalog()))
+	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.SLOW, 0.99, board_view.get_asset_catalog()))
+	assert_eq(board_view.get_asset_catalog().single_tower_attack_textures.size(), 4)
+	assert_eq(board_view.get_asset_catalog().area_tower_attack_textures.size(), 4)
+	assert_eq(board_view.get_asset_catalog().slow_tower_attack_textures.size(), 4)
+	assert_eq(board_view.get_asset_catalog().enemy_walk_textures.size(), 4)
+	assert_eq(board_view.get_asset_catalog().enemy_death_textures.size(), 6)
 
 
 func test_board_view_level_definition_matches_default_path() -> void:
@@ -129,10 +129,10 @@ func test_board_view_level_definition_matches_default_path() -> void:
 		return
 
 	var level: Dictionary = JSON.parse_string(level_file.get_as_text()) as Dictionary
-	assert_eq(int(level["grid"]["width"]), board_view.board.width)
-	assert_eq(int(level["grid"]["height"]), board_view.board.height)
-	assert_eq(_path_cells_to_vector2i(level["path_cells"]), board_view.get_default_path())
-	assert_eq(level["style_id"], board_view.get_map_style_definition().id)
+	assert_eq(int(level["grid"]["width"]), board_view.get_session().board.width)
+	assert_eq(int(level["grid"]["height"]), board_view.get_session().board.height)
+	assert_eq(_path_cells_to_vector2i(level["path_cells"]), board_view.get_session().get_default_path())
+	assert_eq(level["style_id"], board_view.get_asset_catalog().map_style_definition.id)
 
 
 func test_board_view_initializes_board_and_default_path() -> void:
@@ -142,24 +142,24 @@ func test_board_view_initializes_board_and_default_path() -> void:
 	await get_tree().process_frame
 
 	var board_view: BoardView = scene.get_node("BoardView") as BoardView
-	assert_not_null(board_view.board)
-	assert_not_null(board_view.wallet)
-	assert_not_null(board_view.placement_service)
-	assert_not_null(board_view.combat_simulation)
-	assert_not_null(board_view.kill_reward_service)
-	assert_not_null(board_view.wave_reward_service)
-	assert_not_null(board_view.wave_spawner)
-	assert_not_null(board_view.path_follower)
-	assert_eq(board_view.board.width, 10)
-	assert_eq(board_view.board.height, 8)
-	assert_eq(board_view.wallet.gold, 100)
-	assert_eq(board_view.combat_simulation.player_life.lives, 10)
-	assert_eq(board_view.combat_simulation.enemies.size(), 0)
-	assert_eq(board_view.flow_state, BoardView.FlowState.PLAYING)
-	assert_false(board_view.gameplay_paused)
-	assert_eq(board_view.selected_tower_type, GameTower.Type.SINGLE_TARGET)
+	assert_not_null(board_view.get_session().board)
+	assert_not_null(board_view.get_session().wallet)
+	assert_not_null(board_view.get_session().placement_service)
+	assert_not_null(board_view.get_session().combat_simulation)
+	assert_not_null(board_view.get_session().kill_reward_service)
+	assert_not_null(board_view.get_session().wave_reward_service)
+	assert_not_null(board_view.get_session().wave_spawner)
+	assert_not_null(board_view.get_session().path_follower)
+	assert_eq(board_view.get_session().board.width, 10)
+	assert_eq(board_view.get_session().board.height, 8)
+	assert_eq(board_view.get_session().wallet.gold, 100)
+	assert_eq(board_view.get_session().combat_simulation.player_life.lives, 10)
+	assert_eq(board_view.get_session().combat_simulation.enemies.size(), 0)
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.PLAYING)
+	assert_false(board_view.get_session().gameplay_paused)
+	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.SINGLE_TARGET)
 
-	var path_result: PathValidationResult = board_view.board.validate_path(board_view.get_default_path())
+	var path_result: PathValidationResult = board_view.get_session().board.validate_path(board_view.get_session().get_default_path())
 	assert_true(path_result.succeeded)
 
 
@@ -173,8 +173,8 @@ func test_board_view_game_scene_starts_playing_without_start_overlay() -> void:
 	var overlay: Control = scene.get_node("Overlay/Screen") as Control
 	var menu_button: Button = scene.get_node("Hud/MenuButton") as Button
 
-	assert_eq(board_view.flow_state, BoardView.FlowState.PLAYING)
-	assert_false(board_view.gameplay_paused)
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.PLAYING)
+	assert_false(board_view.get_session().gameplay_paused)
 	assert_false(overlay.visible)
 	assert_false(menu_button.disabled)
 
@@ -188,16 +188,16 @@ func test_board_view_spawns_and_advances_wave_enemy() -> void:
 	var board_view: BoardView = scene.get_node("BoardView") as BoardView
 	var wave_label: Label = scene.get_node("Hud/Wave") as Label
 	board_view.start_game()
-	board_view.combat_simulation.accumulator_seconds = 0.0
-	board_view.wave_spawner.current_wave_state.spawn_elapsed_seconds = 0.0
+	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
+	board_view.get_session().wave_spawner.current_wave_state.spawn_elapsed_seconds = 0.0
 
 	board_view._process(0.8)
 
-	assert_eq(board_view.combat_simulation.enemies.size(), 1)
-	assert_eq(board_view.get_visible_enemies().size(), 1)
-	assert_eq(board_view.combat_simulation.enemies[0].id, "wave-1-enemy-1")
+	assert_eq(board_view.get_session().combat_simulation.enemies.size(), 1)
+	assert_eq(board_view.get_session().get_visible_enemies().size(), 1)
+	assert_eq(board_view.get_session().combat_simulation.enemies[0].id, "wave-1-enemy-1")
 	assert_almost_eq(
-		board_view.combat_simulation.enemies[0].path_distance,
+		board_view.get_session().combat_simulation.enemies[0].path_distance,
 		CombatSimulation.DEFAULT_FIXED_STEP_SECONDS,
 		0.00001
 	)
@@ -221,21 +221,21 @@ func test_board_view_layout_fits_mobile_landscape_viewport() -> void:
 	board_view.apply_responsive_layout(mobile_landscape_size)
 
 	var board_size := Vector2(
-		float(board_view.board.width) * board_view.cell_size,
-		float(board_view.board.height) * board_view.cell_size
+		float(board_view.get_session().board.width) * board_view.get_layout_metrics().cell_size,
+		float(board_view.get_session().board.height) * board_view.get_layout_metrics().cell_size
 	)
-	var board_rect := Rect2(board_view.board_origin, board_size)
+	var board_rect := Rect2(board_view.get_layout_metrics().board_origin, board_size)
 
-	assert_true(board_view.cell_size < BoardView.CELL_SIZE)
-	assert_true(board_view.cell_size >= 38.0)
+	assert_true(board_view.get_layout_metrics().cell_size < BoardLayoutService.DEFAULT_CELL_SIZE)
+	assert_true(board_view.get_layout_metrics().cell_size >= 38.0)
 	assert_true(board_rect.position.x >= 0.0)
-	assert_true(board_rect.position.y >= BoardView.HUD_RESERVED_HEIGHT)
-	assert_true(board_rect.end.x <= single_button.position.x - BoardView.SIDE_PANEL_GAP)
+	assert_true(board_rect.position.y >= BoardLayoutService.HUD_RESERVED_HEIGHT)
+	assert_true(board_rect.end.x <= single_button.position.x - BoardLayoutService.SIDE_PANEL_GAP)
 	assert_true(board_rect.end.y <= mobile_landscape_size.y)
-	assert_eq(single_button.size.x, BoardView.TOWER_CARD_WIDTH)
-	assert_eq(single_button.size.y, BoardView.TOWER_CARD_HEIGHT)
-	assert_eq(area_button.position.y, single_button.position.y + BoardView.TOWER_CARD_HEIGHT + BoardView.TOWER_CARD_GAP)
-	assert_eq(slow_button.position.y, area_button.position.y + BoardView.TOWER_CARD_HEIGHT + BoardView.TOWER_CARD_GAP)
+	assert_eq(single_button.size.x, BoardLayoutService.TOWER_CARD_WIDTH)
+	assert_eq(single_button.size.y, BoardLayoutService.TOWER_CARD_HEIGHT)
+	assert_eq(area_button.position.y, single_button.position.y + BoardLayoutService.TOWER_CARD_HEIGHT + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(slow_button.position.y, area_button.position.y + BoardLayoutService.TOWER_CARD_HEIGHT + BoardLayoutService.TOWER_CARD_GAP)
 	var button_rects := [
 		Rect2(single_button.position, single_button.size),
 		Rect2(area_button.position, area_button.size),
@@ -272,19 +272,19 @@ func test_board_view_square_layout_moves_tower_deck_to_bottom_and_expands_board(
 	board_view.apply_responsive_layout(square_size)
 
 	var board_size := Vector2(
-		float(board_view.board.width) * board_view.cell_size,
-		float(board_view.board.height) * board_view.cell_size
+		float(board_view.get_session().board.width) * board_view.get_layout_metrics().cell_size,
+		float(board_view.get_session().board.height) * board_view.get_layout_metrics().cell_size
 	)
-	var board_rect := Rect2(board_view.board_origin, board_size)
+	var board_rect := Rect2(board_view.get_layout_metrics().board_origin, board_size)
 
-	assert_true(board_view.tower_deck_is_bottom)
-	assert_true(board_view.cell_size > BoardView.CELL_SIZE)
-	assert_eq(area_button.position.x, single_button.position.x + BoardView.TOWER_CARD_WIDTH + BoardView.TOWER_CARD_GAP)
-	assert_eq(slow_button.position.x, area_button.position.x + BoardView.TOWER_CARD_WIDTH + BoardView.TOWER_CARD_GAP)
+	assert_true(board_view.get_layout_metrics().tower_deck_is_bottom)
+	assert_true(board_view.get_layout_metrics().cell_size > BoardLayoutService.DEFAULT_CELL_SIZE)
+	assert_eq(area_button.position.x, single_button.position.x + BoardLayoutService.TOWER_CARD_WIDTH + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(slow_button.position.x, area_button.position.x + BoardLayoutService.TOWER_CARD_WIDTH + BoardLayoutService.TOWER_CARD_GAP)
 	assert_eq(area_button.position.y, single_button.position.y)
 	assert_eq(slow_button.position.y, single_button.position.y)
-	assert_true(board_rect.end.y <= single_button.position.y - BoardView.BOTTOM_TOWER_DECK_GAP)
-	assert_true(board_rect.end.x <= square_size.x - BoardView.SCREEN_PADDING)
+	assert_true(board_rect.end.y <= single_button.position.y - BoardLayoutService.BOTTOM_TOWER_DECK_GAP)
+	assert_true(board_rect.end.x <= square_size.x - BoardLayoutService.SCREEN_PADDING)
 
 
 func test_board_view_compact_square_layout_keeps_messages_above_board() -> void:
@@ -302,16 +302,16 @@ func test_board_view_compact_square_layout_keeps_messages_above_board() -> void:
 	board_view.apply_responsive_layout(square_size)
 
 	var board_size := Vector2(
-		float(board_view.board.width) * board_view.cell_size,
-		float(board_view.board.height) * board_view.cell_size
+		float(board_view.get_session().board.width) * board_view.get_layout_metrics().cell_size,
+		float(board_view.get_session().board.height) * board_view.get_layout_metrics().cell_size
 	)
-	var board_rect := Rect2(board_view.board_origin, board_size)
+	var board_rect := Rect2(board_view.get_layout_metrics().board_origin, board_size)
 
-	assert_true(board_view.tower_deck_is_bottom)
-	assert_true(board_rect.position.y >= BoardView.HUD_COMPACT_MESSAGE_RESERVED_HEIGHT)
+	assert_true(board_view.get_layout_metrics().tower_deck_is_bottom)
+	assert_true(board_rect.position.y >= BoardLayoutService.HUD_COMPACT_MESSAGE_RESERVED_HEIGHT)
 	assert_true(status_label.position.y + status_label.size.y <= hint_label.position.y)
 	assert_true(hint_label.position.y + hint_label.size.y <= board_rect.position.y)
-	assert_true(board_rect.end.y <= single_button.position.y - BoardView.BOTTOM_TOWER_DECK_GAP)
+	assert_true(board_rect.end.y <= single_button.position.y - BoardLayoutService.BOTTOM_TOWER_DECK_GAP)
 	assert_false(board_rect.intersects(Rect2(status_label.position, status_label.size)))
 	assert_false(board_rect.intersects(Rect2(hint_label.position, hint_label.size)))
 
@@ -326,13 +326,13 @@ func test_board_view_compact_layout_shortens_reward_status_text() -> void:
 	var status_label: Label = scene.get_node("Hud/Status") as Label
 	board_view.apply_responsive_layout(Vector2(896, 414))
 
-	board_view._set_status("Defeated enemy-1 for 5 gold.")
+	board_view.set_status_text("Defeated enemy-1 for 5 gold.")
 	assert_eq(status_label.text, "+5 gold")
 
-	board_view._set_status("Cleared wave-1 for 20 gold.")
+	board_view.set_status_text("Cleared wave-1 for 20 gold.")
 	assert_eq(status_label.text, "Wave clear +20")
 
-	board_view._set_status("Earned 25 gold.")
+	board_view.set_status_text("Earned 25 gold.")
 	assert_eq(status_label.text, "+25 gold")
 
 
@@ -362,17 +362,17 @@ func test_board_view_pause_menu_pauses_and_resumes_game() -> void:
 	var secondary_button: Button = scene.get_node("Overlay/Screen/Panel/SecondaryButton") as Button
 	var single_button: Button = scene.get_node("Hud/SingleTowerButton") as Button
 	board_view.start_game()
-	board_view.combat_simulation.accumulator_seconds = 0.0
-	board_view.wave_spawner.current_wave_state.spawn_elapsed_seconds = 0.0
+	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
+	board_view.get_session().wave_spawner.current_wave_state.spawn_elapsed_seconds = 0.0
 	board_view._process(0.8)
-	var enemy: Enemy = board_view.combat_simulation.enemies[0]
+	var enemy: Enemy = board_view.get_session().combat_simulation.enemies[0]
 	var paused_distance := enemy.path_distance
 
 	board_view.open_pause_menu()
 	board_view._process(1.0)
 
-	assert_eq(board_view.flow_state, BoardView.FlowState.MENU)
-	assert_true(board_view.gameplay_paused)
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.MENU)
+	assert_true(board_view.get_session().gameplay_paused)
 	assert_eq(title.text, "Paused")
 	assert_true(secondary_button.visible)
 	assert_eq(secondary_button.text, "Start")
@@ -382,8 +382,8 @@ func test_board_view_pause_menu_pauses_and_resumes_game() -> void:
 	primary_button.pressed.emit()
 	board_view._process(0.1)
 
-	assert_eq(board_view.flow_state, BoardView.FlowState.PLAYING)
-	assert_false(board_view.gameplay_paused)
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.PLAYING)
+	assert_false(board_view.get_session().gameplay_paused)
 	assert_false(single_button.disabled)
 	assert_true(enemy.path_distance > paused_distance)
 
@@ -399,17 +399,17 @@ func test_board_view_restart_resets_game_and_starts_playing() -> void:
 	board_view.start_game()
 	board_view.select_tower_type(GameTower.Type.AREA)
 	assert_true(board_view.try_place_at_grid(Vector2i(0, 0)).succeeded)
-	assert_eq(board_view.wallet.gold, 75)
+	assert_eq(board_view.get_session().wallet.gold, 75)
 
 	board_view.restart_game()
 
-	assert_eq(board_view.flow_state, BoardView.FlowState.PLAYING)
-	assert_false(board_view.gameplay_paused)
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.PLAYING)
+	assert_false(board_view.get_session().gameplay_paused)
 	assert_false(overlay.visible)
-	assert_eq(board_view.wallet.gold, 100)
-	assert_eq(board_view.board.get_occupant_id(Vector2i(0, 0)), "")
-	assert_eq(board_view.combat_simulation.enemies.size(), 0)
-	assert_eq(board_view.selected_tower_type, GameTower.Type.SINGLE_TARGET)
+	assert_eq(board_view.get_session().wallet.gold, 100)
+	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(0, 0)), "")
+	assert_eq(board_view.get_session().combat_simulation.enemies.size(), 0)
+	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.SINGLE_TARGET)
 
 
 func test_board_view_places_tower_on_buildable_grid_position() -> void:
@@ -425,12 +425,12 @@ func test_board_view_places_tower_on_buildable_grid_position() -> void:
 	var gold_label: Label = scene.get_node("Hud/Gold") as Label
 
 	assert_true(result.succeeded)
-	assert_eq(board_view.board.get_occupant_id(Vector2i(0, 0)), "tower-1")
-	assert_eq(board_view.wallet.gold, 75)
+	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(0, 0)), "tower-1")
+	assert_eq(board_view.get_session().wallet.gold, 75)
 	assert_eq(status_label.text, "Placed tower-1 at (0, 0) for 25 gold.")
 	assert_eq(gold_label.text, "Gold: 75")
-	assert_eq(board_view.combat_simulation.towers.size(), 1)
-	assert_eq(board_view.placement_service.tower_registry.get_tower("tower-1").tower_type, GameTower.Type.SINGLE_TARGET)
+	assert_eq(board_view.get_session().combat_simulation.towers.size(), 1)
+	assert_eq(board_view.get_session().placement_service.tower_registry.get_tower("tower-1").tower_type, GameTower.Type.SINGLE_TARGET)
 
 
 func test_board_view_selects_area_tower_for_next_placement() -> void:
@@ -449,8 +449,8 @@ func test_board_view_selects_area_tower_for_next_placement() -> void:
 	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
 
 	assert_true(result.succeeded)
-	assert_eq(board_view.selected_tower_type, GameTower.Type.AREA)
-	assert_eq(board_view.placement_service.tower_registry.get_tower("tower-1").tower_type, GameTower.Type.AREA)
+	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.AREA)
+	assert_eq(board_view.get_session().placement_service.tower_registry.get_tower("tower-1").tower_type, GameTower.Type.AREA)
 	assert_eq(area_button.text, "AREA\nSplash hit  25g")
 	assert_eq(single_button.text, "SINGLE\nFocus fire  25g")
 	assert_not_null(area_button.icon)
@@ -473,8 +473,8 @@ func test_board_view_selects_slow_tower_for_next_placement() -> void:
 	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
 
 	assert_true(result.succeeded)
-	assert_eq(board_view.selected_tower_type, GameTower.Type.SLOW)
-	assert_eq(board_view.placement_service.tower_registry.get_tower("tower-1").tower_type, GameTower.Type.SLOW)
+	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.SLOW)
+	assert_eq(board_view.get_session().placement_service.tower_registry.get_tower("tower-1").tower_type, GameTower.Type.SLOW)
 	assert_true(slow_button.button_pressed)
 
 
@@ -523,8 +523,8 @@ func test_board_view_rejects_placement_when_gold_is_insufficient() -> void:
 
 	assert_false(result.succeeded)
 	assert_eq(result.failure_reason, TowerPlacementResult.FailureReason.INSUFFICIENT_FUNDS)
-	assert_eq(board_view.wallet.gold, 0)
-	assert_eq(board_view.board.get_occupant_id(Vector2i(4, 0)), "")
+	assert_eq(board_view.get_session().wallet.gold, 0)
+	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(4, 0)), "")
 	assert_eq(gold_label.text, "Gold: 0")
 	assert_eq(status_label.text, "Cannot place at (4, 0): Need 25 gold.")
 	assert_true(single_button.disabled)
@@ -545,19 +545,19 @@ func test_board_view_combat_simulation_rewards_gold_when_enemy_is_defeated() -> 
 	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 2))
 	assert_true(result.succeeded)
 
-	board_view.combat_simulation.wave_spawner = null
+	board_view.get_session().combat_simulation.wave_spawner = null
 	var enemy := Enemy.new("enemy-1", 1.0, 10.0, 5)
-	board_view.combat_simulation.enemies = [enemy]
-	board_view.combat_simulation.accumulator_seconds = 0.0
+	board_view.get_session().combat_simulation.enemies = [enemy]
+	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
 	board_view._process(0.3)
 
 	assert_true(enemy.defeated)
-	assert_eq(board_view.wallet.gold, 80)
+	assert_eq(board_view.get_session().wallet.gold, 80)
 	assert_eq(gold_label.text, "Gold: 80")
 	assert_eq(status_label.text, "Defeated enemy-1 for 5 gold.")
-	assert_eq(board_view.last_reward_transaction_results.size(), 1)
-	assert_eq(board_view.last_reward_transaction_results[0].reason, TransactionRecord.Reason.KILL_ENEMY)
-	assert_eq(board_view.enemy_death_animations.size(), 1)
+	assert_eq(board_view.get_session().last_reward_transaction_results.size(), 1)
+	assert_eq(board_view.get_session().last_reward_transaction_results[0].reason, TransactionRecord.Reason.KILL_ENEMY)
+	assert_eq(board_view.get_visual_state().enemy_death_animations.size(), 1)
 
 
 func test_board_view_spawns_attack_feedback_when_tower_attacks() -> void:
@@ -571,28 +571,28 @@ func test_board_view_spawns_attack_feedback_when_tower_attacks() -> void:
 	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 2))
 	assert_true(result.succeeded)
 
-	board_view.combat_simulation.wave_spawner = null
+	board_view.get_session().combat_simulation.wave_spawner = null
 	var enemy := Enemy.new("enemy-1", 1.0, 20.0, 5)
-	board_view.combat_simulation.enemies = [enemy]
-	board_view.combat_simulation.accumulator_seconds = 0.0
+	board_view.get_session().combat_simulation.enemies = [enemy]
+	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
 
 	board_view._process(0.1)
 
-	assert_eq(board_view.combat_simulation.projectiles.size(), 1)
-	assert_eq(board_view.attack_feedbacks.size(), 0)
-	assert_true(board_view.tower_attack_animations.has(result.tower_id))
-	assert_not_null(board_view.get_tower_sprite_texture(GameTower.Type.SINGLE_TARGET, result.tower_id))
+	assert_eq(board_view.get_session().combat_simulation.projectiles.size(), 1)
+	assert_eq(board_view.get_visual_state().attack_feedbacks.size(), 0)
+	assert_true(board_view.get_visual_state().tower_attack_animations.has(result.tower_id))
+	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.SINGLE_TARGET, result.tower_id, board_view.get_visual_state(), board_view.get_asset_catalog()))
 
 	board_view._process(0.2)
 
-	assert_eq(board_view.attack_feedbacks.size(), 1)
-	assert_true(board_view.attack_feedbacks[0]["position"] is Vector2)
-	assert_eq(board_view.attack_feedbacks[0]["tower_type"], GameTower.Type.SINGLE_TARGET)
-	assert_not_null(board_view.get_attack_feedback_texture(board_view.attack_feedbacks[0]["tower_type"], 0.0))
+	assert_eq(board_view.get_visual_state().attack_feedbacks.size(), 1)
+	assert_true(board_view.get_visual_state().attack_feedbacks[0]["position"] is Vector2)
+	assert_eq(board_view.get_visual_state().attack_feedbacks[0]["tower_type"], GameTower.Type.SINGLE_TARGET)
+	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(board_view.get_visual_state().attack_feedbacks[0]["tower_type"], 0.0, board_view.get_asset_catalog()))
 
-	board_view._advance_attack_feedback(BoardView.ATTACK_FEEDBACK_DURATION_SECONDS)
+	board_view.get_visual_state().advance_attack_feedbacks(BoardVisualState.ATTACK_FEEDBACK_DURATION_SECONDS)
 
-	assert_eq(board_view.attack_feedbacks.size(), 0)
+	assert_eq(board_view.get_visual_state().attack_feedbacks.size(), 0)
 
 
 func test_board_view_enemy_health_bar_tracks_current_health() -> void:
@@ -606,11 +606,21 @@ func test_board_view_enemy_health_bar_tracks_current_health() -> void:
 	var enemy := Enemy.new("enemy-1", 1.0, 20.0, 5)
 	enemy.path_distance = 1.0
 	enemy.apply_damage(5.0)
-	board_view.combat_simulation.enemies = [enemy]
+	board_view.get_session().combat_simulation.enemies = [enemy]
 
-	var health_ratio := board_view.get_enemy_health_ratio(enemy)
-	var bar_rect := board_view.get_enemy_health_bar_rect(enemy)
-	var enemy_position := board_view._enemy_local_position(enemy)
+	var health_ratio := board_view.get_renderer().get_enemy_health_ratio(enemy)
+	var bar_rect := board_view.get_renderer().get_enemy_health_bar_rect(
+		board_view.get_session().path_follower,
+		board_view.get_layout_metrics().board_origin,
+		board_view.get_layout_metrics().cell_size,
+		enemy
+	)
+	var enemy_position := board_view.get_renderer().enemy_local_position(
+		board_view.get_session().path_follower,
+		board_view.get_layout_metrics().board_origin,
+		board_view.get_layout_metrics().cell_size,
+		enemy
+	)
 
 	assert_almost_eq(health_ratio, 0.75, 0.00001)
 	assert_almost_eq(bar_rect.get_center().x, enemy_position.x, 0.00001)
@@ -648,13 +658,14 @@ func test_board_view_rewards_gold_when_wave_is_cleared() -> void:
 		false
 	)
 
-	board_view._apply_tick_rewards([tick_result])
+	board_view.get_session().apply_tick_rewards([tick_result])
+	board_view.refresh_hud()
 
-	assert_eq(board_view.wallet.gold, 120)
+	assert_eq(board_view.get_session().wallet.gold, 120)
 	assert_eq(gold_label.text, "Gold: 120")
 	assert_eq(status_label.text, "Cleared wave-1 for 20 gold.")
-	assert_eq(board_view.last_wave_reward_transaction_results.size(), 1)
-	assert_eq(board_view.last_wave_reward_transaction_results[0].reason, TransactionRecord.Reason.CLEAR_WAVE)
+	assert_eq(board_view.get_session().last_wave_reward_transaction_results.size(), 1)
+	assert_eq(board_view.get_session().last_wave_reward_transaction_results[0].reason, TransactionRecord.Reason.CLEAR_WAVE)
 
 
 func test_board_view_updates_lives_when_enemy_leaks() -> void:
@@ -667,15 +678,15 @@ func test_board_view_updates_lives_when_enemy_leaks() -> void:
 	var lives_label: Label = scene.get_node("Hud/Lives") as Label
 	var status_label: Label = scene.get_node("Hud/Status") as Label
 	board_view.start_game()
-	board_view.combat_simulation.wave_spawner = null
+	board_view.get_session().combat_simulation.wave_spawner = null
 	var enemy := Enemy.new("enemy-1", 1.0)
-	enemy.path_distance = board_view.path_follower.total_distance - 0.05
-	board_view.combat_simulation.enemies = [enemy]
-	board_view.combat_simulation.accumulator_seconds = 0.0
+	enemy.path_distance = board_view.get_session().path_follower.total_distance - 0.05
+	board_view.get_session().combat_simulation.enemies = [enemy]
+	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
 
 	board_view._process(0.1)
 
-	assert_eq(board_view.combat_simulation.player_life.lives, 9)
+	assert_eq(board_view.get_session().combat_simulation.player_life.lives, 9)
 	assert_eq(lives_label.text, "Lives: 9")
 	assert_eq(status_label.text, "Enemy leaked. Lives: 9")
 
@@ -694,18 +705,18 @@ func test_board_view_shows_defeat_when_lives_reach_zero() -> void:
 	var primary_button: Button = scene.get_node("Overlay/Screen/Panel/PrimaryButton") as Button
 	var secondary_button: Button = scene.get_node("Overlay/Screen/Panel/SecondaryButton") as Button
 	board_view.start_game()
-	board_view.combat_simulation.wave_spawner = null
-	board_view.combat_simulation.player_life = PlayerLife.new(1)
+	board_view.get_session().combat_simulation.wave_spawner = null
+	board_view.get_session().combat_simulation.player_life = PlayerLife.new(1)
 	var enemy := Enemy.new("enemy-1", 1.0)
-	enemy.path_distance = board_view.path_follower.total_distance - 0.05
-	board_view.combat_simulation.enemies = [enemy]
-	board_view.combat_simulation.accumulator_seconds = 0.0
+	enemy.path_distance = board_view.get_session().path_follower.total_distance - 0.05
+	board_view.get_session().combat_simulation.enemies = [enemy]
+	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
 
 	board_view._process(0.1)
 
-	assert_true(board_view.combat_simulation.game_failed)
-	assert_eq(board_view.flow_state, BoardView.FlowState.LOST)
-	assert_true(board_view.gameplay_paused)
+	assert_true(board_view.get_session().combat_simulation.game_failed)
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.LOST)
+	assert_true(board_view.get_session().gameplay_paused)
 	assert_true(overlay.visible)
 	assert_eq(title.text, "Defeat")
 	assert_eq(primary_button.text, "Restart")
@@ -727,25 +738,10 @@ func test_board_view_shows_victory_when_all_waves_are_cleared() -> void:
 	var title: Label = scene.get_node("Overlay/Screen/Panel/Title") as Label
 	var secondary_button: Button = scene.get_node("Overlay/Screen/Panel/SecondaryButton") as Button
 	board_view.start_game()
-	var tick_result := CombatTickResult.new(
-		0.1,
-		[],
-		[],
-		[],
-		EnemyDamageResult.new(),
-		[],
-		[],
-		true,
-		[],
-		10,
-		true,
-		false
-	)
+	board_view.show_victory_screen()
 
-	board_view._apply_tick_outcome([tick_result])
-
-	assert_eq(board_view.flow_state, BoardView.FlowState.WON)
-	assert_true(board_view.gameplay_paused)
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.WON)
+	assert_true(board_view.get_session().gameplay_paused)
 	assert_true(overlay.visible)
 	assert_eq(title.text, "Victory")
 	assert_true(secondary_button.visible)

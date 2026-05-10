@@ -150,14 +150,14 @@ func _scenario_place_single_tower(
 ) -> void:
 	_prepare_manual_combat(board_view)
 	var tower_cell := _preferred_tower_cell(board_view)
-	var gold_before := board_view.wallet.gold
+	var gold_before := board_view.get_session().wallet.gold
 	board_view.select_tower_type(GameTower.Type.SINGLE_TARGET)
 	var placement := board_view.try_place_at_grid(tower_cell)
 	await _settle_frames(2)
 
 	_check(result, placement.succeeded, "single tower placement succeeds")
-	_check(result, board_view.wallet.gold == gold_before - board_view.economy_config.basic_tower_cost, "placement spends gold")
-	_check(result, board_view.placement_service.tower_registry.get_all_towers().size() == 1, "one tower registered")
+	_check(result, board_view.get_session().wallet.gold == gold_before - board_view.get_session().economy_config.basic_tower_cost, "placement spends gold")
+	_check(result, board_view.get_session().placement_service.tower_registry.get_all_towers().size() == 1, "one tower registered")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "after-place", board_view)
 
 
@@ -172,18 +172,18 @@ func _scenario_single_tower_kill_reward(
 	board_view.try_place_at_grid(_preferred_tower_cell(board_view))
 	var enemy := Enemy.new("smoke-enemy-1", 0.2, 10.0, 5)
 	enemy.path_distance = 2.0
-	board_view.combat_simulation.enemies = [enemy]
+	board_view.get_session().combat_simulation.enemies = [enemy]
 	await _settle_frames(2)
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "enemy-in-range", board_view)
 
 	await _advance_gameplay(result, board_view, PROJECTILE_VISUAL_DELAY_SECONDS, CombatSimulation.DEFAULT_FIXED_STEP_SECONDS)
-	_check(result, board_view.combat_simulation.projectiles.size() >= 1, "single tower projectile becomes visible")
+	_check(result, board_view.get_session().combat_simulation.projectiles.size() >= 1, "single tower projectile becomes visible")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "projectile-visible", board_view)
 
 	await _advance_until(result, board_view, func() -> bool: return enemy.defeated, 1.5)
 	_check(result, enemy.defeated, "single tower defeats enemy")
-	_check(result, board_view.wallet.gold == 80, "kill reward adds gold after placement")
-	_check(result, board_view.last_reward_transaction_results.size() >= 1, "kill reward transaction recorded")
+	_check(result, board_view.get_session().wallet.gold == 80, "kill reward adds gold after placement")
+	_check(result, board_view.get_session().last_reward_transaction_results.size() >= 1, "kill reward transaction recorded")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "enemy-defeated-reward", board_view)
 
 
@@ -200,17 +200,17 @@ func _scenario_area_tower_splash(
 	var second_enemy := Enemy.new("splash-enemy-2", 0.2, 6.0, 5)
 	first_enemy.path_distance = 2.0
 	second_enemy.path_distance = 2.3
-	board_view.combat_simulation.enemies = [first_enemy, second_enemy]
+	board_view.get_session().combat_simulation.enemies = [first_enemy, second_enemy]
 	await _settle_frames(2)
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "cluster-in-range", board_view)
 
 	await _advance_gameplay(result, board_view, PROJECTILE_VISUAL_DELAY_SECONDS, CombatSimulation.DEFAULT_FIXED_STEP_SECONDS)
-	_check(result, board_view.combat_simulation.projectiles.size() >= 1, "area projectile becomes visible")
+	_check(result, board_view.get_session().combat_simulation.projectiles.size() >= 1, "area projectile becomes visible")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "area-projectile-visible", board_view)
 
 	await _advance_until(result, board_view, func() -> bool: return first_enemy.defeated and second_enemy.defeated, 1.5)
 	_check(result, first_enemy.defeated and second_enemy.defeated, "area splash defeats grouped enemies")
-	_check(result, board_view.wallet.gold == 85, "area splash kill rewards add gold")
+	_check(result, board_view.get_session().wallet.gold == 85, "area splash kill rewards add gold")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "splash-impact-reward", board_view)
 
 
@@ -225,12 +225,12 @@ func _scenario_slow_tower_status(
 	board_view.try_place_at_grid(_preferred_tower_cell(board_view))
 	var enemy := Enemy.new("slow-enemy-1", 0.2, 20.0, 5)
 	enemy.path_distance = 2.0
-	board_view.combat_simulation.enemies = [enemy]
+	board_view.get_session().combat_simulation.enemies = [enemy]
 	await _settle_frames(2)
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "slow-target-in-range", board_view)
 
 	await _advance_gameplay(result, board_view, PROJECTILE_VISUAL_DELAY_SECONDS, CombatSimulation.DEFAULT_FIXED_STEP_SECONDS)
-	_check(result, board_view.combat_simulation.projectiles.size() >= 1, "slow projectile becomes visible")
+	_check(result, board_view.get_session().combat_simulation.projectiles.size() >= 1, "slow projectile becomes visible")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "slow-projectile-visible", board_view)
 
 	var status_events_before := int(result["summary"]["status_events"])
@@ -254,14 +254,14 @@ func _scenario_enemy_leak_life_loss(
 ) -> void:
 	_prepare_manual_combat(board_view)
 	var enemy := Enemy.new("leak-enemy-1", 1.0)
-	enemy.path_distance = board_view.path_follower.total_distance - 0.05
-	board_view.combat_simulation.enemies = [enemy]
+	enemy.path_distance = board_view.get_session().path_follower.total_distance - 0.05
+	board_view.get_session().combat_simulation.enemies = [enemy]
 	await _settle_frames(2)
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "enemy-near-exit", board_view)
 
 	await _advance_until(result, board_view, func() -> bool: return enemy.completed, 0.5)
 	_check(result, enemy.completed, "enemy reaches exit")
-	_check(result, board_view.combat_simulation.player_life.lives == 9, "leak removes one life")
+	_check(result, board_view.get_session().combat_simulation.player_life.lives == 9, "leak removes one life")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "life-lost", board_view)
 
 
@@ -276,16 +276,16 @@ func _scenario_wave_clear_victory(
 		WaveDefinition.new("smoke-wave", 1, 0.1, 10.0, 1.0, 5, 20),
 	])
 	wave_spawner.current_wave_state.spawned_count = 1
-	board_view.wave_spawner = wave_spawner
-	board_view.combat_simulation.wave_spawner = wave_spawner
-	board_view._update_wave_label()
+	board_view.get_session().wave_spawner = wave_spawner
+	board_view.get_session().combat_simulation.wave_spawner = wave_spawner
+	board_view.refresh_hud()
 	await _settle_frames(2)
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "wave-ready-to-clear", board_view)
 
 	await _advance_gameplay(result, board_view, CombatSimulation.DEFAULT_FIXED_STEP_SECONDS, CombatSimulation.DEFAULT_FIXED_STEP_SECONDS)
-	_check(result, board_view.combat_simulation.game_won, "wave clear sets victory")
-	_check(result, board_view.flow_state == BoardView.FlowState.WON, "victory overlay flow state")
-	_check(result, board_view.wallet.gold == 120, "wave clear reward adds gold")
+	_check(result, board_view.get_session().combat_simulation.game_won, "wave clear sets victory")
+	_check(result, board_view.get_session().flow_state == BoardGameSession.FlowState.WON, "victory overlay flow state")
+	_check(result, board_view.get_session().wallet.gold == 120, "wave clear reward adds gold")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "victory-overlay", board_view)
 
 
@@ -296,17 +296,17 @@ func _scenario_defeat_on_zero_lives(
 	board_view: BoardView
 ) -> void:
 	_prepare_manual_combat(board_view)
-	board_view.combat_simulation.player_life = PlayerLife.new(1)
-	board_view._update_lives_label()
+	board_view.get_session().combat_simulation.player_life = PlayerLife.new(1)
+	board_view.refresh_hud()
 	var enemy := Enemy.new("defeat-enemy-1", 1.0)
-	enemy.path_distance = board_view.path_follower.total_distance - 0.05
-	board_view.combat_simulation.enemies = [enemy]
+	enemy.path_distance = board_view.get_session().path_follower.total_distance - 0.05
+	board_view.get_session().combat_simulation.enemies = [enemy]
 	await _settle_frames(2)
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "last-life-enemy-near-exit", board_view)
 
-	await _advance_until(result, board_view, func() -> bool: return board_view.combat_simulation.game_failed, 0.5)
-	_check(result, board_view.combat_simulation.game_failed, "life reaching zero sets defeat")
-	_check(result, board_view.flow_state == BoardView.FlowState.LOST, "defeat overlay flow state")
+	await _advance_until(result, board_view, func() -> bool: return board_view.get_session().combat_simulation.game_failed, 0.5)
+	_check(result, board_view.get_session().combat_simulation.game_failed, "life reaching zero sets defeat")
+	_check(result, board_view.get_session().flow_state == BoardGameSession.FlowState.LOST, "defeat overlay flow state")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "defeat-overlay", board_view)
 
 
@@ -332,28 +332,26 @@ func _load_main_board(result: Dictionary, viewport_size: Vector2i) -> BoardView:
 	board_view.apply_responsive_layout(Vector2(viewport_size))
 	board_view.start_game()
 	await _settle_frames(4)
-	_check(result, board_view.wallet.gold == 100, "fresh scenario starts with 100 gold")
-	_check(result, board_view.combat_simulation.player_life.lives == 10, "fresh scenario starts with 10 lives")
-	_check(result, not board_view.combat_simulation.game_won, "fresh scenario is not won")
-	_check(result, not board_view.combat_simulation.game_failed, "fresh scenario is not failed")
+	_check(result, board_view.get_session().wallet.gold == 100, "fresh scenario starts with 100 gold")
+	_check(result, board_view.get_session().combat_simulation.player_life.lives == 10, "fresh scenario starts with 10 lives")
+	_check(result, not board_view.get_session().combat_simulation.game_won, "fresh scenario is not won")
+	_check(result, not board_view.get_session().combat_simulation.game_failed, "fresh scenario is not failed")
 	return board_view
 
 
 func _prepare_manual_combat(board_view: BoardView) -> void:
-	board_view.combat_simulation.wave_spawner = null
-	board_view.combat_simulation.enemies = []
-	board_view.combat_simulation.projectiles = []
-	board_view.combat_simulation.accumulator_seconds = 0.0
-	board_view.last_tick_results = []
-	board_view.last_reward_transaction_results = []
-	board_view.last_wave_reward_transaction_results = []
-	board_view.attack_feedbacks = []
-	board_view.enemy_death_animations = []
-	board_view.tower_attack_animations = {}
-	board_view._sync_combat_towers()
-	board_view._update_gold_label()
-	board_view._update_lives_label()
-	board_view._update_wave_label()
+	board_view.get_session().combat_simulation.wave_spawner = null
+	board_view.get_session().combat_simulation.enemies = []
+	board_view.get_session().combat_simulation.projectiles = []
+	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
+	board_view.get_session().last_tick_results = []
+	board_view.get_session().last_reward_transaction_results = []
+	board_view.get_session().last_wave_reward_transaction_results = []
+	board_view.get_visual_state().attack_feedbacks = []
+	board_view.get_visual_state().enemy_death_animations = []
+	board_view.get_visual_state().tower_attack_animations = {}
+	board_view.get_session().sync_combat_towers()
+	board_view.refresh_hud()
 	board_view.queue_redraw()
 
 
@@ -362,8 +360,8 @@ func _preferred_tower_cell(board_view: BoardView) -> Vector2i:
 	if _is_empty_buildable(board_view, preferred):
 		return preferred
 
-	for y in range(board_view.board.height):
-		for x in range(board_view.board.width):
+	for y in range(board_view.get_session().board.height):
+		for x in range(board_view.get_session().board.width):
 			var position := Vector2i(x, y)
 			if _is_empty_buildable(board_view, position):
 				return position
@@ -371,9 +369,9 @@ func _preferred_tower_cell(board_view: BoardView) -> Vector2i:
 
 
 func _is_empty_buildable(board_view: BoardView, position: Vector2i) -> bool:
-	if board_view.board == null or not board_view.board.is_in_bounds(position):
+	if board_view.get_session().board == null or not board_view.get_session().board.is_in_bounds(position):
 		return false
-	var slot := board_view.board.get_slot(position)
+	var slot := board_view.get_session().board.get_slot(position)
 	return slot.slot_type == BoardSlot.Type.BUILDABLE and slot.is_empty()
 
 
@@ -390,7 +388,7 @@ func _advance_gameplay(result: Dictionary, board_view: BoardView, seconds: float
 	while elapsed < seconds:
 		var delta = minf(step, seconds - elapsed)
 		board_view._process(delta)
-		_accumulate_tick_trace(result, board_view.last_tick_results, delta)
+		_accumulate_tick_trace(result, board_view.get_session().last_tick_results, delta)
 		elapsed += delta
 		await _settle_frames(1)
 
@@ -481,7 +479,7 @@ func _draw_gameplay_overlay(image: Image, crop_origin: Vector2, board_view: Boar
 	var board_rect := _board_global_rect(board_view)
 	_draw_rect_outline(image, Rect2(board_rect.position - crop_origin, board_rect.size), OVERLAY_BOARD_COLOR, 2)
 
-	for candidate in board_view.placement_service.tower_registry.get_all_towers():
+	for candidate in board_view.get_session().placement_service.tower_registry.get_all_towers():
 		var tower := candidate as GameTower
 		if tower == null:
 			continue
@@ -490,29 +488,48 @@ func _draw_gameplay_overlay(image: Image, crop_origin: Vector2, board_view: Boar
 		_draw_rect_outline(image, Rect2(global_tower_rect.position - crop_origin, global_tower_rect.size), OVERLAY_TOWER_COLOR, 3)
 		_draw_cross(image, global_tower_rect.get_center() - crop_origin, OVERLAY_TOWER_COLOR, 7)
 
-	for candidate in board_view.combat_simulation.enemies:
+	for candidate in board_view.get_session().combat_simulation.enemies:
 		var enemy := candidate as Enemy
 		if enemy == null or enemy.defeated:
 			continue
-		var enemy_position := board_view.to_global(board_view._grid_space_to_local(board_view.path_follower.get_grid_space_position(enemy)))
+		var enemy_position := board_view.to_global(
+			_grid_space_to_local(board_view, board_view.get_session().path_follower.get_grid_space_position(enemy))
+		)
 		_draw_cross(image, enemy_position - crop_origin, OVERLAY_ENEMY_COLOR, 8)
-		var health_rect := board_view.get_enemy_health_bar_rect(enemy)
+		var health_rect := _enemy_health_bar_rect(board_view, enemy)
 		if health_rect.size.x > 0.0 and health_rect.size.y > 0.0:
 			var global_health_rect := Rect2(board_view.to_global(health_rect.position), health_rect.size)
 			_draw_rect_outline(image, Rect2(global_health_rect.position - crop_origin, global_health_rect.size), OVERLAY_HEALTH_COLOR, 2)
 
-	for candidate in board_view.combat_simulation.projectiles:
+	for candidate in board_view.get_session().combat_simulation.projectiles:
 		var projectile := candidate as CombatProjectile
 		if projectile == null or not projectile.active:
 			continue
-		var projectile_position := board_view.to_global(board_view._grid_space_to_local(projectile.position))
+		var projectile_position := board_view.to_global(_grid_space_to_local(board_view, projectile.position))
 		_draw_cross(image, projectile_position - crop_origin, OVERLAY_PROJECTILE_COLOR, 5)
 
 
 func _board_global_rect(board_view: BoardView) -> Rect2:
 	return Rect2(
-		board_view.to_global(board_view.board_origin),
-		Vector2(float(board_view.board.width) * board_view.cell_size, float(board_view.board.height) * board_view.cell_size)
+		board_view.to_global(board_view.get_layout_metrics().board_origin),
+		Vector2(float(board_view.get_session().board.width) * board_view.get_layout_metrics().cell_size, float(board_view.get_session().board.height) * board_view.get_layout_metrics().cell_size)
+	)
+
+
+func _grid_space_to_local(board_view: BoardView, grid_space_position: Vector2) -> Vector2:
+	return board_view.get_renderer().grid_space_to_local(
+		board_view.get_layout_metrics().board_origin,
+		board_view.get_layout_metrics().cell_size,
+		grid_space_position
+	)
+
+
+func _enemy_health_bar_rect(board_view: BoardView, enemy: Enemy) -> Rect2:
+	return board_view.get_renderer().get_enemy_health_bar_rect(
+		board_view.get_session().path_follower,
+		board_view.get_layout_metrics().board_origin,
+		board_view.get_layout_metrics().cell_size,
+		enemy
 	)
 
 
@@ -536,15 +553,15 @@ func _state_summary(board_view: BoardView) -> Dictionary:
 		wave_text = wave_label.text if wave_label != null else ""
 
 	return {
-		"gold": board_view.wallet.gold,
-		"lives": board_view.combat_simulation.player_life.lives,
-		"flow_state": _flow_state_name(board_view.flow_state),
-		"game_won": board_view.combat_simulation.game_won,
-		"game_failed": board_view.combat_simulation.game_failed,
-		"tower_count": board_view.placement_service.tower_registry.get_all_towers().size(),
-		"enemy_count": board_view.combat_simulation.enemies.size(),
-		"visible_enemy_count": board_view.get_visible_enemies().size(),
-		"projectile_count": board_view.combat_simulation.projectiles.size(),
+		"gold": board_view.get_session().wallet.gold,
+		"lives": board_view.get_session().combat_simulation.player_life.lives,
+		"flow_state": _flow_state_name(board_view.get_session().flow_state),
+		"game_won": board_view.get_session().combat_simulation.game_won,
+		"game_failed": board_view.get_session().combat_simulation.game_failed,
+		"tower_count": board_view.get_session().placement_service.tower_registry.get_all_towers().size(),
+		"enemy_count": board_view.get_session().combat_simulation.enemies.size(),
+		"visible_enemy_count": board_view.get_session().get_visible_enemies().size(),
+		"projectile_count": board_view.get_session().combat_simulation.projectiles.size(),
 		"status_text": status_text,
 		"hint_text": hint_text,
 		"gold_text": gold_text,
@@ -584,11 +601,11 @@ func _update_final_summary(result: Dictionary, board_view: BoardView) -> void:
 
 func _flow_state_name(flow_state: int) -> String:
 	match flow_state:
-		BoardView.FlowState.MENU:
+		BoardGameSession.FlowState.MENU:
 			return "menu"
-		BoardView.FlowState.WON:
+		BoardGameSession.FlowState.WON:
 			return "won"
-		BoardView.FlowState.LOST:
+		BoardGameSession.FlowState.LOST:
 			return "lost"
 		_:
 			return "playing"

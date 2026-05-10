@@ -196,26 +196,26 @@ func _check_main_nodes(result: Dictionary, main_scene: Node) -> void:
 
 
 func _check_main_state(result: Dictionary, board_view: BoardView) -> void:
-	_check(result, board_view.board != null, "board initialized")
-	_check(result, board_view.wallet != null, "wallet initialized")
-	_check(result, board_view.combat_simulation != null, "combat simulation initialized")
-	if board_view.board != null:
-		_check(result, board_view.board.width == 10 and board_view.board.height == 8, "board size is 10x8")
-	if board_view.wallet != null:
-		_check(result, board_view.wallet.gold == 100, "initial gold is 100")
-	if board_view.combat_simulation != null:
-		_check(result, board_view.combat_simulation.player_life.lives == 10, "initial lives are 10")
-	_check(result, board_view.flow_state == BoardView.FlowState.PLAYING, "main starts in playing state")
-	_check(result, board_view.selected_tower_type == GameTower.Type.SINGLE_TARGET, "single tower selected by default")
+	_check(result, board_view.get_session().board != null, "board initialized")
+	_check(result, board_view.get_session().wallet != null, "wallet initialized")
+	_check(result, board_view.get_session().combat_simulation != null, "combat simulation initialized")
+	if board_view.get_session().board != null:
+		_check(result, board_view.get_session().board.width == 10 and board_view.get_session().board.height == 8, "board size is 10x8")
+	if board_view.get_session().wallet != null:
+		_check(result, board_view.get_session().wallet.gold == 100, "initial gold is 100")
+	if board_view.get_session().combat_simulation != null:
+		_check(result, board_view.get_session().combat_simulation.player_life.lives == 10, "initial lives are 10")
+	_check(result, board_view.get_session().flow_state == BoardGameSession.FlowState.PLAYING, "main starts in playing state")
+	_check(result, board_view.get_session().selected_tower_type == GameTower.Type.SINGLE_TARGET, "single tower selected by default")
 
 
 func _check_layout(result: Dictionary, main_scene: Node, board_view: BoardView, viewport_size: Vector2i) -> void:
 	var board_rect := Rect2(
-		board_view.to_global(board_view.board_origin),
-		Vector2(float(board_view.board.width) * board_view.cell_size, float(board_view.board.height) * board_view.cell_size)
+		board_view.to_global(board_view.get_layout_metrics().board_origin),
+		Vector2(float(board_view.get_session().board.width) * board_view.get_layout_metrics().cell_size, float(board_view.get_session().board.height) * board_view.get_layout_metrics().cell_size)
 	)
 	_check_rect(result, board_rect, viewport_size, "board rect in viewport")
-	_check(result, board_view.cell_size >= 1.0, "cell size is positive")
+	_check(result, board_view.get_layout_metrics().cell_size >= 1.0, "cell size is positive")
 
 	var control_paths := [
 		"Hud/Gold",
@@ -255,39 +255,39 @@ func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: Bo
 	if buildable_cell == Vector2i(-1, -1):
 		return
 
-	var gold_before := board_view.wallet.gold
+	var gold_before := board_view.get_session().wallet.gold
 	_click_grid_cell(board_view, buildable_cell)
 	await _settle_frames(2)
 
-	var expected_gold := gold_before - board_view.economy_config.basic_tower_cost
-	var placed_slot := board_view.board.get_slot(buildable_cell)
+	var expected_gold := gold_before - board_view.get_session().economy_config.basic_tower_cost
+	var placed_slot := board_view.get_session().board.get_slot(buildable_cell)
 	_check(result, not placed_slot.occupant_id.is_empty(), "tower placed through board input")
-	_check(result, board_view.wallet.gold == expected_gold, "gold spent after tower placement")
+	_check(result, board_view.get_session().wallet.gold == expected_gold, "gold spent after tower placement")
 	if gold_label != null:
 		_check(result, gold_label.text == "Gold: %d" % expected_gold, "gold label updates after placement")
 
-	var path := board_view.get_default_path()
+	var path := board_view.get_session().get_default_path()
 	if path.size() > 0:
 		_click_grid_cell(board_view, path[0])
 		await _settle_frames(2)
-		_check(result, board_view.wallet.gold == expected_gold, "invalid path placement does not spend gold")
-		if board_view.last_placement_result != null:
-			_check(result, not board_view.last_placement_result.succeeded, "invalid path placement is rejected")
+		_check(result, board_view.get_session().wallet.gold == expected_gold, "invalid path placement does not spend gold")
+		if board_view.get_session().last_placement_result != null:
+			_check(result, not board_view.get_session().last_placement_result.succeeded, "invalid path placement is rejected")
 
-	board_view.combat_simulation.accumulator_seconds = 0.0
-	board_view.wave_spawner.current_wave_state.spawn_elapsed_seconds = 0.0
+	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
+	board_view.get_session().wave_spawner.current_wave_state.spawn_elapsed_seconds = 0.0
 	board_view._process(0.8)
 	await _settle_frames(2)
-	_check(result, board_view.combat_simulation.enemies.size() >= 1, "simulation spawns an enemy")
+	_check(result, board_view.get_session().combat_simulation.enemies.size() >= 1, "simulation spawns an enemy")
 	if wave_label != null:
 		_check(result, wave_label.text == "Wave: 1/3", "wave label remains readable")
 
 
 func _find_buildable_cell(board_view: BoardView) -> Vector2i:
-	for y in range(board_view.board.height):
-		for x in range(board_view.board.width):
+	for y in range(board_view.get_session().board.height):
+		for x in range(board_view.get_session().board.width):
 			var position := Vector2i(x, y)
-			var slot := board_view.board.get_slot(position)
+			var slot := board_view.get_session().board.get_slot(position)
 			if slot.slot_type == BoardSlot.Type.BUILDABLE and slot.is_empty():
 				return position
 	return Vector2i(-1, -1)
@@ -389,9 +389,8 @@ func _capture_visual_state_artifacts(
 		"Tower deck: Slow selected"
 	)
 
-	board_view.wallet.gold = 0
-	board_view._update_gold_label()
-	board_view._sync_tower_button_state()
+	board_view.get_session().wallet.gold = 0
+	board_view.refresh_hud()
 	await _settle_frames(2)
 	await _capture_current_review_artifacts(
 		result,
@@ -403,10 +402,9 @@ func _capture_visual_state_artifacts(
 		"Tower deck: insufficient gold"
 	)
 
-	board_view.wallet.gold = 100
-	board_view._update_gold_label()
-	board_view._sync_tower_button_state()
-	board_view._set_status("Defeated enemy-1 for 5 gold.")
+	board_view.get_session().wallet.gold = 100
+	board_view.refresh_hud()
+	board_view.set_status_text("Defeated enemy-1 for 5 gold.")
 	await _settle_frames(2)
 	await _capture_current_review_artifacts(
 		result,
@@ -418,7 +416,7 @@ func _capture_visual_state_artifacts(
 		"Status and hint: reward"
 	)
 
-	board_view._set_status("Enemy leaked. Lives: 9")
+	board_view.set_status_text("Enemy leaked. Lives: 9")
 	await _settle_frames(2)
 	await _capture_current_review_artifacts(
 		result,

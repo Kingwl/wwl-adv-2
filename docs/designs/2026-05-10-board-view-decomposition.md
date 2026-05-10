@@ -2,7 +2,7 @@
 
 ## 状态
 
-Accepted
+Implemented
 
 ## 背景
 
@@ -12,14 +12,14 @@ Accepted
 
 - 让玩法应用状态不依赖 Godot 场景节点。
 - 让 `BoardView` 最终只做场景生命周期和 adapter 组合。
-- 保持现有 GUT、UI smoke 和 gameplay smoke 可以逐步迁移，不做一次性高风险重写。
+- 让 GUT、UI smoke 和 gameplay smoke 通过显式 adapter API 访问状态，不再依赖 `BoardView` 镜像字段。
 - 让 structural lint 可以逐步从 warning 收紧为 error。
 
 ## 非目标
 
 - 不在本设计里重写核心战斗、经济、波次或塔规则。
 - 不立即改变玩家可见 UI 和玩法数值。
-- 不立即移除所有 `BoardView` 兼容字段；smoke runner 和场景测试会分阶段迁移。
+- 不把塔、敌人、波次和经济配置数据化；这是后续独立工作。
 
 ## 方案
 
@@ -35,16 +35,17 @@ Accepted
 | `BoardVisualState` | 攻击动画、敌人死亡动画、impact feedback 等表现层时间状态。 |
 | `BoardRenderer` | 消费 session、layout、visual state 和 assets，绘制棋盘、塔、敌人、投射物和反馈。 |
 
-当前已实现第一步：`BoardGameSession` 接管棋盘初始化、放置、战斗推进、奖励、漏怪和胜负状态。`BoardView` 保留兼容字段作为 facade，确保现有场景测试和 smoke runner 不需要一次性改写。
+当前已实现全部模块边界：
 
-推荐后续顺序：
+- `BoardGameSession` 接管棋盘初始化、放置、战斗推进、奖励、漏怪和胜负状态。
+- `BoardLayoutService` 输出纯数据 `BoardLayoutMetrics`，覆盖 board、HUD、tower deck 和 overlay rect。
+- `BoardHudController` 负责 HUD 节点绑定、按钮状态、compact 文案和 overlay 展示。
+- `BoardInputAdapter` 将 Godot input 转为暂停/恢复、hover 和放置命令。
+- `BoardVisualState` 管理攻击动画、敌人死亡动画和 impact feedback 生命周期。
+- `BoardRenderer` 消费 board/session/visual/assets 状态进行绘制。
+- `BoardMapRenderer` 已从 `game/scripts/core/` 迁到 `game/scripts/board/`。
 
-1. 迁移场景测试和 smoke runner，减少直接写 `board_view.*` 状态。
-2. 拆 `BoardLayoutService`，先把响应式几何计算变成纯逻辑测试。
-3. 拆 `BoardHudController`，把 HUD 节点绑定、按钮状态和 overlay 展示迁出。
-4. 拆 `BoardVisualState`，让视觉反馈状态和 session 分离。
-5. 拆 `BoardRenderer`，最后迁出 `_draw_*`。
-6. 将 `BoardMapRenderer` 从 `game/scripts/core/` 迁到场景/渲染 adapter。
+`BoardView` 现在是组合这些 adapter 的场景生命周期层。它不再镜像 `BoardGameSession`、`BoardLayoutMetrics`、`BoardAssetCatalog` 或 `BoardVisualState` 的字段；场景测试和 smoke runner 通过 `get_session()`、`get_layout_metrics()`、`get_asset_catalog()`、`get_visual_state()` 和 `get_renderer()` 显式访问对应边界。
 
 ## 替代方案
 
@@ -53,12 +54,10 @@ Accepted
 
 ## 风险
 
-- facade 阶段存在双向同步成本；外部测试仍可直接改 `board_view` 兼容字段。
-- `BoardView` 行数仍然偏大，HUD、layout、渲染和视觉状态还未迁出。
+- `BoardView` 仍负责 Godot 生命周期、adapter 组合和部分坐标桥接，后续 UI 功能可能再次把职责塞回同一文件。
 - `BoardGameSession` 仍构造默认经济和波次配置，配置数据化还需要单独完成。
 
 ## 开放问题
 
 - 塔成长模型确定后，session 是否需要支持更明确的 command/result API。
 - 配置数据化时，经济、塔、敌人和波次配置应统一为 JSON、Godot Resource，还是混合方案。
-- `BoardRenderer` 拆出后是否应把 `BoardMapRenderer` 合并为其子模块。

@@ -17,7 +17,7 @@
 | `2026-05-08-godot-2d-tower-defense-merge.md` | Implemented | `game/`, `game/scripts/core/` | 整体产品和架构方向。 |
 | `2026-05-08-testing-coverage-strategy.md` | Implemented | `game/test/gut/`, `docs/testing/`, `game/tools/` | GUT 优先策略；尚无行覆盖率门禁。 |
 | `2026-05-08-board-grid-rules.md` | Implemented | `game/scripts/core/board/` | 放置、移除、格子类型、路径校验。 |
-| `2026-05-08-board-scene-adapter.md` | Implemented | `game/scripts/board/board_view.gd` | 场景适配层已存在；该文件现在是重构风险。 |
+| `2026-05-08-board-scene-adapter.md` | Implemented | `game/scripts/board/board_view.gd`, `game/scripts/board/board_*` adapters | 场景适配层已拆成 session、layout、HUD、input、visual state 和 renderer adapter。 |
 | `2026-05-08-economy-resource-system.md` | Implemented | `game/scripts/core/economy/`, `game/scripts/core/placement/` | 放置费用和奖励已实现。 |
 | `2026-05-08-enemy-path-movement.md` | Implemented | `game/scripts/core/movement/`, `game/scripts/core/enemies/` | 确定性路径进度和场景渲染。 |
 | `2026-05-08-single-enemy-health-death.md` | Implemented | `game/scripts/core/enemies/`, `game/scripts/core/combat/` | 生命、伤害、死亡事件、奖励。 |
@@ -32,7 +32,7 @@
 | `2026-05-09-road-ribbon-rendering-and-asset-contract.md` | Accepted | `game/tools/generate-road-guide.py`, map assets | 契约已部分验证；确定性道路材质生成仍是未来工作。 |
 | `2026-05-09-merge-ui-integration.md` | Deferred | Core merge only: `game/scripts/core/towers/tower_merge_service.gd` | 被“合成还是直接升级”决策阻塞。 |
 | `2026-05-09-ui-playability-validation.md` | Accepted | `game/tools/check-ui-smoke.sh`; proposed Web smoke | Native smoke 已用于开发；Web smoke 仍是未来发布门禁。 |
-| `2026-05-10-board-view-decomposition.md` | Accepted | `game/scripts/board/board_game_session.gd` first slice | `BoardGameSession` 已落地；HUD、layout、visual state 和 renderer 仍需继续迁出。 |
+| `2026-05-10-board-view-decomposition.md` | Implemented | `game/scripts/board/board_game_session.gd`, `board_layout_service.gd`, `board_hud_controller.gd`, `board_visual_state.gd`, `board_renderer.gd` | `BoardView` 现在是场景生命周期层，并通过显式 getter 暴露 session、layout、assets、visual state 和 renderer 边界。 |
 
 ## 工具索引
 

@@ -37,12 +37,12 @@ Accepted
 
 ## 验证
 
-关卡 JSON 必须匹配：
+关卡 JSON 必须匹配当前运行时契约：
 
-- `BoardView.board.width`
-- `BoardView.board.height`
-- `BoardView.get_default_path()`
-- `BoardView.get_map_style_definition().id`
+- `BoardView.get_session().board.width`
+- `BoardView.get_session().board.height`
+- `BoardView.get_session().get_default_path()`
+- `BoardView.get_asset_catalog().map_style_definition.id`
 
 这可以防止未来地图美术悄悄偏离玩法。
 

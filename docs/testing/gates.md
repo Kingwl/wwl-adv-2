@@ -36,14 +36,15 @@ cd game
 当前 structural lint 会失败的情况：
 
 - `game/scripts/core/` 下新增场景树、输入、节点查找、节点生命周期或 UI 节点依赖。
+- `game/scripts/core/` 下新增渲染、贴图或资源加载 API 依赖。
 - `BoardView` 重新持有多个 `res://` 资源路径常量。
 - `BoardView` 直接调用 `load()` 或 `preload()` 加载资产。
 - `BoardAssetCatalog` 缺失，或 `BoardView` 不再通过它管理棋盘场景资产。
 
-当前 structural lint 会以 warning 跟踪但不阻塞的技术债：
+当前 structural lint 会以 warning 跟踪但不阻塞的结构回膨胀：
 
-- `BoardView` 仍超过 1200 行，且函数数量偏多。
-- `game/scripts/core/maps/BoardMapRenderer` 仍包含渲染和资源加载耦合。
+- `BoardView` 重新超过 1200 行。
+- `BoardView` 函数数量重新超过 70。
 
 native UI/可玩性 smoke 检查：
 

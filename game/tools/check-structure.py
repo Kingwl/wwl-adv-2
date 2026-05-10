@@ -42,7 +42,7 @@ CORE_SCENE_SYMBOLS = (
     "change_scene_to_file",
 )
 
-CORE_RENDER_WARNING_SYMBOLS = (
+CORE_RENDER_SYMBOLS = (
     "CanvasItem",
     "Texture2D",
     "CanvasTexture",
@@ -273,16 +273,16 @@ def check_core_boundaries(docs: Sequence[GDScriptDoc], findings: List[Finding]) 
                     "Core rules must not use scene tree, input, node lookup, or node lifecycle APIs.",
                 )
 
-        for symbol in CORE_RENDER_WARNING_SYMBOLS:
+        for symbol in CORE_RENDER_SYMBOLS:
             line = first_match_line(doc.masked_text, r"\b%s\b" % re.escape(symbol))
             if line:
                 add_finding_once(
                     findings,
-                    "warning",
-                    "CORE101",
+                    "error",
+                    "CORE003",
                     doc,
                     line,
-                    "Rendering/resource coupling exists under core; keep new render adapters outside core.",
+                    "Core rules must not use rendering or resource-loading APIs; keep render adapters outside core.",
                 )
 
 
