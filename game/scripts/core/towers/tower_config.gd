@@ -164,6 +164,35 @@ func get_tower_id(tower_type: GameTower.Type) -> String:
 	return str(tower_definition.get(ID_KEY, _tower_type_id(tower_type)))
 
 
+func get_display_name(tower_type: GameTower.Type) -> String:
+	var tower_definition := _get_tower_definition(tower_type)
+	return str(tower_definition.get(DISPLAY_NAME_KEY, _tower_type_name(tower_type)))
+
+
+func get_description(tower_type: GameTower.Type) -> String:
+	var tower_definition := _get_tower_definition(tower_type)
+	return str(tower_definition.get(DESCRIPTION_KEY, ""))
+
+
+func get_tower_button_node_name(tower_type: GameTower.Type) -> String:
+	return "%sTowerButton" % _pascal_case_id(get_tower_id(tower_type))
+
+
+func get_tower_button_specs() -> Array:
+	var specs := []
+	for tower_type in get_tower_types():
+		specs.append({
+			"name": get_tower_id(tower_type),
+			"tower_type": tower_type,
+			"display_name": get_display_name(tower_type),
+			"description": get_description(tower_type),
+			"node_name": get_tower_button_node_name(tower_type),
+			"node_path": "Hud/%s" % get_tower_button_node_name(tower_type),
+		})
+
+	return specs
+
+
 func is_visual_test_enabled(tower_type: GameTower.Type) -> bool:
 	var tower_definition := _get_tower_definition(tower_type)
 	return bool(tower_definition.get(VISUAL_TEST_ENABLED_KEY, true))
@@ -176,6 +205,7 @@ func get_visual_test_tower_specs() -> Array:
 			specs.append({
 				"name": get_tower_id(tower_type),
 				"tower_type": tower_type,
+				"display_name": get_display_name(tower_type),
 			})
 
 	return specs
@@ -842,6 +872,8 @@ static func _tower_type_from_value(value) -> int:
 			return GameTower.Type.SLOW
 		"FLAME", "flame":
 			return GameTower.Type.FLAME
+		"POISON", "poison":
+			return GameTower.Type.POISON
 
 	return -1
 
@@ -999,6 +1031,8 @@ static func _tower_type_name(tower_type) -> String:
 			return "SLOW"
 		GameTower.Type.FLAME:
 			return "FLAME"
+		GameTower.Type.POISON:
+			return "POISON"
 
 	return str(tower_type)
 
@@ -1013,6 +1047,8 @@ static func _tower_type_id(tower_type) -> String:
 			return "slow"
 		GameTower.Type.FLAME:
 			return "flame"
+		GameTower.Type.POISON:
+			return "poison"
 
 	return str(tower_type)
 
@@ -1023,6 +1059,8 @@ static func _default_weapon_type(tower_type: GameTower.Type) -> int:
 			return DamageTypes.WeaponType.CANNON
 		GameTower.Type.SLOW, GameTower.Type.FLAME:
 			return DamageTypes.WeaponType.SPELL
+		GameTower.Type.POISON:
+			return DamageTypes.WeaponType.CROSSBOW
 
 	return DamageTypes.WeaponType.CROSSBOW
 
@@ -1033,6 +1071,8 @@ static func _default_damage_school(tower_type: GameTower.Type) -> int:
 			return DamageTypes.DamageSchool.FROST
 		GameTower.Type.FLAME:
 			return DamageTypes.DamageSchool.FIRE
+		GameTower.Type.POISON:
+			return DamageTypes.DamageSchool.POISON
 
 	return DamageTypes.DamageSchool.PHYSICAL
 
@@ -1044,6 +1084,8 @@ static func _default_attack_pattern(tower_type: GameTower.Type) -> int:
 		GameTower.Type.SLOW:
 			return DamageTypes.AttackPattern.STATUS_PROJECTILE
 		GameTower.Type.FLAME:
+			return DamageTypes.AttackPattern.STATUS_DOT
+		GameTower.Type.POISON:
 			return DamageTypes.AttackPattern.STATUS_DOT
 
 	return DamageTypes.AttackPattern.SINGLE_PROJECTILE
@@ -1060,3 +1102,13 @@ static func _format_positive_delta(delta: float) -> String:
 	if text.ends_with("."):
 		text = text.left(text.length() - 1)
 	return "+%s" % text
+
+
+static func _pascal_case_id(value: String) -> String:
+	var result := ""
+	for part in value.split("_", false):
+		for subpart in part.split("-", false):
+			if subpart.is_empty():
+				continue
+			result += subpart.substr(0, 1).to_upper() + subpart.substr(1).to_lower()
+	return result

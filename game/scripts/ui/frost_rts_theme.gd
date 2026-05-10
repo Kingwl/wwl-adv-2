@@ -20,6 +20,8 @@ const TOWER_CARD_SELECTED_FRAME := "res://assets/ui/frost_rts/frames/tower_card_
 const TOWER_CARD_DISABLED_FRAME := "res://assets/ui/frost_rts/frames/tower_card_disabled.png"
 const MENU_PANEL_FRAME := "res://assets/ui/frost_rts/frames/menu_panel_frame.png"
 const TITLE_FONT_PATH := "res://assets/fonts/wwl-title-noto-sans-sc-subset.ttf"
+const TOWER_CARD_TEXTURE_MARGIN_X := 46.0
+const TOWER_CARD_TEXTURE_MARGIN_Y := 24.0
 
 static var _title_font_cache: Font
 
@@ -77,15 +79,28 @@ static func apply_button(button: Button, font_size: int = 15) -> void:
 	button.focus_mode = Control.FOCUS_NONE
 
 
-static func apply_tower_button(button: Button) -> void:
+static func apply_tower_button(button: Button, compact_pressed_style: bool = false) -> void:
 	apply_button(button, 11)
 	if button == null:
 		return
 
-	button.add_theme_stylebox_override("normal", texture_style(TOWER_CARD_FRAME, 46, 32, 46, 32, 10, 8, 10, 8))
-	button.add_theme_stylebox_override("hover", texture_style(TOWER_CARD_FRAME, 46, 32, 46, 32, 10, 8, 10, 8))
-	button.add_theme_stylebox_override("pressed", texture_style(TOWER_CARD_SELECTED_FRAME, 46, 32, 46, 32, 10, 8, 10, 8))
-	button.add_theme_stylebox_override("disabled", texture_style(TOWER_CARD_DISABLED_FRAME, 46, 32, 46, 32, 10, 8, 10, 8))
+	var pressed_frame := TOWER_CARD_FRAME if compact_pressed_style else TOWER_CARD_SELECTED_FRAME
+	button.add_theme_stylebox_override(
+		"normal",
+		texture_style(TOWER_CARD_FRAME, TOWER_CARD_TEXTURE_MARGIN_X, TOWER_CARD_TEXTURE_MARGIN_Y, TOWER_CARD_TEXTURE_MARGIN_X, TOWER_CARD_TEXTURE_MARGIN_Y, 10, 8, 10, 8)
+	)
+	button.add_theme_stylebox_override(
+		"hover",
+		texture_style(TOWER_CARD_FRAME, TOWER_CARD_TEXTURE_MARGIN_X, TOWER_CARD_TEXTURE_MARGIN_Y, TOWER_CARD_TEXTURE_MARGIN_X, TOWER_CARD_TEXTURE_MARGIN_Y, 10, 8, 10, 8)
+	)
+	button.add_theme_stylebox_override(
+		"pressed",
+		texture_style(pressed_frame, TOWER_CARD_TEXTURE_MARGIN_X, TOWER_CARD_TEXTURE_MARGIN_Y, TOWER_CARD_TEXTURE_MARGIN_X, TOWER_CARD_TEXTURE_MARGIN_Y, 10, 8, 10, 8)
+	)
+	button.add_theme_stylebox_override(
+		"disabled",
+		texture_style(TOWER_CARD_DISABLED_FRAME, TOWER_CARD_TEXTURE_MARGIN_X, TOWER_CARD_TEXTURE_MARGIN_Y, TOWER_CARD_TEXTURE_MARGIN_X, TOWER_CARD_TEXTURE_MARGIN_Y, 10, 8, 10, 8)
+	)
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.expand_icon = true

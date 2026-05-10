@@ -14,6 +14,7 @@
 
 ## UI 问题
 
+- [x] 移动横屏五塔侧栏中，选中态塔卡的九宫格上下装饰压到 Poison 标题文字；已减小塔卡贴图上下边距，并让紧凑塔卡用普通框加金色文字表达选中。
 - [x] 移动横屏的塔放置预览 smoke crop 被裁成 2x2 像素，无法人工审查；已改用 canvas transform 计算棋盘局部 crop。
 - [x] 塔放置 hover 预览消失，棋盘上只剩 hover 边框；已恢复当前选中塔的半透明预览并加入 UI smoke crop 覆盖。
 - [x] 塔操作菜单关闭后，右侧 hint 仍保留 `Upgrade or remove this tower.` 截断文案；已在关闭菜单时恢复当前塔卡选择提示。

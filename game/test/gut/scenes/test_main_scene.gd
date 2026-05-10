@@ -40,6 +40,7 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	assert_not_null(scene.get_node_or_null("Hud/AreaTowerButton"))
 	assert_not_null(scene.get_node_or_null("Hud/SlowTowerButton"))
 	assert_not_null(scene.get_node_or_null("Hud/FlameTowerButton"))
+	assert_not_null(scene.get_node_or_null("Hud/PoisonTowerButton"))
 	assert_not_null(scene.get_node_or_null("Hud/HudFrame"))
 	assert_not_null(scene.get_node_or_null("Hud/TowerDeck"))
 	assert_not_null(scene.get_node_or_null("Hud/TowerActionPanel"))
@@ -56,8 +57,10 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	assert_not_null(scene.get_node_or_null("Overlay/Screen/Panel/PrimaryButton"))
 	assert_not_null(scene.get_node_or_null("Overlay/Screen/Panel/SecondaryButton"))
 
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
 	var single_button: Button = scene.get_node("Hud/SingleTowerButton") as Button
 	var flame_button: Button = scene.get_node("Hud/FlameTowerButton") as Button
+	var poison_button: Button = scene.get_node("Hud/PoisonTowerButton") as Button
 	var tower_action_panel: Panel = scene.get_node("Hud/TowerActionPanel") as Panel
 	var status_label: Label = scene.get_node("Hud/Status") as Label
 	var hint_label: Label = scene.get_node("Hud/Hint") as Label
@@ -68,10 +71,12 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	var overlay_message: Label = scene.get_node("Overlay/Screen/Panel/Message") as Label
 	assert_eq(single_button.text, "SINGLE\nFocus fire  25g")
 	assert_eq(flame_button.text, "FLAME\nBurn DoT  25g")
+	assert_eq(poison_button.text, "POISON\nToxic DoT  25g")
 	assert_eq(single_button.size.x, BoardLayoutService.TOWER_CARD_WIDTH)
-	assert_eq(single_button.size.y, BoardLayoutService.TOWER_CARD_HEIGHT)
+	assert_eq(single_button.size.y, board_view.get_layout_metrics().tower_card_height)
 	assert_not_null(single_button.icon)
 	assert_not_null(flame_button.icon)
+	assert_not_null(poison_button.icon)
 	assert_eq(status_label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
 	assert_eq(status_label.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
 	assert_eq(hint_label.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
@@ -87,6 +92,7 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	assert_true(single_button.get_theme_stylebox("pressed") is StyleBoxTexture)
 	assert_true((scene.get_node("Hud/HudFrame") as Panel).get_theme_stylebox("panel") is StyleBoxTexture)
 	assert_true(single_button.button_pressed)
+	assert_false(poison_button.button_pressed)
 	assert_false(tower_action_panel.visible)
 
 
@@ -118,17 +124,22 @@ func test_board_view_loads_board_sprite_assets() -> void:
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.AREA, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.SLOW, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.FLAME, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
+	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.POISON, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
 	assert_eq(board_view.get_asset_catalog().single_tower_texture.get_size(), Vector2(128.0, 128.0))
 	assert_eq(board_view.get_asset_catalog().area_tower_texture.get_size(), Vector2(128.0, 128.0))
 	assert_eq(board_view.get_asset_catalog().slow_tower_texture.get_size(), Vector2(128.0, 128.0))
 	assert_eq(board_view.get_asset_catalog().flame_tower_texture.get_size(), Vector2(128.0, 128.0))
+	assert_eq(board_view.get_asset_catalog().poison_tower_texture.get_size(), Vector2(128.0, 128.0))
 	assert_not_null(board_view.get_renderer().get_enemy_sprite_texture(null, board_view.get_visual_state(), board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.SINGLE_TARGET, 0.0, board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.AREA, 0.5, board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.SLOW, 0.99, board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.FLAME, 0.5, board_view.get_asset_catalog()))
+	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.POISON, 0.5, board_view.get_asset_catalog()))
 	assert_eq(board_view.get_asset_catalog().enemy_walk_textures.size(), 4)
 	assert_eq(board_view.get_asset_catalog().enemy_death_textures.size(), 6)
+	assert_eq(board_view.get_asset_catalog().poison_projectile_textures.size(), 4)
+	assert_eq(board_view.get_asset_catalog().poison_impact_textures.size(), 4)
 
 
 func test_board_view_level_definition_matches_default_path() -> void:
@@ -230,6 +241,7 @@ func test_board_view_layout_fits_mobile_landscape_viewport() -> void:
 	var area_button: Button = scene.get_node("Hud/AreaTowerButton") as Button
 	var slow_button: Button = scene.get_node("Hud/SlowTowerButton") as Button
 	var flame_button: Button = scene.get_node("Hud/FlameTowerButton") as Button
+	var poison_button: Button = scene.get_node("Hud/PoisonTowerButton") as Button
 	var status_label: Label = scene.get_node("Hud/Status") as Label
 	var hint_label: Label = scene.get_node("Hud/Hint") as Label
 	var mobile_landscape_size := Vector2(844, 390)
@@ -249,15 +261,18 @@ func test_board_view_layout_fits_mobile_landscape_viewport() -> void:
 	assert_true(board_rect.end.x <= single_button.position.x - BoardLayoutService.SIDE_PANEL_GAP)
 	assert_true(board_rect.end.y <= mobile_landscape_size.y)
 	assert_eq(single_button.size.x, BoardLayoutService.TOWER_CARD_WIDTH)
-	assert_eq(single_button.size.y, BoardLayoutService.TOWER_CARD_HEIGHT)
-	assert_eq(area_button.position.y, single_button.position.y + BoardLayoutService.TOWER_CARD_HEIGHT + BoardLayoutService.TOWER_CARD_GAP)
-	assert_eq(slow_button.position.y, area_button.position.y + BoardLayoutService.TOWER_CARD_HEIGHT + BoardLayoutService.TOWER_CARD_GAP)
-	assert_eq(flame_button.position.y, slow_button.position.y + BoardLayoutService.TOWER_CARD_HEIGHT + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(single_button.size.y, board_view.get_layout_metrics().tower_card_height)
+	assert_true(single_button.size.y >= BoardLayoutService.TOWER_CARD_MIN_HEIGHT)
+	assert_eq(area_button.position.y, single_button.position.y + board_view.get_layout_metrics().tower_card_height + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(slow_button.position.y, area_button.position.y + board_view.get_layout_metrics().tower_card_height + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(flame_button.position.y, slow_button.position.y + board_view.get_layout_metrics().tower_card_height + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(poison_button.position.y, flame_button.position.y + board_view.get_layout_metrics().tower_card_height + BoardLayoutService.TOWER_CARD_GAP)
 	var button_rects := [
 		Rect2(single_button.position, single_button.size),
 		Rect2(area_button.position, area_button.size),
 		Rect2(slow_button.position, slow_button.size),
 		Rect2(flame_button.position, flame_button.size),
+		Rect2(poison_button.position, poison_button.size),
 	]
 	var status_rect := Rect2(status_label.position, status_label.size)
 	var hint_rect := Rect2(hint_label.position, hint_label.size)
@@ -286,6 +301,7 @@ func test_board_view_square_layout_moves_tower_deck_to_bottom_and_expands_board(
 	var area_button: Button = scene.get_node("Hud/AreaTowerButton") as Button
 	var slow_button: Button = scene.get_node("Hud/SlowTowerButton") as Button
 	var flame_button: Button = scene.get_node("Hud/FlameTowerButton") as Button
+	var poison_button: Button = scene.get_node("Hud/PoisonTowerButton") as Button
 	var square_size := Vector2(1364, 1242)
 
 	board_view.apply_responsive_layout(square_size)
@@ -301,9 +317,11 @@ func test_board_view_square_layout_moves_tower_deck_to_bottom_and_expands_board(
 	assert_eq(area_button.position.x, single_button.position.x + BoardLayoutService.TOWER_CARD_WIDTH + BoardLayoutService.TOWER_CARD_GAP)
 	assert_eq(slow_button.position.x, area_button.position.x + BoardLayoutService.TOWER_CARD_WIDTH + BoardLayoutService.TOWER_CARD_GAP)
 	assert_eq(flame_button.position.x, slow_button.position.x + BoardLayoutService.TOWER_CARD_WIDTH + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(poison_button.position.x, flame_button.position.x + BoardLayoutService.TOWER_CARD_WIDTH + BoardLayoutService.TOWER_CARD_GAP)
 	assert_eq(area_button.position.y, single_button.position.y)
 	assert_eq(slow_button.position.y, single_button.position.y)
 	assert_eq(flame_button.position.y, single_button.position.y)
+	assert_eq(poison_button.position.y, single_button.position.y)
 	assert_true(board_rect.end.y <= single_button.position.y - BoardLayoutService.BOTTOM_TOWER_DECK_GAP)
 	assert_true(board_rect.end.x <= square_size.x - BoardLayoutService.SCREEN_PADDING)
 
@@ -319,6 +337,7 @@ func test_board_view_compact_square_layout_keeps_messages_above_board() -> void:
 	var area_button: Button = scene.get_node("Hud/AreaTowerButton") as Button
 	var slow_button: Button = scene.get_node("Hud/SlowTowerButton") as Button
 	var flame_button: Button = scene.get_node("Hud/FlameTowerButton") as Button
+	var poison_button: Button = scene.get_node("Hud/PoisonTowerButton") as Button
 	var status_label: Label = scene.get_node("Hud/Status") as Label
 	var hint_label: Label = scene.get_node("Hud/Hint") as Label
 	var square_size := Vector2(720, 720)
@@ -334,10 +353,12 @@ func test_board_view_compact_square_layout_keeps_messages_above_board() -> void:
 	assert_true(board_view.get_layout_metrics().tower_deck_is_bottom)
 	assert_eq(area_button.position.x, single_button.position.x + BoardLayoutService.TOWER_CARD_WIDTH + BoardLayoutService.TOWER_CARD_GAP)
 	assert_eq(area_button.position.y, single_button.position.y)
-	assert_eq(slow_button.position.x, single_button.position.x)
-	assert_eq(slow_button.position.y, single_button.position.y + BoardLayoutService.TOWER_CARD_HEIGHT + BoardLayoutService.TOWER_CARD_GAP)
-	assert_eq(flame_button.position.x, area_button.position.x)
-	assert_eq(flame_button.position.y, slow_button.position.y)
+	assert_eq(slow_button.position.x, area_button.position.x + BoardLayoutService.TOWER_CARD_WIDTH + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(slow_button.position.y, single_button.position.y)
+	assert_eq(flame_button.position.x, single_button.position.x)
+	assert_eq(flame_button.position.y, single_button.position.y + BoardLayoutService.TOWER_CARD_HEIGHT + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(poison_button.position.x, area_button.position.x)
+	assert_eq(poison_button.position.y, flame_button.position.y)
 	assert_true(board_rect.position.y >= BoardLayoutService.HUD_COMPACT_MESSAGE_RESERVED_HEIGHT)
 	assert_true(status_label.position.y + status_label.size.y <= hint_label.position.y)
 	assert_true(hint_label.position.y + hint_label.size.y <= board_rect.position.y)
@@ -594,6 +615,31 @@ func test_board_view_selects_flame_tower_for_next_placement() -> void:
 	assert_eq(hint_label.text, "Flame tower: 25g. Enemies follow the paved road.")
 
 
+func test_board_view_selects_poison_tower_for_next_placement() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var poison_button: Button = scene.get_node("Hud/PoisonTowerButton") as Button
+	var single_button: Button = scene.get_node("Hud/SingleTowerButton") as Button
+	var hint_label: Label = scene.get_node("Hud/Hint") as Label
+	board_view.start_game()
+
+	poison_button.pressed.emit()
+	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
+
+	assert_true(result.succeeded)
+	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.POISON)
+	assert_eq(board_view.get_session().placement_service.tower_registry.get_tower("tower-1").tower_type, GameTower.Type.POISON)
+	assert_eq(poison_button.text, "POISON\nToxic DoT  25g")
+	assert_not_null(poison_button.icon)
+	assert_true(poison_button.button_pressed)
+	assert_false(single_button.button_pressed)
+	assert_eq(hint_label.text, "Poison tower: 25g. Enemies follow the paved road.")
+
+
 func test_board_view_number_keys_select_tower_type_shortcuts() -> void:
 	var packed_scene: PackedScene = load("res://scenes/main.tscn")
 	var scene: Node = packed_scene.instantiate()
@@ -605,6 +651,7 @@ func test_board_view_number_keys_select_tower_type_shortcuts() -> void:
 	var area_button: Button = scene.get_node("Hud/AreaTowerButton") as Button
 	var slow_button: Button = scene.get_node("Hud/SlowTowerButton") as Button
 	var flame_button: Button = scene.get_node("Hud/FlameTowerButton") as Button
+	var poison_button: Button = scene.get_node("Hud/PoisonTowerButton") as Button
 	var hint_label: Label = scene.get_node("Hud/Hint") as Label
 	board_view.start_game()
 
@@ -629,11 +676,18 @@ func test_board_view_number_keys_select_tower_type_shortcuts() -> void:
 	assert_false(slow_button.button_pressed)
 	assert_eq(hint_label.text, "Flame tower: 25g. Enemies follow the paved road.")
 
+	board_view._unhandled_input(_key_event(KEY_5))
+
+	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.POISON)
+	assert_true(poison_button.button_pressed)
+	assert_false(flame_button.button_pressed)
+	assert_eq(hint_label.text, "Poison tower: 25g. Enemies follow the paved road.")
+
 	board_view._unhandled_input(_key_event(KEY_1))
 
 	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.SINGLE_TARGET)
 	assert_true(single_button.button_pressed)
-	assert_false(flame_button.button_pressed)
+	assert_false(poison_button.button_pressed)
 	assert_eq(hint_label.text, "Single tower: 25g. Enemies follow the paved road.")
 
 
@@ -672,6 +726,7 @@ func test_board_view_rejects_placement_when_gold_is_insufficient() -> void:
 	var area_button: Button = scene.get_node("Hud/AreaTowerButton") as Button
 	var slow_button: Button = scene.get_node("Hud/SlowTowerButton") as Button
 	var flame_button: Button = scene.get_node("Hud/FlameTowerButton") as Button
+	var poison_button: Button = scene.get_node("Hud/PoisonTowerButton") as Button
 	board_view.start_game()
 
 	assert_true(board_view.try_place_at_grid(Vector2i(0, 0)).succeeded)
@@ -691,6 +746,7 @@ func test_board_view_rejects_placement_when_gold_is_insufficient() -> void:
 	assert_true(area_button.disabled)
 	assert_true(slow_button.disabled)
 	assert_true(flame_button.disabled)
+	assert_true(poison_button.disabled)
 
 
 func test_board_view_clicking_placed_tower_shows_action_menu_near_tower() -> void:

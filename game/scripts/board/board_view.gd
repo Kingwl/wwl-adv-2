@@ -10,10 +10,6 @@ const START_SCENE_PATH := "res://scenes/start.tscn"
 @export var lives_label_path: NodePath = NodePath("../Hud/Lives")
 @export var wave_label_path: NodePath = NodePath("../Hud/Wave")
 @export var menu_button_path: NodePath = NodePath("../Hud/MenuButton")
-@export var single_tower_button_path: NodePath = NodePath("../Hud/SingleTowerButton")
-@export var area_tower_button_path: NodePath = NodePath("../Hud/AreaTowerButton")
-@export var slow_tower_button_path: NodePath = NodePath("../Hud/SlowTowerButton")
-@export var flame_tower_button_path: NodePath = NodePath("../Hud/FlameTowerButton")
 @export var overlay_root_path: NodePath = NodePath("../Overlay/Screen")
 @export var overlay_backdrop_path: NodePath = NodePath("../Overlay/Screen/Backdrop")
 @export var overlay_panel_path: NodePath = NodePath("../Overlay/Screen/Panel")
@@ -125,7 +121,7 @@ func apply_responsive_layout(viewport_size: Vector2) -> void:
 		board_width = _game_session.board.width
 		board_height = _game_session.board.height
 
-	_layout_metrics = _layout_service.calculate(viewport_size, board_width, board_height)
+	_layout_metrics = _layout_service.calculate(viewport_size, board_width, board_height, _tower_card_count())
 	_hud_controller.apply_layout(_layout_metrics)
 	_sync_tower_action_menu()
 	_sync_message_labels()
@@ -173,7 +169,8 @@ func clear_tower_action_menu() -> void:
 	if _game_session != null and _game_session.economy_config != null and _hud_controller != null:
 		_game_session.set_hint(_hud_controller.update_selected_tower_hint(
 			_game_session.selected_tower_type,
-			_game_session.economy_config
+			_game_session.economy_config,
+			_game_session.placement_service.tower_config
 		))
 		_sync_message_labels()
 	queue_redraw()
@@ -301,10 +298,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		Callable(self, "open_pause_menu"),
 		Callable(self, "resume_game"),
 		{
-			"select_single_tower": Callable(self, "select_tower_type").bind(GameTower.Type.SINGLE_TARGET),
-			"select_area_tower": Callable(self, "select_tower_type").bind(GameTower.Type.AREA),
-			"select_slow_tower": Callable(self, "select_tower_type").bind(GameTower.Type.SLOW),
-			"select_flame_tower": Callable(self, "select_tower_type").bind(GameTower.Type.FLAME),
+			"select_tower_by_shortcut_index": Callable(self, "_select_tower_by_shortcut_index"),
 			"upgrade_selected_tower": Callable(self, "upgrade_selected_tower"),
 			"remove_selected_tower": Callable(self, "remove_selected_tower"),
 			"has_tower_action_menu": Callable(self, "has_tower_action_menu"),
@@ -386,10 +380,6 @@ func _configure_hud() -> void:
 		lives_label_path,
 		wave_label_path,
 		menu_button_path,
-		single_tower_button_path,
-		area_tower_button_path,
-		slow_tower_button_path,
-		flame_tower_button_path,
 		overlay_root_path,
 		overlay_backdrop_path,
 		overlay_panel_path,
@@ -401,17 +391,15 @@ func _configure_hud() -> void:
 	_hud_controller.ensure_chrome(
 		_asset_catalog.gold_icon_texture,
 		_asset_catalog.lives_icon_texture,
-		_asset_catalog.wave_icon_texture
+		_asset_catalog.wave_icon_texture,
+		_game_session.placement_service.tower_config
 	)
 	FrostRtsTheme.apply_hud_panel(_hud_controller.hud_frame_panel)
 	FrostRtsTheme.apply_hud_panel(_hud_controller.tower_deck_panel)
 	_hud_controller.configure(_asset_catalog.menu_icon_texture)
 	_hud_controller.connect_signals(
 		Callable(self, "open_pause_menu"),
-		Callable(self, "select_tower_type").bind(GameTower.Type.SINGLE_TARGET),
-		Callable(self, "select_tower_type").bind(GameTower.Type.AREA),
-		Callable(self, "select_tower_type").bind(GameTower.Type.SLOW),
-		Callable(self, "select_tower_type").bind(GameTower.Type.FLAME),
+		Callable(self, "select_tower_type"),
 		Callable(self, "_on_overlay_primary_pressed"),
 		Callable(self, "_on_overlay_secondary_pressed"),
 		Callable(self, "upgrade_selected_tower"),
@@ -522,7 +510,8 @@ func _sync_message_labels() -> void:
 func _update_selected_tower_hint() -> void:
 	_set_hint(_hud_controller.update_selected_tower_hint(
 		_game_session.selected_tower_type,
-		_game_session.economy_config
+		_game_session.economy_config,
+		_game_session.placement_service.tower_config
 	))
 
 
@@ -532,6 +521,7 @@ func _sync_tower_button_state() -> void:
 		_game_session.selected_tower_type,
 		_game_session.wallet,
 		_game_session.economy_config,
+		_game_session.placement_service.tower_config,
 		Callable(self, "_get_tower_sprite_texture")
 	)
 
@@ -608,7 +598,7 @@ func _select_tower_if_occupied(grid_position: Vector2i) -> bool:
 	selected_tower_grid_position = grid_position
 	selected_tower_id = tower_id
 	_game_session.set_status("%s T%d selected." % [
-		_hud_controller.tower_type_label(tower.tower_type),
+		_hud_controller.tower_type_label(tower.tower_type, _game_session.placement_service.tower_config),
 		tower.tier,
 	])
 	_game_session.set_hint("Upgrade or remove this tower.")
@@ -616,6 +606,21 @@ func _select_tower_if_occupied(grid_position: Vector2i) -> bool:
 	_sync_message_labels()
 	queue_redraw()
 	return true
+
+
+func _select_tower_by_shortcut_index(index: int) -> void:
+	var tower_types := _game_session.placement_service.tower_config.get_tower_types()
+	if index < 0 or index >= tower_types.size():
+		return
+
+	select_tower_type(tower_types[index])
+
+
+func _tower_card_count() -> int:
+	if _game_session == null or _game_session.placement_service == null:
+		return BoardLayoutService.DEFAULT_TOWER_CARD_COUNT
+
+	return _game_session.placement_service.tower_config.get_tower_types().size()
 
 
 func _sync_combat_tower_selection() -> void:

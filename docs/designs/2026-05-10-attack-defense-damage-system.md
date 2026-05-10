@@ -20,7 +20,7 @@ Implemented
 - 让数值系统可以数据化到塔、敌人和波次配置。
 - 避免把攻击类型、防御类型和伤害类型做成难维护的三维倍率表。
 - 支持正抗性和负抗性，允许敌人对某些伤害类型减伤或增伤。
-- 保持第一版实现足够小，可以先接入现有四塔和基础敌人。
+- 保持第一版实现足够小，可以先接入现有基础塔和基础敌人。
 
 ## 非目标
 
@@ -162,7 +162,7 @@ final_damage =
 
 注意：构装的毒素抗性 `0.75` 会让毒素伤害变为 `0.25x`，这是强抗特例。实现时可以先允许，但平衡上要谨慎使用。
 
-### 当前四塔映射
+### 当前五塔映射
 
 | 当前塔 | 武器形态 | 攻击类型 | 伤害类型 | 说明 |
 | --- | --- | --- | --- | --- |
@@ -170,6 +170,7 @@ final_damage =
 | Area | `CANNON` | `SIEGE` | `PHYSICAL` 或 `FIRE` | 溅射清群，打城甲 |
 | Slow | `SPELL` | `MAGIC` | `FROST` | 克重甲，附带减速 |
 | Flame | `SPELL` | `MAGIC` | `FIRE` | 克怕火种族，附带灼烧 DoT |
+| Poison | `CROSSBOW` | `PIERCE` | `POISON` | 穿刺毒素，附带中毒 DoT |
 
 ### 后续塔例子
 
@@ -177,7 +178,6 @@ final_damage =
 | --- | --- | --- | --- | --- |
 | 冰弩塔 | `CROSSBOW` | `PIERCE` | `FROST` | 单体，附带减速 |
 | 火炮塔 | `CANNON` | `SIEGE` | `FIRE` | 溅射，附带燃烧 |
-| 毒针塔 | `CROSSBOW` | `PIERCE` | `POISON` | 单体或多段，中毒 |
 | 雷法塔 | `SPELL` | `MAGIC` | `LIGHTNING` | 连锁 |
 | 奥术塔 | `HEROIC` | `HERO` | `ARCANE` | 后期打精英/Boss |
 | 混乱塔 | `CHAOS` | `CHAOS` | `ARCANE` 或 `SHADOW` | 终局稳定输出 |
@@ -268,7 +268,7 @@ final_damage = 10 * 2.0 * 1.25 = 25
 - `Enemy` 增加 `armor_type`、`race_type` 和 `school_resistance_overrides`。
 - `DamageEvent` 携带 `attack_type` 和 `damage_school`。
 - `EnemyDamageService` 在应用伤害前按攻击/防御/伤害/种族公式计算最终伤害。
-- `TowerConfig` 从 `game/data/towers/towers.json` 给现有四塔提供类型元数据：Single = CROSSBOW/PIERCE/PHYSICAL，Area = CANNON/SIEGE/PHYSICAL，Slow = SPELL/MAGIC/FROST，Flame = SPELL/MAGIC/FIRE。
+- `TowerConfig` 从 `game/data/towers/towers.json` 给现有五塔提供类型元数据：Single = CROSSBOW/PIERCE/PHYSICAL，Area = CANNON/SIEGE/PHYSICAL，Slow = SPELL/MAGIC/FROST，Flame = SPELL/MAGIC/FIRE，Poison = CROSSBOW/PIERCE/POISON。
 - `TowerAttackService` 和 `ProjectileService` 将塔的攻击类型和伤害类型传递到投射物与伤害事件。
 - `check-assets.sh` 已校验塔配置 schema 中的攻击类型、伤害类型、攻击模式和 effect 字段。
 
@@ -306,7 +306,7 @@ final_damage = 10 * 0.35 * 0.25 = 0.875
 
 - `test_damage_affinity_config.gd` 覆盖攻击/防御倍率表、种族抗性、默认值和负抗性。
 - `test_enemy_damage_service.gd` 覆盖最终伤害公式。
-- `test_tower_config.gd` 覆盖现有四塔的武器形态、攻击类型和伤害类型。
+- `test_tower_config.gd` 覆盖现有五塔的武器形态、攻击类型和伤害类型。
 - `test_projectile_service.gd` 覆盖 projectile 携带并传递攻击/伤害类型。
 - 数据化后 `check-assets.sh` 必须继续校验 tower/enemy/race resistance 的枚举值和必填字段；当前已覆盖 tower。
 - Gameplay smoke 后续增加一个克制场景，例如火焰打亡灵、毒素打构装的伤害摘要。

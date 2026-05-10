@@ -32,11 +32,16 @@ func test_default_tower_config_loads_json_tower_definitions() -> void:
 		GameTower.Type.AREA,
 		GameTower.Type.SLOW,
 		GameTower.Type.FLAME,
+		GameTower.Type.POISON,
 	])
 	assert_eq(config.get_tower_id(GameTower.Type.SINGLE_TARGET), "single")
 	assert_eq(config.get_tower_id(GameTower.Type.FLAME), "flame")
+	assert_eq(config.get_display_name(GameTower.Type.POISON), "Poison")
+	assert_eq(config.get_description(GameTower.Type.POISON), "Toxic DoT")
+	assert_eq(config.get_tower_button_node_name(GameTower.Type.POISON), "PoisonTowerButton")
+	assert_eq(config.get_tower_button_specs().size(), 5)
 	assert_true(config.is_visual_test_enabled(GameTower.Type.SLOW))
-	assert_eq(config.get_visual_test_tower_specs().size(), 4)
+	assert_eq(config.get_visual_test_tower_specs().size(), 5)
 
 
 func test_single_target_upgrade_tiers_focus_damage_and_fire_rate() -> void:
@@ -60,7 +65,7 @@ func test_single_target_upgrade_tiers_focus_damage_and_fire_rate() -> void:
 func test_default_upgrade_tiers_always_increase_damage_and_range() -> void:
 	var config := TowerConfig.new()
 
-	for tower_type in [GameTower.Type.SINGLE_TARGET, GameTower.Type.AREA, GameTower.Type.SLOW, GameTower.Type.FLAME]:
+	for tower_type in config.get_tower_types():
 		for tier in range(1, config.get_max_tier(tower_type)):
 			var current := config.get_stats(tower_type, tier)
 			var next := config.get_stats(tower_type, tier + 1)
@@ -205,6 +210,50 @@ func test_flame_upgrade_tiers_improve_damage_range_and_dot_numbers() -> void:
 	assert_eq(tier_three.damage, 11.0)
 	assert_eq(tier_three.range_cells, 2.75)
 	assert_eq(tier_three.status_duration, 4.0)
+	assert_eq(tier_three.status_tick_damage, 4.0)
+
+
+func test_poison_tier_one_stats() -> void:
+	var config := TowerConfig.new()
+
+	var stats := config.get_stats(GameTower.Type.POISON, 1)
+
+	assert_eq(stats.damage, 3.0)
+	assert_eq(stats.range_cells, 2.35)
+	assert_eq(stats.attack_interval, 1.1)
+	assert_eq(stats.weapon_type, DamageTypes.WeaponType.CROSSBOW)
+	assert_eq(stats.attack_type, DamageTypes.AttackType.PIERCE)
+	assert_eq(stats.damage_school, DamageTypes.DamageSchool.POISON)
+	assert_eq(stats.attack_pattern, DamageTypes.AttackPattern.STATUS_DOT)
+	assert_eq(stats.status_type, StatusEvent.StatusType.POISON)
+	assert_eq(stats.status_duration, 4.0)
+	assert_eq(stats.status_tick_interval, 1.0)
+	assert_eq(stats.status_tick_damage, 2.0)
+	assert_eq(stats.status_stack_policy, StatusEffect.StackPolicy.REFRESH)
+	assert_eq(stats.projectile_speed_cells_per_second, 6.4)
+	assert_eq(stats.effects.size(), 2)
+	assert_eq(stats.effects[0].effect_type, TowerEffect.EffectType.DAMAGE_PRIMARY)
+	assert_eq(stats.effects[1].effect_type, TowerEffect.EffectType.APPLY_STATUS)
+	assert_eq(stats.effects[1].status_type, StatusEvent.StatusType.POISON)
+	assert_eq(stats.effects[1].damage_school, DamageTypes.DamageSchool.POISON)
+
+
+func test_poison_upgrade_tiers_improve_damage_range_and_dot_numbers() -> void:
+	var config := TowerConfig.new()
+
+	var tier_two := config.get_stats(GameTower.Type.POISON, 2)
+	var tier_three := config.get_stats(GameTower.Type.POISON, 3)
+
+	assert_eq(config.get_max_tier(GameTower.Type.POISON), 3)
+	assert_eq(config.get_upgrade_cost(GameTower.Type.POISON, 1), 40)
+	assert_eq(config.get_upgrade_cost(GameTower.Type.POISON, 2), 70)
+	assert_eq(tier_two.damage, 5.0)
+	assert_eq(tier_two.range_cells, 2.6)
+	assert_eq(tier_two.status_duration, 4.5)
+	assert_eq(tier_two.status_tick_damage, 3.0)
+	assert_eq(tier_three.damage, 8.0)
+	assert_eq(tier_three.range_cells, 2.9)
+	assert_eq(tier_three.status_duration, 5.0)
 	assert_eq(tier_three.status_tick_damage, 4.0)
 
 

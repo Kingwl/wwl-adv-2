@@ -1,6 +1,6 @@
-# 里程碑计划
+# Milestone 0 - Project Bootstrap
 
-当前项目状态汇总在 `docs/status.md`。这个文件保留为历史 Milestone 0 bootstrap 检查点，不作为第二个实时状态来源。
+这个文件是历史检查点，不作为实时状态来源。当前项目状态见 `../../status.md`，当前路线图见 `../godot-2d-td-merge-roadmap.md`。
 
 ## 当前里程碑
 

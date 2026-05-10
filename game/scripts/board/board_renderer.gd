@@ -86,15 +86,7 @@ func get_tower_sprite_texture(
 	if asset_catalog == null:
 		return null
 
-	match tower_type:
-		GameTower.Type.AREA:
-			return asset_catalog.area_tower_texture
-		GameTower.Type.SLOW:
-			return asset_catalog.slow_tower_texture
-		GameTower.Type.FLAME:
-			return asset_catalog.flame_tower_texture
-
-	return asset_catalog.single_tower_texture
+	return asset_catalog.get_tower_texture(tower_type)
 
 
 func should_draw_tower_placement_preview(
@@ -135,15 +127,7 @@ func get_attack_feedback_texture(tower_type: GameTower.Type, progress: float, as
 	if asset_catalog == null:
 		return null
 
-	match tower_type:
-		GameTower.Type.AREA:
-			return _texture_for_progress(asset_catalog.area_impact_textures, progress)
-		GameTower.Type.SLOW:
-			return _texture_for_progress(asset_catalog.slow_impact_textures, progress)
-		GameTower.Type.FLAME:
-			return _texture_for_progress(asset_catalog.flame_impact_textures, progress)
-
-	return _texture_for_progress(asset_catalog.single_projectile_textures, progress)
+	return _texture_for_progress(asset_catalog.get_impact_textures(tower_type), progress)
 
 
 func get_projectile_texture(projectile: CombatProjectile, asset_catalog: BoardAssetCatalog) -> Texture2D:
@@ -151,7 +135,7 @@ func get_projectile_texture(projectile: CombatProjectile, asset_catalog: BoardAs
 		return null
 
 	var progress := fmod(projectile.elapsed_seconds / 0.24, 1.0)
-	return get_attack_feedback_texture(projectile.tower_type, progress, asset_catalog)
+	return _texture_for_progress(asset_catalog.get_projectile_textures(projectile.tower_type), progress)
 
 
 func projectile_draw_rotation(projectile: CombatProjectile, path_follower: PathFollower, combat_simulation: CombatSimulation) -> float:
@@ -214,6 +198,8 @@ func impact_feedback_color(tower_type: GameTower.Type) -> Color:
 			return Color(0.35, 0.70, 1.0, 1.0)
 		GameTower.Type.FLAME:
 			return Color(1.0, 0.30, 0.08, 1.0)
+		GameTower.Type.POISON:
+			return Color(0.44, 1.0, 0.26, 1.0)
 
 	return Color(1.0, 0.86, 0.25, 1.0)
 
@@ -635,5 +621,7 @@ func _tower_type_fill_color(tower_type: GameTower.Type) -> Color:
 			return Color(0.38, 0.70, 1.0, 1.0)
 		GameTower.Type.FLAME:
 			return Color(1.0, 0.34, 0.08, 1.0)
+		GameTower.Type.POISON:
+			return Color(0.42, 0.95, 0.30, 1.0)
 
 	return Color(0.95, 0.75, 0.30, 1.0)

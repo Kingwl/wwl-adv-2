@@ -11,10 +11,6 @@ var gold_label: Label
 var lives_label: Label
 var wave_label: Label
 var menu_button: Button
-var single_tower_button: Button
-var area_tower_button: Button
-var slow_tower_button: Button
-var flame_tower_button: Button
 var overlay_root: Control
 var overlay_backdrop: ColorRect
 var overlay_panel: Control
@@ -32,6 +28,8 @@ var tower_action_remove_button: Button
 var gold_icon_rect: TextureRect
 var lives_icon_rect: TextureRect
 var wave_icon_rect: TextureRect
+var tower_buttons := {}
+var tower_button_order := []
 var compact_messages := false
 
 
@@ -43,10 +41,6 @@ func bind(
 	lives_label_path: NodePath,
 	wave_label_path: NodePath,
 	menu_button_path: NodePath,
-	single_tower_button_path: NodePath,
-	area_tower_button_path: NodePath,
-	slow_tower_button_path: NodePath,
-	flame_tower_button_path: NodePath,
 	overlay_root_path: NodePath,
 	overlay_backdrop_path: NodePath,
 	overlay_panel_path: NodePath,
@@ -61,10 +55,6 @@ func bind(
 	lives_label = owner.get_node_or_null(lives_label_path) as Label
 	wave_label = owner.get_node_or_null(wave_label_path) as Label
 	menu_button = owner.get_node_or_null(menu_button_path) as Button
-	single_tower_button = owner.get_node_or_null(single_tower_button_path) as Button
-	area_tower_button = owner.get_node_or_null(area_tower_button_path) as Button
-	slow_tower_button = owner.get_node_or_null(slow_tower_button_path) as Button
-	flame_tower_button = owner.get_node_or_null(flame_tower_button_path) as Button
 	overlay_root = owner.get_node_or_null(overlay_root_path) as Control
 	overlay_backdrop = owner.get_node_or_null(overlay_backdrop_path) as ColorRect
 	overlay_panel = owner.get_node_or_null(overlay_panel_path) as Control
@@ -74,7 +64,12 @@ func bind(
 	overlay_secondary_button = owner.get_node_or_null(overlay_secondary_button_path) as Button
 
 
-func ensure_chrome(gold_icon_texture: Texture2D, lives_icon_texture: Texture2D, wave_icon_texture: Texture2D) -> void:
+func ensure_chrome(
+	gold_icon_texture: Texture2D,
+	lives_icon_texture: Texture2D,
+	wave_icon_texture: Texture2D,
+	tower_config: TowerConfig
+) -> void:
 	var hud_parent: Node = null
 	if gold_label != null:
 		hud_parent = gold_label.get_parent()
@@ -87,6 +82,7 @@ func ensure_chrome(gold_icon_texture: Texture2D, lives_icon_texture: Texture2D, 
 	gold_icon_rect = _ensure_hud_icon(hud_parent, "GoldIcon", gold_icon_texture)
 	lives_icon_rect = _ensure_hud_icon(hud_parent, "LivesIcon", lives_icon_texture)
 	wave_icon_rect = _ensure_hud_icon(hud_parent, "WaveIcon", wave_icon_texture)
+	_ensure_tower_buttons(hud_parent, tower_config)
 
 
 func configure(menu_icon_texture: Texture2D) -> void:
@@ -133,7 +129,7 @@ func configure(menu_icon_texture: Texture2D) -> void:
 		menu_button.add_theme_constant_override("icon_max_width", 22)
 		menu_button.add_theme_constant_override("h_separation", 8)
 
-	for button in [single_tower_button, area_tower_button, slow_tower_button, flame_tower_button]:
+	for button in tower_buttons.values():
 		if button == null:
 			continue
 
@@ -168,20 +164,17 @@ func configure(menu_icon_texture: Texture2D) -> void:
 
 func connect_signals(
 	menu_pressed: Callable,
-	single_pressed: Callable,
-	area_pressed: Callable,
-	slow_pressed: Callable,
-	flame_pressed: Callable,
+	tower_pressed: Callable,
 	primary_pressed: Callable,
 	secondary_pressed: Callable,
 	upgrade_pressed: Callable,
 	remove_pressed: Callable
 ) -> void:
 	_connect_button(menu_button, menu_pressed)
-	_connect_button(single_tower_button, single_pressed)
-	_connect_button(area_tower_button, area_pressed)
-	_connect_button(slow_tower_button, slow_pressed)
-	_connect_button(flame_tower_button, flame_pressed)
+	for tower_type in tower_button_order:
+		var button := tower_buttons.get(tower_type, null) as Button
+		if button != null:
+			_connect_button(button, tower_pressed.bind(tower_type))
 	_connect_button(overlay_primary_button, primary_pressed)
 	_connect_button(overlay_secondary_button, secondary_pressed)
 	_connect_button(tower_action_upgrade_button, upgrade_pressed)
@@ -199,10 +192,15 @@ func apply_layout(metrics: BoardLayoutMetrics) -> void:
 	_set_control_rect(lives_label, metrics.lives_label_rect)
 	_set_control_rect(wave_label, metrics.wave_label_rect)
 	_set_control_rect(menu_button, metrics.menu_button_rect)
-	_set_control_rect(single_tower_button, metrics.single_tower_button_rect)
-	_set_control_rect(area_tower_button, metrics.area_tower_button_rect)
-	_set_control_rect(slow_tower_button, metrics.slow_tower_button_rect)
-	_set_control_rect(flame_tower_button, metrics.flame_tower_button_rect)
+	for index in range(tower_button_order.size()):
+		var tower_type = tower_button_order[index]
+		var button := tower_buttons.get(tower_type, null) as Button
+		var button_rect := Rect2()
+		if index < metrics.tower_button_rects.size():
+			button_rect = metrics.tower_button_rects[index] as Rect2
+		_set_control_rect(button, button_rect)
+		if button != null:
+			FrostRtsTheme.apply_tower_button(button, button_rect.size.y < BoardLayoutService.TOWER_CARD_HEIGHT)
 	_set_control_rect(status_label, metrics.status_label_rect)
 	_set_control_rect(hint_label, metrics.hint_label_rect)
 	_set_message_label_alignment(HORIZONTAL_ALIGNMENT_CENTER)
@@ -266,7 +264,7 @@ func show_tower_action_menu(
 	var can_afford := wallet != null and wallet.gold >= upgrade_cost
 	var actions_enabled := flow_state == BoardGameSession.FlowState.PLAYING
 	if tower_action_title != null:
-		tower_action_title.text = "%s T%d" % [tower_type_label(tower.tower_type), tower.tier]
+		tower_action_title.text = "%s T%d" % [tower_type_label(tower.tower_type, tower_config), tower.tier]
 	if tower_action_preview_label != null:
 		tower_action_preview_label.text = tower_config.get_upgrade_preview(tower.tower_type, tower.tier)
 	if tower_action_upgrade_button != null:
@@ -296,12 +294,16 @@ func sync_message_labels(status_text: String, hint_text: String) -> void:
 		hint_label.text = compact_hint_text(hint_text) if compact_messages else hint_text
 
 
-func update_selected_tower_hint(selected_tower_type: GameTower.Type, economy_config: EconomyConfig) -> String:
+func update_selected_tower_hint(
+	selected_tower_type: GameTower.Type,
+	economy_config: EconomyConfig,
+	tower_config: TowerConfig = null
+) -> String:
 	var cost := 0
 	if economy_config != null:
 		cost = economy_config.basic_tower_cost
 	return "%s tower: %dg. Enemies follow the paved road." % [
-		tower_type_label(selected_tower_type),
+		tower_type_label(selected_tower_type, tower_config),
 		cost,
 	]
 
@@ -311,12 +313,20 @@ func sync_tower_button_state(
 	selected_tower_type: GameTower.Type,
 	wallet: Wallet,
 	economy_config: EconomyConfig,
+	tower_config: TowerConfig,
 	get_tower_sprite_texture: Callable
 ) -> void:
-	_set_tower_button_text(single_tower_button, GameTower.Type.SINGLE_TARGET, "Single", flow_state, selected_tower_type, wallet, economy_config, get_tower_sprite_texture)
-	_set_tower_button_text(area_tower_button, GameTower.Type.AREA, "Area", flow_state, selected_tower_type, wallet, economy_config, get_tower_sprite_texture)
-	_set_tower_button_text(slow_tower_button, GameTower.Type.SLOW, "Slow", flow_state, selected_tower_type, wallet, economy_config, get_tower_sprite_texture)
-	_set_tower_button_text(flame_tower_button, GameTower.Type.FLAME, "Flame", flow_state, selected_tower_type, wallet, economy_config, get_tower_sprite_texture)
+	for tower_type in tower_button_order:
+		_set_tower_button_text(
+			tower_buttons.get(tower_type, null) as Button,
+			tower_type,
+			flow_state,
+			selected_tower_type,
+			wallet,
+			economy_config,
+			tower_config,
+			get_tower_sprite_texture
+		)
 
 
 func update_gold_label(wallet: Wallet) -> void:
@@ -378,7 +388,10 @@ func compact_hint_text(text: String) -> String:
 	return text
 
 
-func tower_type_label(tower_type: GameTower.Type) -> String:
+func tower_type_label(tower_type: GameTower.Type, tower_config: TowerConfig = null) -> String:
+	if tower_config != null:
+		return tower_config.get_display_name(tower_type)
+
 	match tower_type:
 		GameTower.Type.AREA:
 			return "Area"
@@ -386,11 +399,16 @@ func tower_type_label(tower_type: GameTower.Type) -> String:
 			return "Slow"
 		GameTower.Type.FLAME:
 			return "Flame"
+		GameTower.Type.POISON:
+			return "Poison"
 
 	return "Single"
 
 
-func tower_type_description(tower_type: GameTower.Type) -> String:
+func tower_type_description(tower_type: GameTower.Type, tower_config: TowerConfig = null) -> String:
+	if tower_config != null:
+		return tower_config.get_description(tower_type)
+
 	match tower_type:
 		GameTower.Type.AREA:
 			return "Splash hit"
@@ -398,6 +416,8 @@ func tower_type_description(tower_type: GameTower.Type) -> String:
 			return "Frost slow"
 		GameTower.Type.FLAME:
 			return "Burn DoT"
+		GameTower.Type.POISON:
+			return "Toxic DoT"
 
 	return "Focus fire"
 
@@ -405,11 +425,11 @@ func tower_type_description(tower_type: GameTower.Type) -> String:
 func _set_tower_button_text(
 	button: Button,
 	tower_type: GameTower.Type,
-	label: String,
 	flow_state: int,
 	selected_tower_type: GameTower.Type,
 	wallet: Wallet,
 	economy_config: EconomyConfig,
+	tower_config: TowerConfig,
 	get_tower_sprite_texture: Callable
 ) -> void:
 	if button == null:
@@ -421,14 +441,16 @@ func _set_tower_button_text(
 
 	var can_afford := wallet != null and wallet.gold >= cost
 	var is_selected := selected_tower_type == tower_type
+	var label := tower_type_label(tower_type, tower_config)
+	var description := tower_type_description(tower_type, tower_config)
 	button.disabled = flow_state != BoardGameSession.FlowState.PLAYING or not can_afford
-	button.tooltip_text = "%s tower: %s, %d gold" % [label, tower_type_description(tower_type), cost]
+	button.tooltip_text = "%s tower: %s, %d gold" % [label, description, cost]
 	button.button_pressed = is_selected
 	button.modulate = _tower_button_modulate(is_selected, button.disabled)
 	button.icon = get_tower_sprite_texture.call(tower_type)
 	button.text = "%s\n%s  %dg" % [
 		label.to_upper(),
-		tower_type_description(tower_type),
+		description,
 		cost,
 	]
 
@@ -462,6 +484,24 @@ func _ensure_hud_panel(parent: Node, node_name: String) -> Panel:
 		parent.move_child(panel, 0)
 
 	return panel
+
+
+func _ensure_tower_buttons(parent: Node, tower_config: TowerConfig) -> void:
+	tower_buttons = {}
+	tower_button_order = []
+	if tower_config == null:
+		return
+
+	for spec in tower_config.get_tower_button_specs():
+		var tower_type: int = spec["tower_type"]
+		var button := parent.get_node_or_null(String(spec["node_name"])) as Button
+		if button == null:
+			button = Button.new()
+			button.name = String(spec["node_name"])
+			parent.add_child(button)
+
+		tower_buttons[tower_type] = button
+		tower_button_order.append(tower_type)
 
 
 func _ensure_hud_icon(parent: Node, node_name: String, texture: Texture2D) -> TextureRect:

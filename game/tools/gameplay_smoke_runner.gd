@@ -79,6 +79,7 @@ func _parse_scenarios() -> Array:
 		"area_tower_splash",
 		"slow_tower_status",
 		"flame_tower_burn",
+		"poison_tower_dot",
 		"tower_visual_catalog",
 		"enemy_leak_life_loss",
 		"wave_clear_victory",
@@ -139,6 +140,8 @@ func _run_scenario(viewport: Dictionary, scenario_name: String) -> Dictionary:
 			await _scenario_slow_tower_status(result, viewport_name, scenario_dir, board_view)
 		"flame_tower_burn":
 			await _scenario_flame_tower_burn(result, viewport_name, scenario_dir, board_view)
+		"poison_tower_dot":
+			await _scenario_poison_tower_dot(result, viewport_name, scenario_dir, board_view)
 		"tower_visual_catalog":
 			await _scenario_tower_visual_catalog(result, viewport_name, scenario_dir, board_view)
 		"enemy_leak_life_loss":
@@ -351,6 +354,56 @@ func _scenario_flame_tower_burn(
 	)
 	_check(result, enemy.health < health_after_hit, "burn DoT deals follow-up damage")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "burn-dot-damage", board_view)
+
+
+func _scenario_poison_tower_dot(
+	result: Dictionary,
+	viewport_name: String,
+	scenario_dir: String,
+	board_view: BoardView
+) -> void:
+	_prepare_manual_combat(board_view)
+	board_view.select_tower_type(GameTower.Type.POISON)
+	board_view.try_place_at_grid(_preferred_tower_cell(board_view))
+	var enemy := Enemy.new(
+		"poison-enemy-1",
+		0.2,
+		80.0,
+		5,
+		DamageTypes.ArmorType.LIGHT,
+		DamageTypes.RaceType.HUMANOID
+	)
+	enemy.path_distance = 2.0
+	board_view.get_session().combat_simulation.enemies = [enemy]
+	await _settle_frames(2)
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "poison-target-in-range", board_view)
+
+	await _advance_gameplay(result, board_view, PROJECTILE_VISUAL_DELAY_SECONDS, CombatSimulation.DEFAULT_FIXED_STEP_SECONDS)
+	_check(result, board_view.get_session().combat_simulation.projectiles.size() >= 1, "poison projectile becomes visible")
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "poison-projectile-visible", board_view)
+
+	var status_events_before := int(result["summary"]["status_events"])
+	await _advance_until(
+		result,
+		board_view,
+		func() -> bool: return int(result["summary"]["status_events"]) > status_events_before,
+		1.5
+	)
+	var poison_seen := int(result["summary"]["status_events"]) > status_events_before
+	var health_after_hit := enemy.health
+	_check(result, poison_seen, "poison projectile emits poison status event")
+	_check(result, enemy.status_effects.size() >= 1, "poison status is active on target")
+	_check(result, health_after_hit < enemy.max_health and not enemy.defeated, "poison target remains alive after initial hit")
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "poison-impact-status", board_view)
+
+	await _advance_until(
+		result,
+		board_view,
+		func() -> bool: return enemy.health < health_after_hit,
+		1.2
+	)
+	_check(result, enemy.health < health_after_hit, "poison DoT deals follow-up damage")
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "poison-dot-damage", board_view)
 
 
 func _scenario_tower_visual_catalog(

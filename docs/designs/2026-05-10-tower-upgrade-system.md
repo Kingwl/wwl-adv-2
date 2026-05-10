@@ -329,7 +329,7 @@ new_cooldown_remaining = min(old_cooldown_remaining, new_tier.attack_interval)
 
 - `test_main_scene.gd` 覆盖操作菜单中的费用、金币不足禁用、升级预览和快捷键 `U`。
 - `check-ui-smoke.sh` 保留塔操作菜单截图，并覆盖升级后 tier badge 和按钮状态。
-- `check-gameplay-smoke.sh` 保留升级/拆除返还 scenario，并在新增火焰、毒针、雷霆后加入代表性升级 checkpoint。
+- `check-gameplay-smoke.sh` 保留升级/拆除返还 scenario，并已加入火焰、毒针代表玩法和逐塔视觉 checkpoint；雷霆塔实现后继续补代表性 checkpoint。
 
 数据化后：
 
@@ -357,5 +357,5 @@ new_cooldown_remaining = min(old_cooldown_remaining, new_tier.attack_interval)
 - 第一版新塔是否全部 3 级，还是弩塔、炮塔、冰霜塔先 3 级，新塔先 2 级。
 - 每种塔的范围成长上限是多少，避免高 tier 后覆盖过度。
 - 每座塔除伤害和范围外，第一版是否只允许一个副数值成长轴。
-- 毒针塔叠层、火焰小范围点燃和雷霆感电都延后到分支或后续机制，具体进入哪个版本仍待决定。
+- 毒针塔第一版只刷新中毒持续时间；毒素叠层、火焰小范围点燃和雷霆感电都延后到分支或后续机制，具体进入哪个版本仍待决定。
 - 未来复杂效果的升级预览是继续扩展结构化 diff，还是允许每个 tier 手写补充文案。

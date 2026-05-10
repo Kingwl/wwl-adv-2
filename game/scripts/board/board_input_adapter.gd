@@ -45,15 +45,13 @@ func _handle_key_shortcut(event: InputEventKey, keyboard_actions: Dictionary) ->
 	if not event.pressed or event.echo:
 		return
 
+	if event.keycode >= KEY_1 and event.keycode <= KEY_9:
+		var action: Callable = keyboard_actions.get("select_tower_by_shortcut_index", Callable())
+		if action.is_valid():
+			action.call(event.keycode - KEY_1)
+		return
+
 	match event.keycode:
-		KEY_1:
-			_call_action(keyboard_actions, "select_single_tower")
-		KEY_2:
-			_call_action(keyboard_actions, "select_area_tower")
-		KEY_3:
-			_call_action(keyboard_actions, "select_slow_tower")
-		KEY_4:
-			_call_action(keyboard_actions, "select_flame_tower")
 		KEY_U:
 			_call_action(keyboard_actions, "upgrade_selected_tower")
 		KEY_X, KEY_DELETE, KEY_BACKSPACE:

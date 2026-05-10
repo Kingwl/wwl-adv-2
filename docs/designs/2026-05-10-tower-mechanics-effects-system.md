@@ -16,11 +16,12 @@ Accepted
 - 塔 tier 已通过 `effects[]` 表达命中效果：`damage_primary`、`splash_damage` 和 `apply_status`。
 - `ProjectileService` 消费 `effects[]` 生成伤害和状态事件，不再按塔类型写死 Area/Slow/Flame 分支。
 - Flame 塔已通过数据文件和通用状态效果施加 `burn`，并有塔 sprite、火焰命中特效和 gameplay smoke 视觉 checkpoint。
+- Poison 塔已通过数据文件和通用状态效果施加 `poison`，并有塔 sprite、毒针投射物、毒素命中特效和 gameplay smoke 视觉 checkpoint。
 - `game/data/towers/towers.json` 和 `game/data/schemas/towers.schema.json` 已纳入 `check-assets.sh`，校验塔枚举、投射物字段、tier 成长和 effect 语义。
 
 尚未实现：
 
-- 毒针塔、雷霆塔等后续新塔接入。
+- 雷霆塔等后续新塔接入。
 - `StatusAppliedEvent`、`StatusTickEvent`、`StatusExpiredEvent` 和 `VisualEvent` 的独立事件对象。
 - 状态图标、独立 DoT tick 视觉表现和 HUD 展示。
 
@@ -297,7 +298,7 @@ VisualEvent
 4. 增加 DoT tick，对 `burn` 和 `poison` 产生伤害事件。
 5. 让 DoT 伤害也经过攻击/防御/伤害类型和种族抗性结算。
 6. 增加轻量 `VisualEvent` 或扩展现有 projectile impact event，给 BoardView 播特效。
-7. 新增火焰塔和毒针塔。
+7. 新增火焰塔和毒针塔。已实现。
 8. 新增雷霆塔连锁攻击模式。
 9. 长期再做光环、地面区域、Buff 和复杂叠层。
 
@@ -308,7 +309,7 @@ VisualEvent
 - `test_enemy_damage_service.gd` 覆盖 DoT 伤害仍走最终伤害公式。
 - `test_combat_simulation.gd` 覆盖固定 tick 中状态移动倍率、DoT 伤害、死亡和奖励。
 - `test_tower_config.gd` 覆盖塔配置里的 `attack_pattern`、JSON 加载、schema 语义和 `effects`。
-- `check-gameplay-smoke.sh` 后续增加火焰或毒素 DoT 的代表 scenario。
+- `check-gameplay-smoke.sh` 覆盖火焰和毒素 DoT 的代表 scenario，并通过逐塔视觉目录覆盖每种塔的塔本体、投射物和命中特效。
 
 ## 替代方案
 

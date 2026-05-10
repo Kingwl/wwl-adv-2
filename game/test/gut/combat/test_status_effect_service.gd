@@ -76,6 +76,34 @@ func test_dot_damage_waits_for_full_interval_and_expires() -> void:
 	assert_eq(enemy.status_effects.size(), 0)
 
 
+func test_poison_dot_damage_keeps_pierce_poison_damage_types() -> void:
+	var service := StatusEffectService.new()
+	var enemy := Enemy.new("enemy-1")
+
+	service.apply_status_events([enemy], [
+		StatusEvent.new(
+			"enemy-1",
+			StatusEvent.StatusType.POISON,
+			2.0,
+			1.0,
+			"tower-poison",
+			1.0,
+			3.0,
+			DamageTypes.AttackType.PIERCE,
+			DamageTypes.DamageSchool.POISON
+		),
+	])
+
+	var result := service.advance_statuses([enemy], 1.0)
+
+	assert_eq(result.damage_events.size(), 1)
+	assert_eq(result.damage_events[0].enemy_id, "enemy-1")
+	assert_eq(result.damage_events[0].source_tower_id, "tower-poison")
+	assert_eq(result.damage_events[0].amount, 3.0)
+	assert_eq(result.damage_events[0].attack_type, DamageTypes.AttackType.PIERCE)
+	assert_eq(result.damage_events[0].damage_school, DamageTypes.DamageSchool.POISON)
+
+
 func test_status_events_for_inactive_enemies_are_ignored() -> void:
 	var service := StatusEffectService.new()
 	var active_enemy := Enemy.new("enemy-active")

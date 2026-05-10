@@ -12,6 +12,7 @@ const SINGLE_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/s
 const AREA_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/area.png"
 const SLOW_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/slow.png"
 const FLAME_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/flame.png"
+const POISON_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/poison.png"
 const BASIC_ENEMY_TEXTURE_PATH := "res://assets/sprites/mmo-v1/enemies/basic_enemy.png"
 const ENEMY_WALK_TEXTURE_PATHS := [
 	"res://assets/sprites/mmo-v1/enemies/enemy_walk_1.png",
@@ -51,6 +52,18 @@ const FLAME_IMPACT_TEXTURE_PATHS := [
 	"res://assets/sprites/mvp-v1/fx/flame_impact_3.png",
 	"res://assets/sprites/mvp-v1/fx/flame_impact_4.png",
 ]
+const POISON_PROJECTILE_TEXTURE_PATHS := [
+	"res://assets/sprites/mvp-v1/fx/poison_projectile_1.png",
+	"res://assets/sprites/mvp-v1/fx/poison_projectile_2.png",
+	"res://assets/sprites/mvp-v1/fx/poison_projectile_3.png",
+	"res://assets/sprites/mvp-v1/fx/poison_projectile_4.png",
+]
+const POISON_IMPACT_TEXTURE_PATHS := [
+	"res://assets/sprites/mvp-v1/fx/poison_impact_1.png",
+	"res://assets/sprites/mvp-v1/fx/poison_impact_2.png",
+	"res://assets/sprites/mvp-v1/fx/poison_impact_3.png",
+	"res://assets/sprites/mvp-v1/fx/poison_impact_4.png",
+]
 
 var level_definition: LevelDefinition
 var map_style_definition: MapStyleDefinition
@@ -64,6 +77,7 @@ var single_tower_texture: Texture2D
 var area_tower_texture: Texture2D
 var slow_tower_texture: Texture2D
 var flame_tower_texture: Texture2D
+var poison_tower_texture: Texture2D
 var basic_enemy_texture: Texture2D
 var enemy_walk_textures: Array = []
 var enemy_death_textures: Array = []
@@ -71,6 +85,11 @@ var single_projectile_textures: Array = []
 var area_impact_textures: Array = []
 var slow_impact_textures: Array = []
 var flame_impact_textures: Array = []
+var poison_projectile_textures: Array = []
+var poison_impact_textures: Array = []
+var tower_textures_by_type := {}
+var projectile_textures_by_type := {}
+var impact_textures_by_type := {}
 
 
 func load_all() -> void:
@@ -110,6 +129,7 @@ func load_sprite_assets() -> void:
 	area_tower_texture = _load_texture(AREA_TOWER_TEXTURE_PATH)
 	slow_tower_texture = _load_texture(SLOW_TOWER_TEXTURE_PATH)
 	flame_tower_texture = _load_texture(FLAME_TOWER_TEXTURE_PATH)
+	poison_tower_texture = _load_texture(POISON_TOWER_TEXTURE_PATH)
 	basic_enemy_texture = _load_texture(BASIC_ENEMY_TEXTURE_PATH)
 	enemy_walk_textures = _load_texture_sequence(ENEMY_WALK_TEXTURE_PATHS)
 	enemy_death_textures = _load_texture_sequence(ENEMY_DEATH_TEXTURE_PATHS)
@@ -117,6 +137,27 @@ func load_sprite_assets() -> void:
 	area_impact_textures = _load_texture_sequence(AREA_IMPACT_TEXTURE_PATHS)
 	slow_impact_textures = _load_texture_sequence(SLOW_IMPACT_TEXTURE_PATHS)
 	flame_impact_textures = _load_texture_sequence(FLAME_IMPACT_TEXTURE_PATHS)
+	poison_projectile_textures = _load_texture_sequence(POISON_PROJECTILE_TEXTURE_PATHS)
+	poison_impact_textures = _load_texture_sequence(POISON_IMPACT_TEXTURE_PATHS)
+	_rebuild_sprite_lookup_tables()
+
+
+func get_tower_texture(tower_type: int) -> Texture2D:
+	return tower_textures_by_type.get(tower_type, single_tower_texture) as Texture2D
+
+
+func get_projectile_textures(tower_type: int) -> Array:
+	var textures := projectile_textures_by_type.get(tower_type, []) as Array
+	if textures != null and not textures.is_empty():
+		return textures
+	return get_impact_textures(tower_type)
+
+
+func get_impact_textures(tower_type: int) -> Array:
+	var textures := impact_textures_by_type.get(tower_type, []) as Array
+	if textures != null:
+		return textures
+	return []
 
 
 func _load_texture(resource_path: String) -> Texture2D:
@@ -134,3 +175,27 @@ func _load_texture_sequence(paths: Array) -> Array:
 			textures.append(texture)
 
 	return textures
+
+
+func _rebuild_sprite_lookup_tables() -> void:
+	tower_textures_by_type = {
+		GameTower.Type.SINGLE_TARGET: single_tower_texture,
+		GameTower.Type.AREA: area_tower_texture,
+		GameTower.Type.SLOW: slow_tower_texture,
+		GameTower.Type.FLAME: flame_tower_texture,
+		GameTower.Type.POISON: poison_tower_texture,
+	}
+	projectile_textures_by_type = {
+		GameTower.Type.SINGLE_TARGET: single_projectile_textures,
+		GameTower.Type.AREA: area_impact_textures,
+		GameTower.Type.SLOW: slow_impact_textures,
+		GameTower.Type.FLAME: flame_impact_textures,
+		GameTower.Type.POISON: poison_projectile_textures,
+	}
+	impact_textures_by_type = {
+		GameTower.Type.SINGLE_TARGET: single_projectile_textures,
+		GameTower.Type.AREA: area_impact_textures,
+		GameTower.Type.SLOW: slow_impact_textures,
+		GameTower.Type.FLAME: flame_impact_textures,
+		GameTower.Type.POISON: poison_impact_textures,
+	}

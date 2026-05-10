@@ -183,10 +183,6 @@ func _check_main_nodes(result: Dictionary, main_scene: Node) -> void:
 		"Hud/Lives",
 		"Hud/Wave",
 		"Hud/MenuButton",
-		"Hud/SingleTowerButton",
-		"Hud/AreaTowerButton",
-		"Hud/SlowTowerButton",
-		"Hud/FlameTowerButton",
 		"Hud/HudFrame",
 		"Hud/TowerDeck",
 		"Hud/TowerActionPanel",
@@ -197,6 +193,7 @@ func _check_main_nodes(result: Dictionary, main_scene: Node) -> void:
 		"Hud/Hint",
 		"Overlay/Screen",
 	]
+	required_nodes.append_array(_tower_button_paths())
 
 	for node_path in required_nodes:
 		_check(result, main_scene.get_node_or_null(node_path) != null, "main node exists: %s" % node_path)
@@ -229,11 +226,8 @@ func _check_layout(result: Dictionary, main_scene: Node, board_view: BoardView, 
 		"Hud/Lives",
 		"Hud/Wave",
 		"Hud/MenuButton",
-		"Hud/SingleTowerButton",
-		"Hud/AreaTowerButton",
-		"Hud/SlowTowerButton",
-		"Hud/FlameTowerButton",
 	]
+	control_paths.append_array(_tower_button_paths())
 
 	for node_path in control_paths:
 		var control := main_scene.get_node_or_null(node_path) as Control
@@ -598,6 +592,13 @@ func _review_crop_specs(main_scene: Node, image_size: Vector2i) -> Array:
 	]
 
 
+func _tower_button_paths() -> Array:
+	var paths := []
+	for spec in TowerConfig.new().get_tower_button_specs():
+		paths.append(String(spec["node_path"]))
+	return paths
+
+
 func _hud_resources_review_spec(main_scene: Node, image_size: Vector2i) -> Dictionary:
 	return {
 		"name": "hud-resources",
@@ -649,29 +650,23 @@ func _tower_deck_review_spec(
 	spec_name: String = "",
 	spec_title: String = ""
 ) -> Dictionary:
+	var tower_button_paths := _tower_button_paths()
+	var deck_paths := ["Hud/TowerDeck"]
+	deck_paths.append_array(tower_button_paths)
+	var controls := [
+		{"path": "Hud/TowerDeck", "kind": "frame"},
+	]
+	var groups := []
+	for path in tower_button_paths:
+		controls.append({"path": path, "kind": "control"})
+		groups.append([path])
+
 	return {
 		"name": spec_name if not spec_name.is_empty() else "tower-deck",
 		"title": spec_title if not spec_title.is_empty() else "Tower deck",
-		"rect": _expanded_control_group_rect(main_scene, [
-			"Hud/TowerDeck",
-			"Hud/SingleTowerButton",
-			"Hud/AreaTowerButton",
-			"Hud/SlowTowerButton",
-			"Hud/FlameTowerButton",
-		], image_size),
-		"controls": [
-			{"path": "Hud/TowerDeck", "kind": "frame"},
-			{"path": "Hud/SingleTowerButton", "kind": "control"},
-			{"path": "Hud/AreaTowerButton", "kind": "control"},
-			{"path": "Hud/SlowTowerButton", "kind": "control"},
-			{"path": "Hud/FlameTowerButton", "kind": "control"},
-		],
-		"groups": [
-			["Hud/SingleTowerButton"],
-			["Hud/AreaTowerButton"],
-			["Hud/SlowTowerButton"],
-			["Hud/FlameTowerButton"],
-		],
+		"rect": _expanded_control_group_rect(main_scene, deck_paths, image_size),
+		"controls": controls,
+		"groups": groups,
 	}
 
 

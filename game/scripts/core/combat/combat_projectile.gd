@@ -103,6 +103,8 @@ static func _default_attack_type(projectile_tower_type: GameTower.Type) -> int:
 			return DamageTypes.AttackType.SIEGE
 		GameTower.Type.SLOW, GameTower.Type.FLAME:
 			return DamageTypes.AttackType.MAGIC
+		GameTower.Type.POISON:
+			return DamageTypes.AttackType.PIERCE
 
 	return DamageTypes.AttackType.PIERCE
 
@@ -113,6 +115,8 @@ static func _default_damage_school(projectile_tower_type: GameTower.Type) -> int
 			return DamageTypes.DamageSchool.FROST
 		GameTower.Type.FLAME:
 			return DamageTypes.DamageSchool.FIRE
+		GameTower.Type.POISON:
+			return DamageTypes.DamageSchool.POISON
 
 	return DamageTypes.DamageSchool.PHYSICAL
 

@@ -6,6 +6,7 @@ enum Type {
 	AREA,
 	SLOW,
 	FLAME,
+	POISON,
 }
 
 var id: String

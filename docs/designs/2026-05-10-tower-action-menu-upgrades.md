@@ -24,11 +24,13 @@ Prototype 需要一个玩家可触达的塔成长模型。两次点击合成在�
 
 ## 方案
 
-`TowerConfig` 从 `game/data/towers/towers.json` 读取 tier 配置，包括伤害、射程、攻速、投射物参数、`effects[]` 和升到下一 tier 的费用。当前四种塔都是 3 级：
+`TowerConfig` 从 `game/data/towers/towers.json` 读取 tier 配置，包括伤害、射程、攻速、投射物参数、`effects[]` 和升到下一 tier 的费用。当前五种塔都是 3 级：
 
 - Single：提升单体伤害、射程和攻击间隔。
 - Area：提升伤害、射程、攻击间隔和溅射半径。
 - Slow：提升伤害、射程、攻击间隔，并增强减速倍率和持续时间。
+- Flame：提升伤害、射程、攻击间隔，并增强灼烧持续时间和 tick 伤害。
+- Poison：提升伤害、射程、攻击间隔，并增强中毒持续时间和 tick 伤害。
 
 `TowerPlacementService` 承接升级和拆除：
 

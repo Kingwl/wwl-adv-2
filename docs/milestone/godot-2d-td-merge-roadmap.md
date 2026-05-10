@@ -1,5 +1,9 @@
 # Godot 2D 塔防合成 Roadmap
 
+最近更新：2026-05-11。
+
+更新规则：这个文件只在 milestone 范围、完成标准、顺序或 checklist 完成状态变化时更新；当前项目状态、最近验证和下一步优先级以 `../status.md` 为准。
+
 ## Milestone 0: Project Bootstrap
 
 目标：建立可运行、可测试的 GDScript 工程骨架。

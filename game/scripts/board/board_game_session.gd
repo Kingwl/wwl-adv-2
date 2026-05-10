@@ -58,7 +58,7 @@ func initialize_board() -> void:
 	economy_config = EconomyConfig.new()
 	wallet = Wallet.new(economy_config.initial_gold)
 	placement_service = TowerPlacementService.new(board, wallet, economy_config)
-	selected_tower_type = GameTower.Type.SINGLE_TARGET
+	selected_tower_type = _default_tower_type()
 	placement_service.basic_tower_type = selected_tower_type
 	kill_reward_service = KillRewardService.new(wallet)
 	wave_reward_service = WaveRewardService.new(wallet)
@@ -359,12 +359,18 @@ func set_hint(text: String) -> void:
 
 
 func _tower_type_label(tower_type: GameTower.Type) -> String:
-	match tower_type:
-		GameTower.Type.AREA:
-			return "Area"
-		GameTower.Type.SLOW:
-			return "Slow"
-		GameTower.Type.FLAME:
-			return "Flame"
+	if placement_service != null and placement_service.tower_config != null:
+		return placement_service.tower_config.get_display_name(tower_type)
 
 	return "Single"
+
+
+func _default_tower_type() -> GameTower.Type:
+	if placement_service == null or placement_service.tower_config == null:
+		return GameTower.Type.SINGLE_TARGET
+
+	var tower_types := placement_service.tower_config.get_tower_types()
+	if tower_types.is_empty():
+		return GameTower.Type.SINGLE_TARGET
+
+	return tower_types[0] as GameTower.Type

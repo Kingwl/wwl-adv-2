@@ -177,3 +177,27 @@ func test_flame_tower_emits_fire_projectile_with_burn_status() -> void:
 	assert_eq(result.projectile.effects.size(), 2)
 	assert_eq(result.projectile.effects[1].status_type, StatusEvent.StatusType.BURN)
 	assert_eq(tower.cooldown_remaining, 1.25)
+
+
+func test_poison_tower_emits_pierce_projectile_with_poison_status() -> void:
+	var tower := GameTower.new("tower-a", GameTower.Type.POISON, 1, Vector2i(0, 0))
+	var enemy := Enemy.new("enemy-1", 1.0)
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0)])
+	var service := TowerAttackService.new()
+
+	var result := service.tick_tower(tower, 0.1, [enemy], follower)
+
+	assert_true(result.succeeded)
+	assert_not_null(result.projectile)
+	assert_eq(result.projectile.damage, 3.0)
+	assert_eq(result.projectile.attack_type, DamageTypes.AttackType.PIERCE)
+	assert_eq(result.projectile.damage_school, DamageTypes.DamageSchool.POISON)
+	assert_eq(result.projectile.tower_type, GameTower.Type.POISON)
+	assert_eq(result.projectile.status_type, StatusEvent.StatusType.POISON)
+	assert_eq(result.projectile.status_duration, 4.0)
+	assert_eq(result.projectile.status_tick_interval, 1.0)
+	assert_eq(result.projectile.status_tick_damage, 2.0)
+	assert_eq(result.projectile.speed_cells_per_second, 6.4)
+	assert_eq(result.projectile.effects.size(), 2)
+	assert_eq(result.projectile.effects[1].status_type, StatusEvent.StatusType.POISON)
+	assert_eq(tower.cooldown_remaining, 1.1)

@@ -256,6 +256,82 @@
           ]
         }
       ]
+    },
+    {
+      "id": "poison",
+      "type": "POISON",
+      "display_name": "Poison",
+      "description": "Toxic DoT",
+      "weapon_type": "CROSSBOW",
+      "attack_type": "PIERCE",
+      "damage_school": "POISON",
+      "attack_pattern": "STATUS_DOT",
+      "visual_test_enabled": true,
+      "projectile": {
+        "speed_cells_per_second": 6.4,
+        "hit_radius_cells": 0.12
+      },
+      "tiers": [
+        {
+          "tier": 1,
+          "damage": 3.0,
+          "range_cells": 2.35,
+          "attack_interval": 1.1,
+          "upgrade_cost": 40,
+          "effects": [
+            {
+              "type": "damage_primary"
+            },
+            {
+              "type": "apply_status",
+              "status_type": "POISON",
+              "duration": 4.0,
+              "tick_interval": 1.0,
+              "tick_damage": 2.0,
+              "stack_policy": "REFRESH"
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "damage": 5.0,
+          "range_cells": 2.6,
+          "attack_interval": 1.05,
+          "upgrade_cost": 70,
+          "effects": [
+            {
+              "type": "damage_primary"
+            },
+            {
+              "type": "apply_status",
+              "status_type": "POISON",
+              "duration": 4.5,
+              "tick_interval": 1.0,
+              "tick_damage": 3.0,
+              "stack_policy": "REFRESH"
+            }
+          ]
+        },
+        {
+          "tier": 3,
+          "damage": 8.0,
+          "range_cells": 2.9,
+          "attack_interval": 1.0,
+          "effects": [
+            {
+              "type": "damage_primary"
+            },
+            {
+              "type": "apply_status",
+              "status_type": "POISON",
+              "duration": 5.0,
+              "tick_interval": 1.0,
+              "tick_damage": 4.0,
+              "stack_policy": "REFRESH"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

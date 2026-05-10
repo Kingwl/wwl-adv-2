@@ -185,6 +185,48 @@ func test_flame_projectile_emits_burn_status_on_hit() -> void:
 	assert_eq(result.status_events[0].stack_policy, StatusEffect.StackPolicy.REFRESH)
 
 
+func test_poison_projectile_emits_poison_status_on_hit() -> void:
+	var service := ProjectileService.new()
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0)])
+	var enemy := Enemy.new("enemy-1", 1.0, 20.0, 5)
+	var projectile := CombatProjectile.new(
+		"projectile-1",
+		"tower-a",
+		"enemy-1",
+		GameTower.Type.POISON,
+		Vector2(0.5, 0.75),
+		10.0,
+		0.05,
+		3.0,
+		0.0,
+		1.0,
+		0.0,
+		CombatProjectile.DEFAULT_MAX_LIFETIME_SECONDS,
+		DamageTypes.AttackType.PIERCE,
+		DamageTypes.DamageSchool.POISON,
+		StatusEvent.StatusType.POISON,
+		4.0,
+		1.0,
+		1.0,
+		2.0,
+		StatusEffect.StackPolicy.REFRESH
+	)
+
+	var result := service.advance([projectile], [enemy], follower, 0.1)
+
+	assert_eq(result.damage_events.size(), 1)
+	assert_eq(result.damage_events[0].attack_type, DamageTypes.AttackType.PIERCE)
+	assert_eq(result.damage_events[0].damage_school, DamageTypes.DamageSchool.POISON)
+	assert_eq(result.status_events.size(), 1)
+	assert_eq(result.status_events[0].enemy_id, "enemy-1")
+	assert_eq(result.status_events[0].status_type, StatusEvent.StatusType.POISON)
+	assert_eq(result.status_events[0].duration, 4.0)
+	assert_eq(result.status_events[0].tick_interval, 1.0)
+	assert_eq(result.status_events[0].tick_damage, 2.0)
+	assert_eq(result.status_events[0].attack_type, DamageTypes.AttackType.PIERCE)
+	assert_eq(result.status_events[0].damage_school, DamageTypes.DamageSchool.POISON)
+
+
 func test_projectile_consumes_apply_status_effect_without_status_tower_type() -> void:
 	var service := ProjectileService.new()
 	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0)])
