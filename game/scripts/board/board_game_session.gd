@@ -24,6 +24,8 @@ var wave_spawner: WaveSpawner
 var path_follower: PathFollower
 var level_definition: LevelDefinition
 var last_placement_result: PlacementResult
+var last_upgrade_result: TowerUpgradeResult
+var last_removal_result: TowerRemovalResult
 var last_tick_results: Array
 var last_reward_transaction_results: Array
 var last_wave_reward_transaction_results: Array
@@ -61,6 +63,8 @@ func initialize_board() -> void:
 	kill_reward_service = KillRewardService.new(wallet)
 	wave_reward_service = WaveRewardService.new(wallet)
 	last_placement_result = null
+	last_upgrade_result = null
+	last_removal_result = null
 	last_tick_results = []
 	last_reward_transaction_results = []
 	last_wave_reward_transaction_results = []
@@ -135,6 +139,48 @@ func try_place_at_grid(grid_position: Vector2i) -> TowerPlacementResult:
 		set_status("Cannot place at (%d, %d): %s" % [grid_position.x, grid_position.y, result.placement_result.message])
 	else:
 		set_status("Cannot place at (%d, %d): %s" % [grid_position.x, grid_position.y, result.message])
+
+	return result
+
+
+func try_upgrade_tower(tower_id: String) -> TowerUpgradeResult:
+	var result := placement_service.try_upgrade_tower(tower_id)
+	last_upgrade_result = result
+
+	if result.succeeded:
+		sync_combat_towers()
+		var tower := get_tower_by_id(tower_id)
+		set_status("Upgraded %s to %s T%d for %d gold." % [
+			tower_id,
+			_tower_type_label(tower.tower_type),
+			result.new_tier,
+			result.cost,
+		])
+	elif result.failure_reason == TowerUpgradeResult.FailureReason.MAX_TIER:
+		set_status("%s is fully upgraded." % tower_id)
+	elif result.transaction_result != null:
+		set_status("Cannot upgrade %s: %s" % [tower_id, result.transaction_result.message])
+	else:
+		set_status("Cannot upgrade %s: %s" % [tower_id, result.message])
+
+	return result
+
+
+func try_remove_tower_at(grid_position: Vector2i) -> TowerRemovalResult:
+	var result := placement_service.try_remove_tower_at(grid_position)
+	last_removal_result = result
+
+	if result.succeeded:
+		sync_combat_towers()
+		set_status("Removed %s for %d gold refund." % [result.tower_id, result.refund_amount])
+	elif result.removal_result != null:
+		set_status("Cannot remove at (%d, %d): %s" % [
+			grid_position.x,
+			grid_position.y,
+			result.removal_result.message,
+		])
+	else:
+		set_status("Cannot remove %s: %s" % [result.tower_id, result.message])
 
 	return result
 
@@ -310,3 +356,13 @@ func set_status(text: String) -> void:
 
 func set_hint(text: String) -> void:
 	hint_text = text
+
+
+func _tower_type_label(tower_type: GameTower.Type) -> String:
+	match tower_type:
+		GameTower.Type.AREA:
+			return "Area"
+		GameTower.Type.SLOW:
+			return "Slow"
+
+	return "Single"

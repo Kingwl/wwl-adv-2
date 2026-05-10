@@ -1,6 +1,10 @@
 class_name BoardHudController
 extends RefCounted
 
+const TOWER_ACTION_MENU_SIZE := Vector2(184.0, 132.0)
+const TOWER_ACTION_MENU_MARGIN := 10.0
+const TOWER_ACTION_BUTTON_HEIGHT := 30.0
+
 var status_label: Label
 var hint_label: Label
 var gold_label: Label
@@ -19,6 +23,10 @@ var overlay_primary_button: Button
 var overlay_secondary_button: Button
 var hud_frame_panel: Panel
 var tower_deck_panel: Panel
+var tower_action_panel: Panel
+var tower_action_title: Label
+var tower_action_upgrade_button: Button
+var tower_action_remove_button: Button
 var gold_icon_rect: TextureRect
 var lives_icon_rect: TextureRect
 var wave_icon_rect: TextureRect
@@ -71,6 +79,7 @@ func ensure_chrome(gold_icon_texture: Texture2D, lives_icon_texture: Texture2D, 
 
 	hud_frame_panel = _ensure_hud_panel(hud_parent, "HudFrame")
 	tower_deck_panel = _ensure_hud_panel(hud_parent, "TowerDeck")
+	tower_action_panel = _ensure_tower_action_panel(hud_parent)
 	gold_icon_rect = _ensure_hud_icon(hud_parent, "GoldIcon", gold_icon_texture)
 	lives_icon_rect = _ensure_hud_icon(hud_parent, "LivesIcon", lives_icon_texture)
 	wave_icon_rect = _ensure_hud_icon(hud_parent, "WaveIcon", wave_icon_texture)
@@ -131,6 +140,21 @@ func configure(menu_icon_texture: Texture2D) -> void:
 	for button in [overlay_primary_button, overlay_secondary_button]:
 		FrostRtsTheme.apply_button(button, 15)
 
+	FrostRtsTheme.apply_hud_panel(tower_action_panel)
+	FrostRtsTheme.apply_body_label(tower_action_title, 13, FrostRtsTheme.TEXT)
+	if tower_action_title != null:
+		tower_action_title.clip_text = true
+		tower_action_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tower_action_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+	for button in [tower_action_upgrade_button, tower_action_remove_button]:
+		if button == null:
+			continue
+
+		FrostRtsTheme.apply_button(button, 12)
+		button.clip_text = true
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+
 
 func connect_signals(
 	menu_pressed: Callable,
@@ -138,7 +162,9 @@ func connect_signals(
 	area_pressed: Callable,
 	slow_pressed: Callable,
 	primary_pressed: Callable,
-	secondary_pressed: Callable
+	secondary_pressed: Callable,
+	upgrade_pressed: Callable,
+	remove_pressed: Callable
 ) -> void:
 	_connect_button(menu_button, menu_pressed)
 	_connect_button(single_tower_button, single_pressed)
@@ -146,6 +172,8 @@ func connect_signals(
 	_connect_button(slow_tower_button, slow_pressed)
 	_connect_button(overlay_primary_button, primary_pressed)
 	_connect_button(overlay_secondary_button, secondary_pressed)
+	_connect_button(tower_action_upgrade_button, upgrade_pressed)
+	_connect_button(tower_action_remove_button, remove_pressed)
 
 
 func apply_layout(metrics: BoardLayoutMetrics) -> void:
@@ -204,6 +232,41 @@ func show_overlay(title: String, message: String, primary_text: String, secondar
 func set_overlay_visible(should_be_visible: bool) -> void:
 	if overlay_root != null:
 		overlay_root.visible = should_be_visible
+
+
+func show_tower_action_menu(
+	tower: GameTower,
+	tower_config: TowerConfig,
+	wallet: Wallet,
+	refund_amount: int,
+	menu_rect: Rect2,
+	flow_state: int
+) -> void:
+	if tower_action_panel == null or tower == null or tower_config == null:
+		return
+
+	_set_control_rect(tower_action_panel, menu_rect)
+	_layout_tower_action_menu(menu_rect.size)
+
+	var can_upgrade := tower_config.can_upgrade(tower)
+	var upgrade_cost := tower_config.get_upgrade_cost(tower.tower_type, tower.tier) if can_upgrade else 0
+	var can_afford := wallet != null and wallet.gold >= upgrade_cost
+	var actions_enabled := flow_state == BoardGameSession.FlowState.PLAYING
+	if tower_action_title != null:
+		tower_action_title.text = "%s T%d" % [tower_type_label(tower.tower_type), tower.tier]
+	if tower_action_upgrade_button != null:
+		tower_action_upgrade_button.text = "Upgrade %dg" % upgrade_cost if can_upgrade else "Max tier"
+		tower_action_upgrade_button.disabled = not actions_enabled or not can_upgrade or not can_afford
+	if tower_action_remove_button != null:
+		tower_action_remove_button.text = "Remove +%dg" % refund_amount
+		tower_action_remove_button.disabled = not actions_enabled
+
+	tower_action_panel.visible = true
+
+
+func hide_tower_action_menu() -> void:
+	if tower_action_panel != null:
+		tower_action_panel.visible = false
 
 
 func sync_menu_button_state(flow_state: int) -> void:
@@ -271,8 +334,14 @@ func compact_status_text(text: String) -> String:
 		if text.find("Need") != -1:
 			return text.get_slice(": ", 1)
 		return "Cannot place."
+	if text.begins_with("Cannot upgrade"):
+		return text.get_slice(": ", 1)
 	if text.begins_with("Placed"):
 		return "Tower placed."
+	if text.begins_with("Upgraded"):
+		return "Tower upgraded."
+	if text.begins_with("Removed"):
+		return "+%s refund" % text.get_slice(" for ", 1).get_slice(" gold", 0)
 	if text.begins_with("Click a green"):
 		return "Place on green tile."
 	if text.begins_with("Select a tower"):
@@ -387,6 +456,55 @@ func _ensure_hud_icon(parent: Node, node_name: String, texture: Texture2D) -> Te
 
 	icon.texture = texture
 	return icon
+
+
+func _ensure_tower_action_panel(parent: Node) -> Panel:
+	var panel := parent.get_node_or_null("TowerActionPanel") as Panel
+	if panel == null:
+		panel = Panel.new()
+		panel.name = "TowerActionPanel"
+		panel.mouse_filter = Control.MOUSE_FILTER_STOP
+		panel.visible = false
+		parent.add_child(panel)
+
+	tower_action_title = _ensure_action_label(panel, "Title")
+	tower_action_upgrade_button = _ensure_action_button(panel, "UpgradeButton")
+	tower_action_remove_button = _ensure_action_button(panel, "RemoveButton")
+	return panel
+
+
+func _ensure_action_label(parent: Node, node_name: String) -> Label:
+	var label := parent.get_node_or_null(node_name) as Label
+	if label == null:
+		label = Label.new()
+		label.name = node_name
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		parent.add_child(label)
+
+	return label
+
+
+func _ensure_action_button(parent: Node, node_name: String) -> Button:
+	var button := parent.get_node_or_null(node_name) as Button
+	if button == null:
+		button = Button.new()
+		button.name = node_name
+		parent.add_child(button)
+
+	return button
+
+
+func _layout_tower_action_menu(menu_size: Vector2) -> void:
+	var inner_left := TOWER_ACTION_MENU_MARGIN
+	var inner_width := menu_size.x - TOWER_ACTION_MENU_MARGIN * 2.0
+	var title_height := 22.0
+	var button_gap := 8.0
+	var first_button_top := 44.0
+	var second_button_top := first_button_top + TOWER_ACTION_BUTTON_HEIGHT + button_gap
+
+	_set_control_rect(tower_action_title, Rect2(inner_left, 8.0, inner_width, title_height))
+	_set_control_rect(tower_action_upgrade_button, Rect2(inner_left, first_button_top, inner_width, TOWER_ACTION_BUTTON_HEIGHT))
+	_set_control_rect(tower_action_remove_button, Rect2(inner_left, second_button_top, inner_width, TOWER_ACTION_BUTTON_HEIGHT))
 
 
 func _set_control_rect(control: Control, rect: Rect2) -> void:

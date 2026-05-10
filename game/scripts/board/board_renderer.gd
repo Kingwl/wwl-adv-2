@@ -26,6 +26,7 @@ func draw(
 	board_origin: Vector2,
 	cell_size: float,
 	hover_grid_position: Vector2i,
+	selected_tower_grid_position: Vector2i,
 	last_placement_result: PlacementResult
 ) -> void:
 	if canvas == null or board == null:
@@ -52,6 +53,7 @@ func draw(
 				grid_position,
 				slot,
 				hover_grid_position,
+				selected_tower_grid_position,
 				last_placement_result
 			)
 
@@ -259,6 +261,7 @@ func _draw_slot(
 	grid_position: Vector2i,
 	slot: BoardSlot,
 	hover_grid_position: Vector2i,
+	selected_tower_grid_position: Vector2i,
 	last_placement_result: PlacementResult
 ) -> void:
 	var rect := Rect2(
@@ -269,6 +272,9 @@ func _draw_slot(
 
 	if slot.occupant_id != "":
 		_draw_tower_sprite(canvas, placement_service, combat_simulation, path_follower, visual_state, asset_catalog, cell_size, slot.occupant_id, inner_rect)
+
+	if grid_position == selected_tower_grid_position:
+		canvas.draw_rect(inner_rect.grow(-2), Color(1.0, 0.78, 0.22, 1.0), false, 4.0)
 
 	if grid_position == hover_grid_position:
 		var outline_color := Color(0.85, 0.95, 1.0, 1.0)
@@ -306,10 +312,12 @@ func _draw_tower_sprite(
 			cell_size * TOWER_SPRITE_SIZE_FACTOR,
 			tower_draw_rotation(tower, combat_simulation, path_follower)
 		)
+		_draw_tower_tier_badge(canvas, tower, slot_rect, cell_size)
 		return
 
 	canvas.draw_circle(slot_rect.get_center(), cell_size * 0.25, _tower_fill_color(placement_service, combat_simulation, tower_id))
 	canvas.draw_circle(slot_rect.get_center(), cell_size * 0.14, Color(0.15, 0.25, 0.32, 1.0))
+	_draw_tower_tier_badge(canvas, tower, slot_rect, cell_size)
 
 
 func _draw_enemies(
@@ -449,6 +457,24 @@ func _draw_attack_feedbacks(canvas: CanvasItem, visual_state: BoardVisualState, 
 			var color: Color = feedback.get("color", impact_feedback_color(tower_type))
 			color.a = alpha
 			canvas.draw_circle(center, cell_size * (0.18 + progress * 0.18), color)
+
+
+func _draw_tower_tier_badge(canvas: CanvasItem, tower: GameTower, slot_rect: Rect2, cell_size: float) -> void:
+	if tower == null or tower.tier <= 1:
+		return
+
+	var radius := maxf(7.0, cell_size * 0.12)
+	var center := slot_rect.position + Vector2(slot_rect.size.x - radius * 1.1, radius * 1.1)
+	canvas.draw_circle(center, radius + 2.0, Color(0.03, 0.025, 0.018, 0.92))
+	canvas.draw_circle(center, radius, Color(1.0, 0.78, 0.24, 1.0))
+
+	var pip_radius := maxf(1.5, radius * 0.18)
+	for index in range(tower.tier):
+		var offset := Vector2(
+			(float(index) - float(tower.tier - 1) * 0.5) * pip_radius * 2.4,
+			0.0
+		)
+		canvas.draw_circle(center + offset, pip_radius, Color(0.10, 0.07, 0.03, 1.0))
 
 
 func _board_rect(board: Board, board_origin: Vector2, cell_size: float) -> Rect2:

@@ -4,6 +4,7 @@ extends RefCounted
 enum Reason {
 	STARTING_GOLD,
 	PLACE_TOWER,
+	UPGRADE_TOWER,
 	KILL_ENEMY,
 	CLEAR_WAVE,
 	REFUND,

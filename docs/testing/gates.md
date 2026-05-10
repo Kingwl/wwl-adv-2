@@ -75,7 +75,7 @@ cd game
 ./tools/check-gameplay-smoke.sh
 ```
 
-这个命令按确定性 gameplay scenario 运行 Godot native runtime。它不替代核心 GUT；它把放塔、Single 击杀奖励、Area 溅射、Slow 状态、漏怪扣生命、清波胜利和生命归零失败这些代表路径连到机器可读 trace，并为每个 checkpoint 输出整屏截图、board crop 和状态 overlay。产物位于 `ci-artifacts/gameplay-smoke/native/`。
+这个命令按确定性 gameplay scenario 运行 Godot native runtime。它不替代核心 GUT；它把放塔、升级/拆除返还、Single 击杀奖励、Area 溅射、Slow 状态、漏怪扣生命、清波胜利和生命归零失败这些代表路径连到机器可读 trace，并为每个 checkpoint 输出整屏截图、board crop 和状态 overlay。产物位于 `ci-artifacts/gameplay-smoke/native/`。
 
 仅文档改动：
 

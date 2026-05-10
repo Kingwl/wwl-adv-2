@@ -71,6 +71,7 @@ func _parse_viewports() -> Array:
 func _parse_scenarios() -> Array:
 	var default_scenarios := [
 		"place_single_tower",
+		"tower_upgrade_remove_refund",
 		"single_tower_kill_reward",
 		"area_tower_splash",
 		"slow_tower_status",
@@ -123,6 +124,8 @@ func _run_scenario(viewport: Dictionary, scenario_name: String) -> Dictionary:
 	match scenario_name:
 		"place_single_tower":
 			await _scenario_place_single_tower(result, viewport_name, scenario_dir, board_view)
+		"tower_upgrade_remove_refund":
+			await _scenario_tower_upgrade_remove_refund(result, viewport_name, scenario_dir, board_view)
 		"single_tower_kill_reward":
 			await _scenario_single_tower_kill_reward(result, viewport_name, scenario_dir, board_view)
 		"area_tower_splash":
@@ -159,6 +162,51 @@ func _scenario_place_single_tower(
 	_check(result, board_view.get_session().wallet.gold == gold_before - board_view.get_session().economy_config.basic_tower_cost, "placement spends gold")
 	_check(result, board_view.get_session().placement_service.tower_registry.get_all_towers().size() == 1, "one tower registered")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "after-place", board_view)
+
+
+func _scenario_tower_upgrade_remove_refund(
+	result: Dictionary,
+	viewport_name: String,
+	scenario_dir: String,
+	board_view: BoardView
+) -> void:
+	_prepare_manual_combat(board_view)
+	var tower_cell := _preferred_tower_cell(board_view)
+	board_view.select_tower_type(GameTower.Type.SINGLE_TARGET)
+	var placement := board_view.try_place_at_grid(tower_cell)
+	await _settle_frames(2)
+	_check(result, placement.succeeded, "tower placement succeeds before upgrade")
+
+	var selected := board_view.select_tower_at_grid(tower_cell)
+	await _settle_frames(2)
+	_check(result, selected, "placed tower can be selected")
+	_check(result, board_view.get_selected_tower_id() == placement.tower_id, "selected tower id matches placement")
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "menu-open", board_view)
+
+	var upgrade := board_view.upgrade_selected_tower()
+	var session := board_view.get_session()
+	var tower := session.placement_service.tower_registry.get_tower(placement.tower_id)
+	await _settle_frames(2)
+	_check(result, upgrade != null and upgrade.succeeded, "selected tower upgrade succeeds")
+	_check(result, tower != null and tower.tier == 2, "upgraded tower reaches tier two")
+	_check(result, session.wallet.gold == 35, "upgrade spends configured gold after placement")
+	_check(result, session.combat_simulation.towers.size() == 1, "combat towers stay synced after upgrade")
+	if session.combat_simulation.towers.size() == 1:
+		_check(result, (session.combat_simulation.towers[0] as GameTower).tier == 2, "combat tower uses upgraded tier")
+	_check(result, session.status_text == "Upgraded tower-1 to Single T2 for 40 gold.", "upgrade status text is visible")
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "after-upgrade", board_view)
+
+	var removal := board_view.remove_selected_tower()
+	await _settle_frames(2)
+	_check(result, removal != null and removal.succeeded, "selected tower removal succeeds")
+	_check(result, removal != null and removal.refund_amount == 32, "removal refunds half of invested gold")
+	_check(result, session.wallet.gold == 67, "wallet includes removal refund")
+	_check(result, session.board.get_occupant_id(tower_cell).is_empty(), "board slot is empty after removal")
+	_check(result, session.placement_service.tower_registry.get_all_towers().is_empty(), "registry is empty after removal")
+	_check(result, session.combat_simulation.towers.is_empty(), "combat towers stay synced after removal")
+	_check(result, board_view.get_selected_tower_id().is_empty(), "selection clears after removal")
+	_check(result, session.status_text == "Removed tower-1 for 32 gold refund.", "removal status text is visible")
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "after-remove", board_view)
 
 
 func _scenario_single_tower_kill_reward(

@@ -20,8 +20,9 @@
 | `scene-ui-architecture.md` | Implemented | `game/scripts/board/`, `game/scenes/`, `docs/ui/` | 当前场景、UI、BoardView adapter 边界和验证入口。 |
 | `map-and-asset-pipeline.md` | Accepted | `game/data/levels/`, `game/data/map_styles/`, assets, `BoardAssetCatalog`, `BoardMapRenderer` | 当前地图/资产流水线和仍未实现的多关卡、数据引用校验。 |
 | `test-and-harness-architecture.md` | Implemented | `game/tools/`, `.github/workflows/`, `ci-artifacts/` | 当前测试层级、agent preflight、CI artifacts 和日志报告。 |
+| `2026-05-10-tower-action-menu-upgrades.md` | Implemented | `TowerConfig`, `TowerPlacementService`, `BoardView`, `BoardHudController`, `ui_smoke_runner.gd` | Prototype 塔成长模型：点击塔弹出 Upgrade/Remove 菜单，直接升级和 50% 拆除返还。 |
 | `2026-05-09-road-ribbon-rendering-and-asset-contract.md` | Accepted | `game/tools/generate-road-guide.py`, map assets | 契约已部分验证；确定性道路材质生成仍是未来工作。 |
-| `2026-05-09-merge-ui-integration.md` | Deferred | Core merge only: `game/scripts/core/towers/tower_merge_service.gd` | 被“合成还是直接升级”决策阻塞。 |
+| `2026-05-09-merge-ui-integration.md` | Superseded | Core merge only: `game/scripts/core/towers/tower_merge_service.gd` | Prototype 已选择直接升级菜单；此文档仅保留为未来随机召唤/合成经济参考。 |
 
 ## 归档索引
 

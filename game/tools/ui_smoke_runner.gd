@@ -17,6 +17,7 @@ enum ReviewSpecKind {
 	MAIN,
 	START,
 	TOWER_DECK,
+	TOWER_ACTION,
 	STATUS_HINT,
 	OVERLAY,
 }
@@ -186,6 +187,10 @@ func _check_main_nodes(result: Dictionary, main_scene: Node) -> void:
 		"Hud/SlowTowerButton",
 		"Hud/HudFrame",
 		"Hud/TowerDeck",
+		"Hud/TowerActionPanel",
+		"Hud/TowerActionPanel/Title",
+		"Hud/TowerActionPanel/UpgradeButton",
+		"Hud/TowerActionPanel/RemoveButton",
 		"Hud/Status",
 		"Hud/Hint",
 		"Overlay/Screen",
@@ -266,10 +271,29 @@ func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: Bo
 	if gold_label != null:
 		_check(result, gold_label.text == "Gold: %d" % expected_gold, "gold label updates after placement")
 
+	_click_grid_cell(board_view, buildable_cell)
+	await _settle_frames(2)
+	var action_panel := main_scene.get_node_or_null("Hud/TowerActionPanel") as Panel
+	var action_title := main_scene.get_node_or_null("Hud/TowerActionPanel/Title") as Label
+	var upgrade_button := main_scene.get_node_or_null("Hud/TowerActionPanel/UpgradeButton") as Button
+	var remove_button := main_scene.get_node_or_null("Hud/TowerActionPanel/RemoveButton") as Button
+	_check(result, action_panel != null and action_panel.visible, "tower action menu opens from placed tower")
+	if action_panel != null:
+		_check_control_rect(result, action_panel, Vector2i(get_root().size), "tower action menu in viewport")
+	if action_title != null:
+		_check(result, action_title.text == "Single T1", "tower action title")
+	if upgrade_button != null:
+		_check(result, upgrade_button.text == "Upgrade 40g", "tower action upgrade text")
+		_check(result, not upgrade_button.disabled, "tower action upgrade enabled")
+	if remove_button != null:
+		_check(result, remove_button.text == "Remove +12g", "tower action remove text")
+		_check(result, not remove_button.disabled, "tower action remove enabled")
+
 	var path := board_view.get_session().get_default_path()
 	if path.size() > 0:
 		_click_grid_cell(board_view, path[0])
 		await _settle_frames(2)
+		_check(result, action_panel == null or not action_panel.visible, "invalid path click closes tower action menu")
 		_check(result, board_view.get_session().wallet.gold == expected_gold, "invalid path placement does not spend gold")
 		if board_view.get_session().last_placement_result != null:
 			_check(result, not board_view.get_session().last_placement_result.succeeded, "invalid path placement is rejected")
@@ -289,6 +313,16 @@ func _find_buildable_cell(board_view: BoardView) -> Vector2i:
 			var position := Vector2i(x, y)
 			var slot := board_view.get_session().board.get_slot(position)
 			if slot.slot_type == BoardSlot.Type.BUILDABLE and slot.is_empty():
+				return position
+	return Vector2i(-1, -1)
+
+
+func _find_occupied_cell(board_view: BoardView) -> Vector2i:
+	for y in range(board_view.get_session().board.height):
+		for x in range(board_view.get_session().board.width):
+			var position := Vector2i(x, y)
+			var slot := board_view.get_session().board.get_slot(position)
+			if not slot.occupant_id.is_empty():
 				return position
 	return Vector2i(-1, -1)
 
@@ -365,6 +399,22 @@ func _capture_visual_state_artifacts(
 	main_scene: Node,
 	board_view: BoardView
 ) -> void:
+	var occupied_cell := _find_occupied_cell(board_view)
+	if occupied_cell != Vector2i(-1, -1):
+		board_view.select_tower_at_grid(occupied_cell)
+		await _settle_frames(2)
+		await _capture_current_review_artifacts(
+			result,
+			viewport_name,
+			main_scene,
+			"tower action menu",
+			ReviewSpecKind.TOWER_ACTION,
+			"tower-action-menu",
+			"Tower action menu"
+		)
+		board_view.clear_tower_action_menu()
+		await _settle_frames(1)
+
 	board_view.select_tower_type(GameTower.Type.AREA)
 	await _settle_frames(2)
 	await _capture_current_review_artifacts(
@@ -496,6 +546,8 @@ func _review_specs_for_kind(
 			return [_start_screen_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.TOWER_DECK:
 			return [_tower_deck_review_spec(scene, image_size, spec_name, spec_title)]
+		ReviewSpecKind.TOWER_ACTION:
+			return [_tower_action_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.STATUS_HINT:
 			return [_status_hint_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.OVERLAY:
@@ -582,6 +634,34 @@ func _tower_deck_review_spec(
 			["Hud/SingleTowerButton"],
 			["Hud/AreaTowerButton"],
 			["Hud/SlowTowerButton"],
+		],
+	}
+
+
+func _tower_action_review_spec(
+	main_scene: Node,
+	image_size: Vector2i,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> Dictionary:
+	return {
+		"name": spec_name if not spec_name.is_empty() else "tower-action-menu",
+		"title": spec_title if not spec_title.is_empty() else "Tower action menu",
+		"rect": _expanded_control_group_rect(main_scene, [
+			"Hud/TowerActionPanel",
+			"Hud/TowerActionPanel/Title",
+			"Hud/TowerActionPanel/UpgradeButton",
+			"Hud/TowerActionPanel/RemoveButton",
+		], image_size),
+		"controls": [
+			{"path": "Hud/TowerActionPanel", "kind": "frame"},
+			{"path": "Hud/TowerActionPanel/Title", "kind": "control"},
+			{"path": "Hud/TowerActionPanel/UpgradeButton", "kind": "control"},
+			{"path": "Hud/TowerActionPanel/RemoveButton", "kind": "control"},
+		],
+		"groups": [
+			["Hud/TowerActionPanel/Title"],
+			["Hud/TowerActionPanel/UpgradeButton", "Hud/TowerActionPanel/RemoveButton"],
 		],
 	}
 
@@ -962,6 +1042,7 @@ func _render_markdown_report() -> String:
 	lines.append("- [ ] Status/hint: text is readable, centered in its intended area, and not clipped or crowded by Menu, board, or tower deck.")
 	lines.append("- [ ] Status variants: reward and leak messages remain readable in compact and desktop layouts.")
 	lines.append("- [ ] Tower deck: cards fit the viewport, selected/disabled states are readable, and card text does not collide with icons or frames.")
+	lines.append("- [ ] Tower action menu: floating Upgrade/Remove panel appears beside the selected tower, stays in viewport, and its button text is readable.")
 	lines.append("- [ ] Start and overlays: start, pause, victory, and defeat panels keep title, message, and buttons centered and readable.")
 	lines.append("- [ ] Compact viewports: top HUD, board, and bottom/side tower deck remain visually separated.")
 	lines.append("")

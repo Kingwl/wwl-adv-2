@@ -2,9 +2,9 @@
 
 ## 当前里程碑
 
-里程碑 1：Playable Prototype 收尾；里程碑 2：MVP 准备已开始。
+里程碑 1：Playable Prototype 已完成；里程碑 2：MVP 准备已开始。
 
-可玩循环基本已经具备。Prototype 目前剩下的主要决策是塔成长模型：场景级合成交互，还是直接升级。
+可玩循环已经具备：玩家可以开始、放塔、升级、拆除、战斗、获胜或失败。MVP 目前主线是内容数据化和更长可演示局。
 
 ## 已验证命令
 
@@ -28,11 +28,11 @@ cd game
 
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
-- GUT 套件：135 个测试通过，761 个断言。
+- GUT 套件：159 个测试通过，979 个断言。
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
-- Native gameplay smoke：代表性 gameplay scenario 通过，trace、截图和 overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
+- Native gameplay smoke：8 个代表性 gameplay scenario 通过，trace、截图和 overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
 - Web export smoke：Web 导出页面通过本地 HTTP + headless browser 检查，报告和截图位于 `ci-artifacts/web-smoke/`。
-- Structural lint：Tree-sitter GDScript 解析 83 个文件，0 个 error，0 个 warning。
+- Structural lint：Tree-sitter GDScript 解析 85 个文件，0 个 error，0 个 warning。
 - Agent preflight fast：运行 `check-all.sh`，生成 Godot/GUT 结构化日志报告，不运行 native smoke。
 - Agent preflight full：运行 fast preflight、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
 - 已知警告：GUT 退出时有来自场景/资源清理的 ObjectDB leaked instances 警告，记录为 TD-007。
@@ -50,11 +50,15 @@ cd game
 - 玩家生命、胜利和失败状态。
 - 开始场景、主场景、暂停菜单、重开、返回开始、胜利和失败流程。
 - 三种基础塔：Single、Area 和 Slow。
+- 点击已放置塔会显示右上角浮动操作菜单，支持直接升级和拆除。
+- 支持键盘快捷键：`1`/`2`/`3` 选择塔，`U` 升级选中塔，`X`/`Delete`/`Backspace` 拆除选中塔，`Esc` 优先关闭塔操作菜单再进入暂停。
+- 塔升级效果按塔类型和 tier 配置化；Single 提升单体伤害/射程/攻速，Area 提升溅射和伤害，Slow 增强减速和持续时间。
+- 拆除塔会返还 50% 建造和升级累计投入。
 - 三种基础塔在棋盘和塔卡中使用生成的圆形塔顶 sprite，运行时按当前目标方向旋转。
 - 当前地图的数据驱动关卡路径/style 加载。
 - 生成的城市防御地图、道路 guide 产物、UI frame、塔 sprite、敌人 sprite 和攻击特效。
-- 覆盖 start-to-main 可玩性、响应式视口、单塔放置和截图产物的 native UI smoke。
-- 覆盖放塔、Single 击杀奖励、Area 溅射、Slow 状态、漏怪、胜利和失败的 native gameplay smoke。
+- 覆盖 start-to-main 可玩性、响应式视口、单塔放置、塔操作菜单和截图产物的 native UI smoke。
+- 覆盖放塔、升级/拆除返还、Single 击杀奖励、Area 溅射、Slow 状态、漏怪、胜利和失败的 native gameplay smoke。
 - Tree-sitter structural lint，覆盖 core/scene/render 边界、BoardView 资产加载边界和结构回膨胀 warning 报告。
 - `BoardAssetCatalog`，集中管理主棋盘场景的关卡、map style、HUD 图标、塔/敌人 sprite 和特效贴图加载。
 - `BoardGameSession`，集中管理一局游戏的棋盘、钱包、放置服务、战斗模拟、波次、奖励和胜负 flow；场景测试和 smoke runner 通过 `BoardView.get_session()` 明确访问。
@@ -70,7 +74,6 @@ cd game
 
 ## 开放决策
 
-- Prototype 塔成长模型：合成交互还是直接升级。
 - 塔、敌人和波次配置的数据形状。
 - 更长波次前，是否需要清理已完成/已击败但仍保留的敌人。
 - 生成的 road ribbon 资产是否应变成确定性的运行时/编辑器生成内容。
@@ -96,6 +99,6 @@ cd game
 
 ## 下一步最值得做的工作
 
-1. 决定并实现 Prototype 塔成长模型。
-2. 将塔、敌人和波次定义推进到数据文件。
+1. 将塔、敌人和波次定义推进到数据文件。
+2. 增加 MVP 敌人类型和至少 8 波可演示内容。
 3. 保持 `game/tools/check-all.sh` 作为默认验证命令。

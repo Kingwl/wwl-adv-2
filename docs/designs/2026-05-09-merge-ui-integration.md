@@ -2,7 +2,7 @@
 
 ## 状态
 
-Deferred。保留为参考方案，直到 Prototype 成长模型决策完成。
+Superseded。Prototype 已选择 `2026-05-10-tower-action-menu-upgrades.md` 中的点击塔操作菜单和直接升级方案；本文档仅保留为未来随机召唤或合成经济参考。
 
 ## 背景
 
@@ -10,7 +10,7 @@ Deferred。保留为参考方案，直到 Prototype 成长模型决策完成。
 
 `BoardView` 当前把每次左键点击都当成放置尝试。点击已占用格会返回 occupied-placement 失败，因此核心合成规则无法从可玩场景触达。
 
-截至 2026-05-09，具体实现暂停，因为项目尚未决定 Prototype 的塔成长模型是合成还是直接升级。
+截至 2026-05-10，Prototype 已选择直接升级菜单；以下方案不再是当前里程碑的实现计划。
 
 ## 目标
 

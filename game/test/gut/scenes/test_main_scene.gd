@@ -41,6 +41,10 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	assert_not_null(scene.get_node_or_null("Hud/SlowTowerButton"))
 	assert_not_null(scene.get_node_or_null("Hud/HudFrame"))
 	assert_not_null(scene.get_node_or_null("Hud/TowerDeck"))
+	assert_not_null(scene.get_node_or_null("Hud/TowerActionPanel"))
+	assert_not_null(scene.get_node_or_null("Hud/TowerActionPanel/Title"))
+	assert_not_null(scene.get_node_or_null("Hud/TowerActionPanel/UpgradeButton"))
+	assert_not_null(scene.get_node_or_null("Hud/TowerActionPanel/RemoveButton"))
 	assert_not_null(scene.get_node_or_null("Hud/GoldIcon"))
 	assert_not_null(scene.get_node_or_null("Hud/LivesIcon"))
 	assert_not_null(scene.get_node_or_null("Hud/WaveIcon"))
@@ -52,6 +56,7 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	assert_not_null(scene.get_node_or_null("Overlay/Screen/Panel/SecondaryButton"))
 
 	var single_button: Button = scene.get_node("Hud/SingleTowerButton") as Button
+	var tower_action_panel: Panel = scene.get_node("Hud/TowerActionPanel") as Panel
 	var status_label: Label = scene.get_node("Hud/Status") as Label
 	var hint_label: Label = scene.get_node("Hud/Hint") as Label
 	var gold_label: Label = scene.get_node("Hud/Gold") as Label
@@ -78,6 +83,7 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	assert_true(single_button.get_theme_stylebox("pressed") is StyleBoxTexture)
 	assert_true((scene.get_node("Hud/HudFrame") as Panel).get_theme_stylebox("panel") is StyleBoxTexture)
 	assert_true(single_button.button_pressed)
+	assert_false(tower_action_panel.visible)
 
 
 func test_board_view_loads_board_sprite_assets() -> void:
@@ -480,6 +486,41 @@ func test_board_view_selects_slow_tower_for_next_placement() -> void:
 	assert_true(slow_button.button_pressed)
 
 
+func test_board_view_number_keys_select_tower_type_shortcuts() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var single_button: Button = scene.get_node("Hud/SingleTowerButton") as Button
+	var area_button: Button = scene.get_node("Hud/AreaTowerButton") as Button
+	var slow_button: Button = scene.get_node("Hud/SlowTowerButton") as Button
+	var hint_label: Label = scene.get_node("Hud/Hint") as Label
+	board_view.start_game()
+
+	board_view._unhandled_input(_key_event(KEY_2))
+
+	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.AREA)
+	assert_true(area_button.button_pressed)
+	assert_false(single_button.button_pressed)
+	assert_eq(hint_label.text, "Area tower: 25g. Enemies follow the paved road.")
+
+	board_view._unhandled_input(_key_event(KEY_3))
+
+	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.SLOW)
+	assert_true(slow_button.button_pressed)
+	assert_false(area_button.button_pressed)
+	assert_eq(hint_label.text, "Slow tower: 25g. Enemies follow the paved road.")
+
+	board_view._unhandled_input(_key_event(KEY_1))
+
+	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.SINGLE_TARGET)
+	assert_true(single_button.button_pressed)
+	assert_false(slow_button.button_pressed)
+	assert_eq(hint_label.text, "Single tower: 25g. Enemies follow the paved road.")
+
+
 func test_board_view_rejects_path_and_occupied_grid_positions() -> void:
 	var packed_scene: PackedScene = load("res://scenes/main.tscn")
 	var scene: Node = packed_scene.instantiate()
@@ -532,6 +573,197 @@ func test_board_view_rejects_placement_when_gold_is_insufficient() -> void:
 	assert_true(single_button.disabled)
 	assert_true(area_button.disabled)
 	assert_true(slow_button.disabled)
+
+
+func test_board_view_clicking_placed_tower_shows_action_menu_near_tower() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var tower_action_panel: Panel = scene.get_node("Hud/TowerActionPanel") as Panel
+	var title: Label = scene.get_node("Hud/TowerActionPanel/Title") as Label
+	var upgrade_button: Button = scene.get_node("Hud/TowerActionPanel/UpgradeButton") as Button
+	var remove_button: Button = scene.get_node("Hud/TowerActionPanel/RemoveButton") as Button
+	var status_label: Label = scene.get_node("Hud/Status") as Label
+	var hint_label: Label = scene.get_node("Hud/Hint") as Label
+	board_view.start_game()
+	assert_true(board_view.try_place_at_grid(Vector2i(2, 2)).succeeded)
+
+	board_view.handle_board_click(Vector2i(2, 2))
+
+	var tower_rect := board_view.grid_to_local_rect(Vector2i(2, 2))
+	assert_true(tower_action_panel.visible)
+	assert_eq(board_view.get_selected_tower_id(), "tower-1")
+	assert_eq(board_view.get_selected_tower_grid_position(), Vector2i(2, 2))
+	assert_eq(title.text, "Single T1")
+	assert_eq(upgrade_button.text, "Upgrade 40g")
+	assert_false(upgrade_button.disabled)
+	assert_eq(remove_button.text, "Remove +12g")
+	assert_false(remove_button.disabled)
+	assert_eq(status_label.text, "Single T1 selected.")
+	assert_eq(hint_label.text, "Upgrade or remove this tower.")
+	assert_true(tower_action_panel.global_position.x >= board_view.to_global(tower_rect.position).x)
+	assert_true(tower_action_panel.global_position.y < board_view.to_global(tower_rect.end).y)
+
+
+func test_board_view_upgrade_button_uses_configured_cost_and_keeps_menu_synced() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var tower_action_panel: Panel = scene.get_node("Hud/TowerActionPanel") as Panel
+	var title: Label = scene.get_node("Hud/TowerActionPanel/Title") as Label
+	var upgrade_button: Button = scene.get_node("Hud/TowerActionPanel/UpgradeButton") as Button
+	var gold_label: Label = scene.get_node("Hud/Gold") as Label
+	var status_label: Label = scene.get_node("Hud/Status") as Label
+	board_view.start_game()
+	assert_true(board_view.try_place_at_grid(Vector2i(2, 2)).succeeded)
+	board_view.handle_board_click(Vector2i(2, 2))
+
+	upgrade_button.pressed.emit()
+	var tower := board_view.get_session().placement_service.tower_registry.get_tower("tower-1")
+	var stats := board_view.get_session().placement_service.tower_config.get_stats(tower.tower_type, tower.tier)
+
+	assert_true(tower_action_panel.visible)
+	assert_eq(tower.tier, 2)
+	assert_eq(tower.invested_gold, 65)
+	assert_eq(board_view.get_session().wallet.gold, 35)
+	assert_eq(gold_label.text, "Gold: 35")
+	assert_eq(status_label.text, "Upgraded tower-1 to Single T2 for 40 gold.")
+	assert_eq(title.text, "Single T2")
+	assert_eq(upgrade_button.text, "Upgrade 70g")
+	assert_true(upgrade_button.disabled)
+	assert_eq(board_view.get_session().combat_simulation.towers[0].tier, 2)
+	assert_eq(stats.damage, 18.0)
+	assert_eq(stats.attack_interval, 0.9)
+
+
+func test_board_view_remove_button_refunds_half_total_investment_and_hides_menu() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var tower_action_panel: Panel = scene.get_node("Hud/TowerActionPanel") as Panel
+	var upgrade_button: Button = scene.get_node("Hud/TowerActionPanel/UpgradeButton") as Button
+	var remove_button: Button = scene.get_node("Hud/TowerActionPanel/RemoveButton") as Button
+	var gold_label: Label = scene.get_node("Hud/Gold") as Label
+	var status_label: Label = scene.get_node("Hud/Status") as Label
+	board_view.start_game()
+	assert_true(board_view.try_place_at_grid(Vector2i(2, 2)).succeeded)
+	board_view.handle_board_click(Vector2i(2, 2))
+	upgrade_button.pressed.emit()
+
+	remove_button.pressed.emit()
+
+	assert_false(tower_action_panel.visible)
+	assert_eq(board_view.get_selected_tower_id(), "")
+	assert_eq(board_view.get_session().wallet.gold, 67)
+	assert_eq(gold_label.text, "Gold: 67")
+	assert_eq(status_label.text, "Removed tower-1 for 32 gold refund.")
+	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(2, 2)), "")
+	assert_null(board_view.get_session().placement_service.tower_registry.get_tower("tower-1"))
+	assert_eq(board_view.get_session().combat_simulation.towers.size(), 0)
+
+
+func test_board_view_action_menu_closes_on_empty_click_and_pause() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var tower_action_panel: Panel = scene.get_node("Hud/TowerActionPanel") as Panel
+	var hint_label: Label = scene.get_node("Hud/Hint") as Label
+	board_view.start_game()
+	assert_true(board_view.try_place_at_grid(Vector2i(2, 2)).succeeded)
+	board_view.handle_board_click(Vector2i(2, 2))
+	assert_true(tower_action_panel.visible)
+
+	board_view.handle_board_click(Vector2i(3, 2))
+
+	assert_false(tower_action_panel.visible)
+	assert_eq(board_view.get_selected_tower_id(), "")
+	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(3, 2)), "tower-2")
+	assert_eq(hint_label.text, "Single tower: 25g. Enemies follow the paved road.")
+
+	board_view.handle_board_click(Vector2i(2, 2))
+	assert_true(tower_action_panel.visible)
+	board_view.open_pause_menu()
+
+	assert_false(tower_action_panel.visible)
+	assert_eq(board_view.get_selected_tower_id(), "")
+
+
+func test_board_view_keyboard_shortcuts_upgrade_and_remove_selected_tower() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var tower_action_panel: Panel = scene.get_node("Hud/TowerActionPanel") as Panel
+	var gold_label: Label = scene.get_node("Hud/Gold") as Label
+	var status_label: Label = scene.get_node("Hud/Status") as Label
+	board_view.start_game()
+	assert_true(board_view.try_place_at_grid(Vector2i(2, 2)).succeeded)
+	assert_true(board_view.select_tower_at_grid(Vector2i(2, 2)))
+
+	board_view._unhandled_input(_key_event(KEY_U))
+	var tower := board_view.get_session().placement_service.tower_registry.get_tower("tower-1")
+
+	assert_true(tower_action_panel.visible)
+	assert_eq(tower.tier, 2)
+	assert_eq(board_view.get_session().wallet.gold, 35)
+	assert_eq(gold_label.text, "Gold: 35")
+	assert_eq(status_label.text, "Upgraded tower-1 to Single T2 for 40 gold.")
+
+	board_view._unhandled_input(_key_event(KEY_X))
+
+	assert_false(tower_action_panel.visible)
+	assert_eq(board_view.get_selected_tower_id(), "")
+	assert_eq(board_view.get_session().wallet.gold, 67)
+	assert_eq(gold_label.text, "Gold: 67")
+	assert_eq(status_label.text, "Removed tower-1 for 32 gold refund.")
+	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(2, 2)), "")
+	assert_eq(board_view.get_session().combat_simulation.towers.size(), 0)
+
+
+func test_board_view_escape_closes_action_menu_before_opening_pause() -> void:
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var tower_action_panel: Panel = scene.get_node("Hud/TowerActionPanel") as Panel
+	var overlay: Control = scene.get_node("Overlay/Screen") as Control
+	board_view.start_game()
+	assert_true(board_view.try_place_at_grid(Vector2i(2, 2)).succeeded)
+	assert_true(board_view.select_tower_at_grid(Vector2i(2, 2)))
+	assert_true(tower_action_panel.visible)
+
+	board_view._unhandled_input(_key_event(KEY_ESCAPE))
+
+	assert_false(tower_action_panel.visible)
+	assert_eq(board_view.get_selected_tower_id(), "")
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.PLAYING)
+	assert_false(overlay.visible)
+
+	board_view._unhandled_input(_key_event(KEY_ESCAPE))
+
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.MENU)
+	assert_true(overlay.visible)
+
+	board_view._unhandled_input(_key_event(KEY_ESCAPE))
+
+	assert_eq(board_view.get_session().flow_state, BoardGameSession.FlowState.PLAYING)
+	assert_false(overlay.visible)
 
 
 func test_board_view_combat_simulation_rewards_gold_when_enemy_is_defeated() -> void:
@@ -756,3 +988,10 @@ func test_board_view_shows_victory_when_all_waves_are_cleared() -> void:
 	assert_true(secondary_button.visible)
 	assert_eq(secondary_button.text, "Start")
 	assert_eq(status_label.text, "Victory. All waves cleared.")
+
+
+func _key_event(keycode: Key) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.keycode = keycode
+	event.pressed = true
+	return event

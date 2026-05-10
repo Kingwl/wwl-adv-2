@@ -50,6 +50,21 @@ func test_single_target_tower_emits_one_damage_event() -> void:
 	assert_eq(tower.cooldown_remaining, 1.0)
 
 
+func test_upgraded_single_target_uses_tier_stats_for_projectile_and_cooldown() -> void:
+	var tower := GameTower.new("tower-a", GameTower.Type.SINGLE_TARGET, 2, Vector2i(0, 0))
+	var enemy := Enemy.new("enemy-1", 1.0)
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0)])
+	var service := TowerAttackService.new()
+
+	var result := service.tick_tower(tower, 0.1, [enemy], follower)
+
+	assert_true(result.succeeded)
+	assert_not_null(result.projectile)
+	assert_eq(result.projectile.damage, 18.0)
+	assert_eq(result.projectile.splash_radius_cells, 0.0)
+	assert_eq(tower.cooldown_remaining, 0.9)
+
+
 func test_area_tower_damages_enemies_near_target() -> void:
 	var tower := GameTower.new("tower-a", GameTower.Type.AREA, 1, Vector2i(1, 0))
 	var target_enemy := Enemy.new("enemy-target", 1.0)
@@ -74,6 +89,22 @@ func test_area_tower_damages_enemies_near_target() -> void:
 	assert_eq(tower.cooldown_remaining, 1.4)
 
 
+func test_upgraded_area_tower_uses_tier_stats_for_splash_projectile() -> void:
+	var tower := GameTower.new("tower-a", GameTower.Type.AREA, 3, Vector2i(1, 0))
+	var enemy := Enemy.new("enemy-1", 1.0)
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)])
+	var service := TowerAttackService.new()
+	enemy.path_distance = 1.5
+
+	var result := service.tick_tower(tower, 0.1, [enemy], follower)
+
+	assert_true(result.succeeded)
+	assert_not_null(result.projectile)
+	assert_eq(result.projectile.damage, 16.0)
+	assert_eq(result.projectile.splash_radius_cells, 1.15)
+	assert_eq(tower.cooldown_remaining, 1.2)
+
+
 func test_slow_tower_emits_damage_and_slow_status_events() -> void:
 	var tower := GameTower.new("tower-a", GameTower.Type.SLOW, 1, Vector2i(0, 0))
 	var enemy := Enemy.new("enemy-1", 1.0)
@@ -91,3 +122,19 @@ func test_slow_tower_emits_damage_and_slow_status_events() -> void:
 	assert_eq(result.projectile.slow_multiplier, 0.6)
 	assert_eq(result.projectile.tower_type, GameTower.Type.SLOW)
 	assert_eq(tower.cooldown_remaining, 1.2)
+
+
+func test_upgraded_slow_tower_uses_tier_stats_for_status_projectile() -> void:
+	var tower := GameTower.new("tower-a", GameTower.Type.SLOW, 3, Vector2i(0, 0))
+	var enemy := Enemy.new("enemy-1", 1.0)
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0)])
+	var service := TowerAttackService.new()
+
+	var result := service.tick_tower(tower, 0.1, [enemy], follower)
+
+	assert_true(result.succeeded)
+	assert_not_null(result.projectile)
+	assert_eq(result.projectile.damage, 8.0)
+	assert_eq(result.projectile.slow_duration, 2.5)
+	assert_eq(result.projectile.slow_multiplier, 0.5)
+	assert_eq(tower.cooldown_remaining, 1.1)

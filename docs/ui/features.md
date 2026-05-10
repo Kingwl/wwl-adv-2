@@ -23,9 +23,10 @@ UI 改动后先检查本文档是否需要更新。以下情况必须更新：
 | 主棋盘和地图 | `game/scenes/main.tscn`, `game/scripts/board/board_view.gd` | 显示 baked 地图、道路、可建造区域、已放置塔、敌人、敌人血条和攻击反馈。 | hover、非法点击、Single/Area/Slow 圆形塔顶按当前目标旋转、投射物/命中特效、敌人行走/死亡动画。 | GUT 覆盖加载、地图资源、圆形塔顶资源、坐标映射、放置、敌人/攻击反馈和塔朝向；native smoke 覆盖一次放塔和整屏截图；gameplay smoke 输出放塔和 Single 攻击 board crop。 |
 | HUD 资源栏 | `Hud/Gold`, `Hud/Lives`, `Hud/Wave`, `GoldIcon`, `LivesIcon`, `WaveIcon` | 显示金币、生命和波次。 | 放塔扣金币、击杀/清波奖励加金币、漏怪扣生命、波次显示保持可读。 | GUT 覆盖文本和状态更新；native smoke 生成 `*-hud-resources.png` 和 `*-hud-resources-overlay.png`。 |
 | Status / Hint | `Hud/Status`, `Hud/Hint` | 显示当前操作提示、选中塔信息、放置失败原因、奖励、漏怪、胜负状态。 | 紧凑布局使用短文本和 ellipsis，避免覆盖棋盘或塔卡。 | GUT 覆盖移动横屏和方形布局边界；native smoke 生成 `*-status-hint.png`、`*-status-reward.png`、`*-status-leak.png` 及对应 overlay。 |
-| 塔选择卡组 | `Hud/SingleTowerButton`, `Hud/AreaTowerButton`, `Hud/SlowTowerButton`, `Hud/TowerDeck` | 选择下一次放置的塔：Single、Area、Slow；显示图标、描述和费用。 | 选中态、暂停禁用、金币不足禁用、tooltip、桌面/移动横屏侧栏、方形视口底栏。 | GUT 覆盖选择、禁用、费用、响应式布局；native smoke 生成默认、Area 选中、Slow 选中、金币不足禁用四组 tower deck crop/overlay。 |
-| 放置输入 | `BoardView._unhandled_input`, `try_place_at_grid` | 点击棋盘格放置当前选中塔。 | 成功放置、路径格拒绝、占用格拒绝、金币不足拒绝，并更新 status 和金币。 | GUT 覆盖成功/失败路径；native smoke 通过真实场景输入放置一座塔并尝试非法道路格。 |
-| 暂停菜单 | `Hud/MenuButton`, `Overlay/Screen` | `Menu` 按钮或 `ui_cancel` 打开暂停 overlay；`Resume` 继续；`Start` 返回开始界面。 | 暂停时塔卡和菜单状态同步，overlay 显示 `Paused`。 | GUT 覆盖暂停、恢复和返回开始；native smoke 生成 `*-pause-overlay.png` 和 `*-pause-overlay-overlay.png`。 |
+| 塔选择卡组 | `Hud/SingleTowerButton`, `Hud/AreaTowerButton`, `Hud/SlowTowerButton`, `Hud/TowerDeck` | 选择下一次放置的塔：Single、Area、Slow；显示图标、描述和费用；`1`/`2`/`3` 可快速切塔。 | 选中态、暂停禁用、金币不足禁用、tooltip、桌面/移动横屏侧栏、方形视口底栏。 | GUT 覆盖按钮选择、数字键选择、禁用、费用、响应式布局；native smoke 生成默认、Area 选中、Slow 选中、金币不足禁用四组 tower deck crop/overlay。 |
+| 塔操作菜单 | `Hud/TowerActionPanel`, `UpgradeButton`, `RemoveButton` | 点击已放置塔后，在塔右上方显示浮动菜单；可升级或拆除该塔；`U` 可升级，`X`/`Delete`/`Backspace` 可拆除。 | 菜单 clamp 到视口内；升级按钮显示配置化费用并在金币不足或满级时禁用；拆除按钮显示 50% 累计投入返还；`Esc` 优先关闭该菜单。 | GUT 覆盖点击塔弹出菜单、快捷键升级/拆除、关闭和 HUD 同步；native smoke 生成 `*-tower-action-menu.png` 和 overlay。 |
+| 放置输入 | `BoardView._unhandled_input`, `handle_board_click`, `try_place_at_grid` | 点击空可建造格放置当前选中塔；点击已放置塔进入塔操作菜单；键盘快捷键路由选塔和塔操作。 | 成功放置、路径格拒绝、金币不足拒绝、已放置塔选择，并更新 status、hint 和金币。 | GUT 覆盖成功/失败路径、已放置塔点击路由、数字键选塔、快捷键升级/拆除和 Esc 关闭菜单；native smoke 通过真实场景输入放置一座塔、打开塔操作菜单并尝试非法道路格。 |
+| 暂停菜单 | `Hud/MenuButton`, `Overlay/Screen` | `Menu` 按钮或 `ui_cancel`/`Esc` 打开暂停 overlay；`Resume` 继续；`Start` 返回开始界面。 | 暂停时塔卡和菜单状态同步，overlay 显示 `Paused`；塔操作菜单打开时 `Esc` 先关闭菜单，再次按下才暂停。 | GUT 覆盖暂停、恢复、返回开始和 Esc 与塔操作菜单优先级；native smoke 生成 `*-pause-overlay.png` 和 `*-pause-overlay-overlay.png`。 |
 | 胜利 overlay | `Overlay/Screen` | 全部波次清空后显示 `Victory`，可 `Restart` 或返回 `Start`。 | gameplay 暂停，status 显示胜利文案。 | GUT 覆盖胜利状态、overlay 文案和按钮；native smoke 生成 `*-victory-overlay.png` 和 `*-victory-overlay-overlay.png`。 |
 | 失败 overlay | `Overlay/Screen` | 生命归零后显示 `Defeat`，可 `Restart` 或返回 `Start`。 | gameplay 暂停，status 显示失败文案。 | GUT 覆盖失败状态、overlay 文案和按钮；native smoke 生成 `*-defeat-overlay.png` 和 `*-defeat-overlay-overlay.png`。 |
 | 响应式布局 | `BoardView.apply_responsive_layout`, `StartScreen._layout` | 桌面、移动横屏和方形/紧凑视口下保持棋盘、HUD、塔卡和提示可读可点。 | 移动横屏使用侧塔卡，方形视口使用底部塔卡和更高 HUD message 区。 | GUT 覆盖移动横屏和方形布局；native smoke 固定覆盖 `1280x720`、`896x414`、`720x720`。 |
@@ -39,6 +40,7 @@ UI 改动后先检查本文档是否需要更新。以下情况必须更新：
 - HUD 资源栏：`*-hud-resources.png` 和 `*-hud-resources-overlay.png`。
 - Status/Hint：默认、奖励和漏怪状态的 `*-status-*.png` 和 `*-status-*-overlay.png`。
 - 塔选择卡组：默认、Area 选中、Slow 选中和金币不足状态的 `*-tower-deck*.png` 和 `*-tower-deck*-overlay.png`。
+- 塔操作菜单：`*-tower-action-menu.png` 和 `*-tower-action-menu-overlay.png`。
 - Overlay：`*-pause-overlay.png`、`*-victory-overlay.png`、`*-defeat-overlay.png` 和对应 overlay。
 - 人工检查清单和链接：`report.md`。
 

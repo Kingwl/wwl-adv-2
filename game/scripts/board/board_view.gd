@@ -22,6 +22,8 @@ const START_SCENE_PATH := "res://scenes/start.tscn"
 @export var overlay_secondary_button_path: NodePath = NodePath("../Overlay/Screen/Panel/SecondaryButton")
 
 var hover_grid_position := INVALID_GRID_POSITION
+var selected_tower_grid_position := INVALID_GRID_POSITION
+var selected_tower_id := ""
 
 var _game_session: BoardGameSession
 var _asset_catalog: BoardAssetCatalog
@@ -124,12 +126,82 @@ func apply_responsive_layout(viewport_size: Vector2) -> void:
 
 	_layout_metrics = _layout_service.calculate(viewport_size, board_width, board_height)
 	_hud_controller.apply_layout(_layout_metrics)
+	_sync_tower_action_menu()
 	_sync_message_labels()
 
 
 func try_place_at_grid(grid_position: Vector2i) -> TowerPlacementResult:
 	_ensure_dependencies()
 	var result := _game_session.try_place_at_grid(grid_position)
+	_refresh_hud()
+	queue_redraw()
+	return result
+
+
+func handle_board_click(grid_position: Vector2i) -> void:
+	_ensure_dependencies()
+	if _select_tower_if_occupied(grid_position):
+		return
+
+	clear_tower_action_menu()
+	try_place_at_grid(grid_position)
+
+
+func get_selected_tower_id() -> String:
+	return selected_tower_id
+
+
+func get_selected_tower_grid_position() -> Vector2i:
+	return selected_tower_grid_position
+
+
+func has_tower_action_menu() -> bool:
+	return not selected_tower_id.is_empty()
+
+
+func select_tower_at_grid(grid_position: Vector2i) -> bool:
+	_ensure_dependencies()
+	return _select_tower_if_occupied(grid_position)
+
+
+func clear_tower_action_menu() -> void:
+	selected_tower_grid_position = INVALID_GRID_POSITION
+	selected_tower_id = ""
+	if _hud_controller != null:
+		_hud_controller.hide_tower_action_menu()
+	if _game_session != null and _game_session.economy_config != null and _hud_controller != null:
+		_game_session.set_hint(_hud_controller.update_selected_tower_hint(
+			_game_session.selected_tower_type,
+			_game_session.economy_config
+		))
+		_sync_message_labels()
+	queue_redraw()
+
+
+func upgrade_selected_tower() -> TowerUpgradeResult:
+	_ensure_dependencies()
+	if selected_tower_id.is_empty():
+		return null
+
+	var result := _game_session.try_upgrade_tower(selected_tower_id)
+	if result.succeeded:
+		_sync_combat_tower_selection()
+	_sync_tower_action_menu()
+	_refresh_hud()
+	queue_redraw()
+	return result
+
+
+func remove_selected_tower() -> TowerRemovalResult:
+	_ensure_dependencies()
+	if selected_tower_grid_position == INVALID_GRID_POSITION:
+		return null
+
+	var result := _game_session.try_remove_tower_at(selected_tower_grid_position)
+	if result.succeeded:
+		clear_tower_action_menu()
+	else:
+		_sync_tower_action_menu()
 	_refresh_hud()
 	queue_redraw()
 	return result
@@ -149,6 +221,7 @@ func open_pause_menu() -> void:
 	if not _game_session.open_pause_menu():
 		return
 
+	clear_tower_action_menu()
 	_show_overlay("Paused", "Game paused.", "Resume", "Start")
 	_refresh_hud()
 
@@ -181,6 +254,7 @@ func return_to_start_screen() -> void:
 
 func show_victory_screen() -> void:
 	_ensure_dependencies()
+	clear_tower_action_menu()
 	_game_session.show_victory_screen()
 	_game_session.set_status("Victory. All waves cleared.")
 	_show_overlay("Victory", "All waves cleared.", "Restart", "Start")
@@ -189,6 +263,7 @@ func show_victory_screen() -> void:
 
 func show_defeat_screen() -> void:
 	_ensure_dependencies()
+	clear_tower_action_menu()
 	_game_session.show_defeat_screen()
 	_game_session.set_status("Defeat. Enemies breached the path.")
 	_show_overlay("Defeat", "Enemies breached the path.", "Restart", "Start")
@@ -221,9 +296,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		BoardGameSession.FlowState.MENU,
 		Callable(self, "screen_to_grid_position"),
 		Callable(self, "_update_hover"),
-		Callable(self, "try_place_at_grid"),
+		Callable(self, "handle_board_click"),
 		Callable(self, "open_pause_menu"),
-		Callable(self, "resume_game")
+		Callable(self, "resume_game"),
+		{
+			"select_single_tower": Callable(self, "select_tower_type").bind(GameTower.Type.SINGLE_TARGET),
+			"select_area_tower": Callable(self, "select_tower_type").bind(GameTower.Type.AREA),
+			"select_slow_tower": Callable(self, "select_tower_type").bind(GameTower.Type.SLOW),
+			"upgrade_selected_tower": Callable(self, "upgrade_selected_tower"),
+			"remove_selected_tower": Callable(self, "remove_selected_tower"),
+			"has_tower_action_menu": Callable(self, "has_tower_action_menu"),
+			"clear_tower_action_menu": Callable(self, "clear_tower_action_menu"),
+		}
 	)
 
 
@@ -246,6 +330,7 @@ func _draw() -> void:
 		metrics.board_origin,
 		metrics.cell_size,
 		hover_grid_position,
+		selected_tower_grid_position,
 		_game_session.last_placement_result
 	)
 
@@ -322,12 +407,15 @@ func _configure_hud() -> void:
 		Callable(self, "select_tower_type").bind(GameTower.Type.AREA),
 		Callable(self, "select_tower_type").bind(GameTower.Type.SLOW),
 		Callable(self, "_on_overlay_primary_pressed"),
-		Callable(self, "_on_overlay_secondary_pressed")
+		Callable(self, "_on_overlay_secondary_pressed"),
+		Callable(self, "upgrade_selected_tower"),
+		Callable(self, "remove_selected_tower")
 	)
 
 
 func _reset_view_state() -> void:
 	hover_grid_position = INVALID_GRID_POSITION
+	clear_tower_action_menu()
 	_visual_state.reset()
 
 
@@ -442,6 +530,28 @@ func _sync_tower_button_state() -> void:
 	)
 
 
+func _sync_tower_action_menu() -> void:
+	if selected_tower_id.is_empty() or selected_tower_grid_position == INVALID_GRID_POSITION:
+		if _hud_controller != null:
+			_hud_controller.hide_tower_action_menu()
+		return
+
+	var tower := _game_session.get_tower_by_id(selected_tower_id)
+	if tower == null:
+		clear_tower_action_menu()
+		return
+
+	var refund_amount := _game_session.placement_service.removal_refund_amount(tower)
+	_hud_controller.show_tower_action_menu(
+		tower,
+		_game_session.placement_service.tower_config,
+		_game_session.wallet,
+		refund_amount,
+		_tower_action_menu_rect(selected_tower_grid_position),
+		_game_session.flow_state
+	)
+
+
 func _sync_menu_button_state() -> void:
 	_hud_controller.sync_menu_button_state(_game_session.flow_state)
 
@@ -452,6 +562,7 @@ func _refresh_hud() -> void:
 	_hud_controller.update_wave_label(_game_session.wave_spawner)
 	_sync_menu_button_state()
 	_sync_tower_button_state()
+	_sync_tower_action_menu()
 	_sync_message_labels()
 
 
@@ -466,3 +577,54 @@ func _update_hover(grid_position: Vector2i) -> void:
 func _on_viewport_size_changed() -> void:
 	apply_responsive_layout(get_viewport_rect().size)
 	queue_redraw()
+
+
+func _select_tower_if_occupied(grid_position: Vector2i) -> bool:
+	if _game_session.board == null or not _game_session.board.is_in_bounds(grid_position):
+		return false
+
+	var tower_id := _game_session.board.get_occupant_id(grid_position)
+	if tower_id.is_empty():
+		return false
+
+	var tower := _game_session.get_tower_by_id(tower_id)
+	if tower == null:
+		return false
+
+	selected_tower_grid_position = grid_position
+	selected_tower_id = tower_id
+	_game_session.set_status("%s T%d selected." % [
+		_hud_controller.tower_type_label(tower.tower_type),
+		tower.tier,
+	])
+	_game_session.set_hint("Upgrade or remove this tower.")
+	_sync_tower_action_menu()
+	_sync_message_labels()
+	queue_redraw()
+	return true
+
+
+func _sync_combat_tower_selection() -> void:
+	var tower := _game_session.get_tower_by_id(selected_tower_id)
+	if tower == null:
+		clear_tower_action_menu()
+		return
+	selected_tower_grid_position = tower.grid_position
+
+
+func _tower_action_menu_rect(grid_position: Vector2i) -> Rect2:
+	var metrics := get_layout_metrics()
+	var cell_rect := grid_to_local_rect(grid_position)
+	var viewport_size := metrics.viewport_size
+	var menu_size := BoardHudController.TOWER_ACTION_MENU_SIZE
+	var gap := maxf(6.0, metrics.cell_size * 0.08)
+	var anchor := to_global(cell_rect.position + Vector2(metrics.cell_size * 0.72, -gap - menu_size.y))
+	var min_y := metrics.hud_reserved_height + 4.0
+	var max_x := viewport_size.x - menu_size.x - BoardLayoutService.SCREEN_PADDING
+	var max_y := viewport_size.y - menu_size.y - BoardLayoutService.SCREEN_PADDING
+	var menu_position := Vector2(
+		clampf(anchor.x, BoardLayoutService.SCREEN_PADDING, maxf(BoardLayoutService.SCREEN_PADDING, max_x)),
+		clampf(anchor.y, min_y, maxf(min_y, max_y))
+	)
+
+	return Rect2(menu_position, menu_size)

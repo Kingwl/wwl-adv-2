@@ -33,6 +33,39 @@ func test_try_place_at_grid_spends_gold_and_syncs_combat_towers() -> void:
 	assert_eq(session.status_text, "Placed tower-1 at (0, 0) for 25 gold.")
 
 
+func test_try_upgrade_tower_spends_gold_updates_status_and_syncs_combat_towers() -> void:
+	var session := _new_initialized_session()
+	assert_true(session.try_place_at_grid(Vector2i(0, 0)).succeeded)
+
+	var result := session.try_upgrade_tower("tower-1")
+	var tower := session.placement_service.tower_registry.get_tower("tower-1")
+
+	assert_true(result.succeeded)
+	assert_eq(session.last_upgrade_result, result)
+	assert_eq(session.wallet.gold, 35)
+	assert_eq(tower.tier, 2)
+	assert_eq(session.combat_simulation.towers.size(), 1)
+	assert_eq((session.combat_simulation.towers[0] as GameTower).tier, 2)
+	assert_eq(session.status_text, "Upgraded tower-1 to Single T2 for 40 gold.")
+
+
+func test_try_remove_tower_refunds_gold_updates_status_and_syncs_combat_towers() -> void:
+	var session := _new_initialized_session()
+	assert_true(session.try_place_at_grid(Vector2i(0, 0)).succeeded)
+	assert_true(session.try_upgrade_tower("tower-1").succeeded)
+
+	var result := session.try_remove_tower_at(Vector2i(0, 0))
+
+	assert_true(result.succeeded)
+	assert_eq(session.last_removal_result, result)
+	assert_eq(result.refund_amount, 32)
+	assert_eq(session.wallet.gold, 67)
+	assert_eq(session.board.get_occupant_id(Vector2i(0, 0)), "")
+	assert_null(session.placement_service.tower_registry.get_tower("tower-1"))
+	assert_eq(session.combat_simulation.towers.size(), 0)
+	assert_eq(session.status_text, "Removed tower-1 for 32 gold refund.")
+
+
 func test_apply_tick_rewards_aggregates_multiple_rewards() -> void:
 	var session := _new_initialized_session()
 	var tick_result := CombatTickResult.new(

@@ -17,9 +17,9 @@
 | GP-BOARD-001 | 棋盘放置 | 空可建造格成功；越界、路径、阻挡、锁定、占用、保留格失败；移除成功和失败。 | `test_board_placement.gd` | GUT 断言结构化 `PlacementResult` / `RemovalResult`。 | 多地图 fixture 覆盖。 |
 | GP-PATH-001 | 路径校验和敌人移动 | 路径过短、越界、非路径、对角和跳跃失败；合法路径通过；敌人按 delta 沿路径移动并在终点完成。 | `test_path_validation.gd`、`test_path_follower.gd` | GUT 断言网格位置、path distance、completed/defeated 状态。 | 复杂路径和多关卡路径 fixture。 |
 | GP-ECON-001 | 钱包和交易 | 获得、花费、余额不足、非法数量、交易记录。 | `test_wallet.gd` | GUT 断言余额、结果对象和 transaction log。 | 无。 |
-| GP-PLACE-001 | 放塔经济 | 金币足够放塔并扣费；金币不足、路径格、占用格不扣费不注册塔。 | `test_tower_placement_service.gd`、`test_main_scene.gd`、`check-gameplay-smoke.sh` | 核心 GUT 覆盖服务；场景 GUT 覆盖点击到放置；gameplay smoke 覆盖 `place_single_tower` checkpoint。 | 多塔成本数据化后的 schema 和回归。 |
-| GP-TOWER-001 | 塔类型和数值 | Single、Area、Slow 的 stats、描述、费用和投射物效果。 | `test_tower_config.gd`、`test_tower_attack_service.gd`、`test_projectile_service.gd`、`test_main_scene.gd`、`check-gameplay-smoke.sh` | GUT 断言 config、攻击结果、状态事件和场景放置类型；gameplay smoke 覆盖 Single/Area/Slow 代表视觉 checkpoint。 | 数据化后需要逐塔 fixture 和 schema 校验。 |
-| GP-GROWTH-001 | 塔成长/合成 | 同类型同等级合成成功；类型不匹配、等级不匹配、同一座塔失败。 | `test_tower_merge_service.gd` | 核心 GUT 断言 `TowerMergeResult`。 | 玩家可触达的合成或升级流程尚未定案。 |
+| GP-PLACE-001 | 放塔经济 | 金币足够放塔并扣费；金币不足、路径格、占用格不扣费不注册塔；放置后记录初始投入。 | `test_tower_placement_service.gd`、`test_main_scene.gd`、`check-gameplay-smoke.sh` | 核心 GUT 覆盖服务；场景 GUT 覆盖点击到放置；gameplay smoke 覆盖 `place_single_tower` checkpoint。 | 多塔成本数据化后的 schema 和回归。 |
+| GP-TOWER-001 | 塔类型和数值 | Single、Area、Slow 的 stats、描述、费用、投射物效果和分塔升级曲线。 | `test_tower_config.gd`、`test_tower_attack_service.gd`、`test_projectile_service.gd`、`test_main_scene.gd`、`check-gameplay-smoke.sh` | GUT 断言 config、攻击结果、状态事件、升级曲线、升级后攻击读取 tier stats 和场景放置类型；gameplay smoke 覆盖 Single/Area/Slow 代表视觉 checkpoint。 | 数据化后需要逐塔 fixture 和 schema 校验。 |
+| GP-GROWTH-001 | 塔成长/拆除 | 点击已放置塔弹出操作菜单；升级扣除配置化费用并提升 tier；金币不足不升级；满级不升级；拆除返还 50% 累计投入并清理棋盘/registry/combat towers；核心合成服务继续覆盖同类型同等级合成。 | `test_tower_config.gd`、`test_tower_placement_service.gd`、`test_board_game_session.gd`、`test_tower_merge_service.gd`、`test_main_scene.gd`、`check-ui-smoke.sh`、`check-gameplay-smoke.sh` | 核心 GUT 断言升级、结构化失败和拆除返还；session GUT 断言 HUD/status 与 combat towers 同步；场景 GUT 覆盖菜单按钮、快捷键升级/拆除、Esc 关闭菜单和 HUD 同步；UI smoke 输出塔操作菜单 crop/overlay；gameplay smoke 覆盖升级、拆除和返还 checkpoint。 | 长局中多次升级/拆除对经济节奏的平衡快照仍未覆盖。 |
 | GP-TARGET-001 | 目标选择 | 选择范围内最靠前敌人；无目标、已完成、已击败、射程外忽略。 | `test_targeting_service.gd` | GUT 断言选择出的 enemy 或 null。 | 后续新增 closest/strongest 等策略时扩展矩阵。 |
 | GP-COMBAT-001 | 固定 tick 战斗 | 固定 tick 推进移动、攻击、投射物、伤害、奖励、漏怪和胜负状态。 | `test_combat_simulation.gd`、`check-gameplay-smoke.sh` | GUT 断言 tick result、敌人状态、投射物和 game state；gameplay smoke 输出 trace summary、checkpoint 截图和 overlay。 | 长局端到端 run 仍未覆盖。 |
 | GP-PROJECTILE-001 | 投射物命中和状态 | 飞行中不命中；命中造成伤害；Area 溅射；Slow 施加减速；非活跃目标忽略。 | `test_projectile_service.gd`、`check-gameplay-smoke.sh` | GUT 断言 damage/status event；gameplay smoke 覆盖 projectile visible、splash impact 和 slow impact checkpoint。 | 多目标拥挤场景和平衡回归。 |
@@ -29,7 +29,7 @@
 | GP-WAVE-001 | 波次和胜利 | 按间隔生成；大 delta 不跳过；波次清空；进入下一波；全部波次清空胜利。 | `test_wave_spawner.gd`、`test_combat_simulation.gd`、`test_main_scene.gd`、`check-gameplay-smoke.sh` | GUT 断言 spawn result、wave clear event、victory state；gameplay smoke 覆盖清波胜利 checkpoint。 | MVP 长波次内容和波次数据 schema。 |
 | GP-MAP-001 | 关卡和地图数据 | 默认关卡路径、地图 style 和 road guide 数据可加载，非法数据被 schema 拦截。 | `test_map_definitions.gd`、`check-assets.sh` | GUT 和 `check-all.sh` 的资产检查。 | 塔、敌人、波次迁移到数据文件后扩展 schema。 |
 | GP-SCENE-001 | 场景可玩路径 | Start 进入 Main；暂停/恢复/重开/返回；放塔；波次推进；奖励、漏怪、胜利、失败 HUD 同步。 | `test_main_scene.gd`、`check-ui-smoke.sh`、`check-gameplay-smoke.sh` | 场景 GUT、native smoke `report.json`、截图、scenario trace 和 overlay。 | Native smoke 目前只覆盖一座塔放置；gameplay smoke 覆盖代表场景但不覆盖完整长局。 |
-| GP-DETERMINISM-001 | 确定性回归 | 相同输入序列在固定 tick 下产生相同核心摘要。 | `check-gameplay-smoke.sh`，部分由核心 GUT 间接覆盖 | Gameplay smoke `report.json` 记录 elapsed、tick result、金币、生命、漏怪、胜负、击杀、波次和状态事件摘要。 | 还缺批准式 snapshot 对比和长局 replay。 |
+| GP-DETERMINISM-001 | 确定性回归 | 相同输入序列在固定 tick 下产生相同核心摘要。 | `check-gameplay-smoke.sh`，部分由核心 GUT 间接覆盖 | Gameplay smoke `report.json` 记录 elapsed、tick result、金币、生命、漏怪、胜负、击杀、波次、状态事件和升级/拆除经济摘要。 | 还缺批准式 snapshot 对比和长局 replay。 |
 
 ## 更新规则
 

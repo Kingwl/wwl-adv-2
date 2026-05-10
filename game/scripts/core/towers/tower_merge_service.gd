@@ -30,7 +30,13 @@ func try_merge(first: GameTower, second: GameTower) -> TowerMergeResult:
 			"Only towers of the same tier can merge."
 		)
 
-	var merged_tower := GameTower.new(_next_id(), first.tower_type, first.tier + 1)
+	var merged_tower := GameTower.new(
+		_next_id(),
+		first.tower_type,
+		first.tier + 1,
+		first.grid_position,
+		first.invested_gold + second.invested_gold
+	)
 	return TowerMergeResult.success(merged_tower, [first.id, second.id])
 
 
