@@ -47,4 +47,4 @@ Implemented
 
 - `BoardRenderer` 和 `BoardHudController` 后续仍可继续拆小，但已经不阻塞当前 MVP。
 - 本地 native smoke 仍会弹 Godot 窗口；默认 fast preflight 不运行 native smoke，完整视觉证据使用 full preflight 或 CI。
-- Web smoke 仍未实现，属于发布信心门禁。
+- Web export smoke 已实现为发布信心门禁；当前仍没有像素级视觉 baseline，视觉回归主要依赖 smoke crop、overlay 和人工审查。
