@@ -48,6 +48,8 @@ func test_projectile_hits_target_and_emits_damage() -> void:
 	assert_eq(result.damage_events.size(), 1)
 	assert_eq(result.damage_events[0].enemy_id, "enemy-1")
 	assert_eq(result.damage_events[0].amount, 10.0)
+	assert_eq(result.damage_events[0].attack_type, DamageTypes.AttackType.PIERCE)
+	assert_eq(result.damage_events[0].damage_school, DamageTypes.DamageSchool.PHYSICAL)
 	assert_eq(result.impact_events.size(), 1)
 	assert_true(result.impact_events[0].hit)
 	assert_eq(result.impact_events[0].tower_type, GameTower.Type.SINGLE_TARGET)
@@ -108,6 +110,50 @@ func test_slow_projectile_emits_slow_status_on_hit() -> void:
 	assert_eq(result.status_events[0].status_type, StatusEvent.StatusType.SLOW)
 	assert_eq(result.status_events[0].duration, 1.5)
 	assert_eq(result.status_events[0].multiplier, 0.6)
+	assert_eq(result.status_events[0].attack_type, DamageTypes.AttackType.MAGIC)
+	assert_eq(result.status_events[0].damage_school, DamageTypes.DamageSchool.FROST)
+	assert_eq(result.status_events[0].stack_policy, StatusEffect.StackPolicy.STRONGEST)
+
+
+func test_flame_projectile_emits_burn_status_on_hit() -> void:
+	var service := ProjectileService.new()
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0)])
+	var enemy := Enemy.new("enemy-1", 1.0, 20.0, 5)
+	var projectile := CombatProjectile.new(
+		"projectile-1",
+		"tower-a",
+		"enemy-1",
+		GameTower.Type.FLAME,
+		Vector2(0.5, 0.75),
+		10.0,
+		0.05,
+		4.0,
+		0.0,
+		1.0,
+		0.0,
+		CombatProjectile.DEFAULT_MAX_LIFETIME_SECONDS,
+		DamageTypes.AttackType.MAGIC,
+		DamageTypes.DamageSchool.FIRE,
+		StatusEvent.StatusType.BURN,
+		3.0,
+		1.0,
+		1.0,
+		2.0,
+		StatusEffect.StackPolicy.REFRESH
+	)
+
+	var result := service.advance([projectile], [enemy], follower, 0.1)
+
+	assert_eq(result.damage_events.size(), 1)
+	assert_eq(result.damage_events[0].damage_school, DamageTypes.DamageSchool.FIRE)
+	assert_eq(result.status_events.size(), 1)
+	assert_eq(result.status_events[0].enemy_id, "enemy-1")
+	assert_eq(result.status_events[0].status_type, StatusEvent.StatusType.BURN)
+	assert_eq(result.status_events[0].duration, 3.0)
+	assert_eq(result.status_events[0].tick_interval, 1.0)
+	assert_eq(result.status_events[0].tick_damage, 2.0)
+	assert_eq(result.status_events[0].damage_school, DamageTypes.DamageSchool.FIRE)
+	assert_eq(result.status_events[0].stack_policy, StatusEffect.StackPolicy.REFRESH)
 
 
 func test_projectile_misses_when_target_is_no_longer_active() -> void:

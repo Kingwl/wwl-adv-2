@@ -1,0 +1,63 @@
+class_name DamageTypes
+extends RefCounted
+
+enum WeaponType {
+	BOW,
+	CROSSBOW,
+	CANNON,
+	BLADE,
+	SPELL,
+	HEROIC,
+	CHAOS,
+}
+
+enum AttackType {
+	NORMAL,
+	PIERCE,
+	SIEGE,
+	MAGIC,
+	HERO,
+	CHAOS,
+}
+
+enum ArmorType {
+	UNARMORED,
+	LIGHT,
+	MEDIUM,
+	HEAVY,
+	FORTIFIED,
+	HERO,
+}
+
+enum DamageSchool {
+	PHYSICAL,
+	FROST,
+	FIRE,
+	POISON,
+	LIGHTNING,
+	ARCANE,
+	SHADOW,
+}
+
+enum RaceType {
+	BEAST,
+	HUMANOID,
+	UNDEAD,
+	CONSTRUCT,
+	ELEMENTAL_FIRE,
+	ELEMENTAL_FROST,
+	PLANT,
+	DEMON,
+}
+
+enum AttackPattern {
+	SINGLE_PROJECTILE,
+	SPLASH_PROJECTILE,
+	STATUS_PROJECTILE,
+	STATUS_DOT,
+	CHAIN,
+	AURA,
+	GROUND_AREA,
+	MULTI_SHOT,
+	SUMMON_OR_TRAP,
+}

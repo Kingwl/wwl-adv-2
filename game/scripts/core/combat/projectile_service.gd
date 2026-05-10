@@ -67,7 +67,13 @@ func _build_damage_events(projectile: CombatProjectile, enemies: Array, path_fol
 	if projectile.tower_type == GameTower.Type.AREA:
 		return _build_area_damage_events(projectile, enemies, path_follower)
 
-	return [DamageEvent.new(projectile.target_enemy_id, projectile.damage, projectile.tower_id)]
+	return [DamageEvent.new(
+		projectile.target_enemy_id,
+		projectile.damage,
+		projectile.tower_id,
+		projectile.attack_type,
+		projectile.damage_school
+	)]
 
 
 func _build_area_damage_events(projectile: CombatProjectile, enemies: Array, path_follower: PathFollower) -> Array:
@@ -80,21 +86,32 @@ func _build_area_damage_events(projectile: CombatProjectile, enemies: Array, pat
 
 		var enemy_position := path_follower.get_grid_space_position(enemy)
 		if projectile.position.distance_to(enemy_position) <= projectile.splash_radius_cells:
-			damage_events.append(DamageEvent.new(enemy.id, projectile.damage, projectile.tower_id))
+			damage_events.append(DamageEvent.new(
+				enemy.id,
+				projectile.damage,
+				projectile.tower_id,
+				projectile.attack_type,
+				projectile.damage_school
+			))
 
 	return damage_events
 
 
 func _build_status_events(projectile: CombatProjectile, target: Enemy) -> Array:
-	if projectile.tower_type != GameTower.Type.SLOW:
+	if projectile.status_type < 0 or projectile.status_duration <= 0.0:
 		return []
 
 	return [
 		StatusEvent.new(
 			target.id,
-			StatusEvent.StatusType.SLOW,
-			projectile.slow_duration,
-			projectile.slow_multiplier,
-			projectile.tower_id
+			projectile.status_type,
+			projectile.status_duration,
+			projectile.status_move_speed_multiplier,
+			projectile.tower_id,
+			projectile.status_tick_interval,
+			projectile.status_tick_damage,
+			projectile.attack_type,
+			projectile.damage_school,
+			projectile.status_stack_policy
 		)
 	]

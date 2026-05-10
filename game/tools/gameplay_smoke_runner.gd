@@ -8,11 +8,14 @@ const MIN_NON_DARK_RATIO := 0.05
 const MIN_LUMINANCE_RANGE := 0.05
 const CROP_SCALE := 2
 const BOARD_CROP_MARGIN := 24.0
+const FOCUS_CROP_MARGIN := 42.0
 const OVERLAY_BOARD_COLOR := Color(0.10, 0.70, 1.0, 1.0)
 const OVERLAY_TOWER_COLOR := Color(0.20, 1.0, 0.35, 1.0)
 const OVERLAY_ENEMY_COLOR := Color(1.0, 0.15, 0.80, 1.0)
 const OVERLAY_PROJECTILE_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 const OVERLAY_HEALTH_COLOR := Color(1.0, 0.78, 0.12, 1.0)
+const OVERLAY_EFFECT_COLOR := Color(1.0, 0.32, 0.05, 1.0)
+const OVERLAY_GUIDE_COLOR := Color(0.92, 1.0, 0.20, 1.0)
 
 var _artifact_dir := ""
 var _report := {}
@@ -75,6 +78,8 @@ func _parse_scenarios() -> Array:
 		"single_tower_kill_reward",
 		"area_tower_splash",
 		"slow_tower_status",
+		"flame_tower_burn",
+		"tower_visual_catalog",
 		"enemy_leak_life_loss",
 		"wave_clear_victory",
 		"defeat_on_zero_lives",
@@ -132,6 +137,10 @@ func _run_scenario(viewport: Dictionary, scenario_name: String) -> Dictionary:
 			await _scenario_area_tower_splash(result, viewport_name, scenario_dir, board_view)
 		"slow_tower_status":
 			await _scenario_slow_tower_status(result, viewport_name, scenario_dir, board_view)
+		"flame_tower_burn":
+			await _scenario_flame_tower_burn(result, viewport_name, scenario_dir, board_view)
+		"tower_visual_catalog":
+			await _scenario_tower_visual_catalog(result, viewport_name, scenario_dir, board_view)
 		"enemy_leak_life_loss":
 			await _scenario_enemy_leak_life_loss(result, viewport_name, scenario_dir, board_view)
 		"wave_clear_victory":
@@ -294,6 +303,96 @@ func _scenario_slow_tower_status(
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "slow-impact-status", board_view)
 
 
+func _scenario_flame_tower_burn(
+	result: Dictionary,
+	viewport_name: String,
+	scenario_dir: String,
+	board_view: BoardView
+) -> void:
+	_prepare_manual_combat(board_view)
+	board_view.select_tower_type(GameTower.Type.FLAME)
+	board_view.try_place_at_grid(_preferred_tower_cell(board_view))
+	var enemy := Enemy.new(
+		"flame-enemy-1",
+		0.2,
+		80.0,
+		5,
+		DamageTypes.ArmorType.HEAVY,
+		DamageTypes.RaceType.UNDEAD
+	)
+	enemy.path_distance = 2.0
+	board_view.get_session().combat_simulation.enemies = [enemy]
+	await _settle_frames(2)
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "flame-target-in-range", board_view)
+
+	await _advance_gameplay(result, board_view, PROJECTILE_VISUAL_DELAY_SECONDS, CombatSimulation.DEFAULT_FIXED_STEP_SECONDS)
+	_check(result, board_view.get_session().combat_simulation.projectiles.size() >= 1, "flame projectile becomes visible")
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "flame-projectile-visible", board_view)
+
+	var status_events_before := int(result["summary"]["status_events"])
+	await _advance_until(
+		result,
+		board_view,
+		func() -> bool: return int(result["summary"]["status_events"]) > status_events_before,
+		1.5
+	)
+	var burn_seen := int(result["summary"]["status_events"]) > status_events_before
+	var health_after_hit := enemy.health
+	_check(result, burn_seen, "flame projectile emits burn status event")
+	_check(result, enemy.status_effects.size() >= 1, "burn status is active on target")
+	_check(result, health_after_hit < enemy.max_health and not enemy.defeated, "flame target remains alive after initial fire hit")
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "flame-impact-burn", board_view)
+
+	await _advance_until(
+		result,
+		board_view,
+		func() -> bool: return enemy.health < health_after_hit,
+		1.2
+	)
+	_check(result, enemy.health < health_after_hit, "burn DoT deals follow-up damage")
+	await _capture_checkpoint(result, viewport_name, scenario_dir, "burn-dot-damage", board_view)
+
+
+func _scenario_tower_visual_catalog(
+	result: Dictionary,
+	viewport_name: String,
+	scenario_dir: String,
+	board_view: BoardView
+) -> void:
+	for spec in _tower_visual_specs():
+		var tower_name := String(spec["name"])
+		var tower_type: GameTower.Type = spec["tower_type"]
+		board_view.restart_game()
+		board_view.set_process(false)
+		board_view.apply_responsive_layout(Vector2(get_root().size))
+		_prepare_manual_combat(board_view)
+		board_view.select_tower_type(tower_type)
+		var placement := board_view.try_place_at_grid(_preferred_tower_cell(board_view))
+		_check(result, placement.succeeded, "%s visual tower placement succeeds" % tower_name)
+
+		var enemy := _visual_catalog_enemy(tower_name)
+		enemy.path_distance = 2.0
+		board_view.get_session().combat_simulation.enemies = [enemy]
+		await _settle_frames(2)
+		await _capture_checkpoint(result, viewport_name, scenario_dir, "%s-tower-ready" % tower_name, board_view)
+
+		await _advance_gameplay(result, board_view, PROJECTILE_VISUAL_DELAY_SECONDS, CombatSimulation.DEFAULT_FIXED_STEP_SECONDS)
+		_check(result, board_view.get_session().combat_simulation.projectiles.size() >= 1, "%s projectile visual becomes visible" % tower_name)
+		await _capture_checkpoint(result, viewport_name, scenario_dir, "%s-projectile-visible" % tower_name, board_view)
+
+		var impact_events_before := int(result["summary"]["projectile_impacts"])
+		await _advance_until(
+			result,
+			board_view,
+			func() -> bool: return int(result["summary"]["projectile_impacts"]) > impact_events_before,
+			2.0
+		)
+		var impact_seen := int(result["summary"]["projectile_impacts"]) > impact_events_before
+		_check(result, impact_seen, "%s projectile impact event is emitted" % tower_name)
+		_check(result, board_view.get_visual_state().attack_feedbacks.size() >= 1, "%s impact feedback visual becomes visible" % tower_name)
+		await _capture_checkpoint(result, viewport_name, scenario_dir, "%s-impact-effect" % tower_name, board_view)
+
+
 func _scenario_enemy_leak_life_loss(
 	result: Dictionary,
 	viewport_name: String,
@@ -385,6 +484,29 @@ func _load_main_board(result: Dictionary, viewport_size: Vector2i) -> BoardView:
 	_check(result, not board_view.get_session().combat_simulation.game_won, "fresh scenario is not won")
 	_check(result, not board_view.get_session().combat_simulation.game_failed, "fresh scenario is not failed")
 	return board_view
+
+
+func _tower_visual_specs() -> Array:
+	return [
+		{"name": "single", "tower_type": GameTower.Type.SINGLE_TARGET},
+		{"name": "area", "tower_type": GameTower.Type.AREA},
+		{"name": "slow", "tower_type": GameTower.Type.SLOW},
+		{"name": "flame", "tower_type": GameTower.Type.FLAME},
+	]
+
+
+func _visual_catalog_enemy(tower_name: String) -> Enemy:
+	var race_type := DamageTypes.RaceType.BEAST
+	if tower_name == "flame":
+		race_type = DamageTypes.RaceType.UNDEAD
+	return Enemy.new(
+		"%s-visual-enemy" % tower_name,
+		0.2,
+		80.0,
+		5,
+		DamageTypes.ArmorType.HEAVY,
+		race_type
+	)
 
 
 func _prepare_manual_combat(board_view: BoardView) -> void:
@@ -494,6 +616,21 @@ func _capture_checkpoint(
 	_check(result, crop_error == OK, "save board crop %s" % checkpoint_name)
 	_check(result, overlay_error == OK, "save board overlay %s" % checkpoint_name)
 
+	var focus_rect := _visual_focus_global_rect(board_view).grow(FOCUS_CROP_MARGIN)
+	var focus_crop_rect := _image_crop_rect(focus_rect, Vector2i(image.get_width(), image.get_height()))
+	var focus_crop := image.get_region(focus_crop_rect)
+	var focus_overlay := focus_crop.duplicate()
+	focus_overlay.convert(Image.FORMAT_RGBA8)
+	_draw_gameplay_overlay(focus_overlay, Vector2(focus_crop_rect.position), board_view)
+	var scaled_focus_crop := _scaled_image(focus_crop)
+	var scaled_focus_overlay := _scaled_image(focus_overlay)
+	var focus_crop_path := scenario_dir.path_join("%s-focus.png" % base_name)
+	var focus_overlay_path := scenario_dir.path_join("%s-focus-overlay.png" % base_name)
+	var focus_crop_error := scaled_focus_crop.save_png(focus_crop_path)
+	var focus_overlay_error := scaled_focus_overlay.save_png(focus_overlay_path)
+	_check(result, focus_crop_error == OK, "save focus crop %s" % checkpoint_name)
+	_check(result, focus_overlay_error == OK, "save focus overlay %s" % checkpoint_name)
+
 	var stats := _image_stats(image)
 	_check(result, stats["non_dark_ratio"] >= MIN_NON_DARK_RATIO, "checkpoint screenshot is not blank")
 	_check(result, stats["luminance_range"] >= MIN_LUMINANCE_RANGE, "checkpoint screenshot has visual contrast")
@@ -516,6 +653,18 @@ func _capture_checkpoint(
 			"path": board_overlay_path,
 			"width": scaled_overlay.get_width(),
 			"height": scaled_overlay.get_height(),
+			"scale": CROP_SCALE,
+		},
+		"focus_crop": {
+			"path": focus_crop_path,
+			"width": scaled_focus_crop.get_width(),
+			"height": scaled_focus_crop.get_height(),
+			"scale": CROP_SCALE,
+		},
+		"focus_overlay": {
+			"path": focus_overlay_path,
+			"width": scaled_focus_overlay.get_width(),
+			"height": scaled_focus_overlay.get_height(),
 			"scale": CROP_SCALE,
 		},
 		"state": _state_summary(board_view),
@@ -553,7 +702,84 @@ func _draw_gameplay_overlay(image: Image, crop_origin: Vector2, board_view: Boar
 		if projectile == null or not projectile.active:
 			continue
 		var projectile_position := board_view.to_global(_grid_space_to_local(board_view, projectile.position))
+		var source_tower := board_view.get_session().placement_service.tower_registry.get_tower(projectile.tower_id)
+		if source_tower != null:
+			var source_rect := board_view.grid_to_local_rect(source_tower.grid_position)
+			_draw_line(
+				image,
+				board_view.to_global(source_rect.get_center()) - crop_origin,
+				projectile_position - crop_origin,
+				OVERLAY_GUIDE_COLOR,
+				1
+			)
+		var target_enemy := _enemy_by_id(board_view.get_session().combat_simulation.enemies, projectile.target_enemy_id)
+		if target_enemy != null and not target_enemy.defeated:
+			var target_position := board_view.to_global(
+				_grid_space_to_local(board_view, board_view.get_session().path_follower.get_grid_space_position(target_enemy))
+			)
+			_draw_line(image, projectile_position - crop_origin, target_position - crop_origin, OVERLAY_GUIDE_COLOR, 1)
 		_draw_cross(image, projectile_position - crop_origin, OVERLAY_PROJECTILE_COLOR, 5)
+
+	for feedback in board_view.get_visual_state().attack_feedbacks:
+		var center: Vector2 = feedback.get("position", Vector2.ZERO)
+		var feedback_position := board_view.to_global(center)
+		_draw_cross(image, feedback_position - crop_origin, OVERLAY_EFFECT_COLOR, 10)
+		_draw_rect_outline(
+			image,
+			Rect2(feedback_position - crop_origin - Vector2(10.0, 10.0), Vector2(20.0, 20.0)),
+			OVERLAY_EFFECT_COLOR,
+			2
+		)
+
+
+func _visual_focus_global_rect(board_view: BoardView) -> Rect2:
+	var has_rect := false
+	var merged := Rect2()
+	var cell_size := board_view.get_layout_metrics().cell_size
+
+	for candidate in board_view.get_session().placement_service.tower_registry.get_all_towers():
+		var tower := candidate as GameTower
+		if tower == null:
+			continue
+		var local_tower_rect := board_view.grid_to_local_rect(tower.grid_position)
+		var global_tower_rect := Rect2(board_view.to_global(local_tower_rect.position), local_tower_rect.size)
+		if has_rect:
+			merged = merged.merge(global_tower_rect)
+		else:
+			merged = global_tower_rect
+			has_rect = true
+
+	for candidate in board_view.get_session().combat_simulation.enemies:
+		var enemy := candidate as Enemy
+		if enemy == null or enemy.defeated:
+			continue
+		var enemy_position := board_view.to_global(
+			_grid_space_to_local(board_view, board_view.get_session().path_follower.get_grid_space_position(enemy))
+		)
+		var enemy_radius := cell_size * 0.28
+		var enemy_rect := Rect2(enemy_position - Vector2(enemy_radius, enemy_radius), Vector2(enemy_radius * 2.0, enemy_radius * 2.0))
+		merged = merged.merge(enemy_rect) if has_rect else enemy_rect
+		has_rect = true
+
+	for candidate in board_view.get_session().combat_simulation.projectiles:
+		var projectile := candidate as CombatProjectile
+		if projectile == null or not projectile.active:
+			continue
+		var projectile_position := board_view.to_global(_grid_space_to_local(board_view, projectile.position))
+		var projectile_radius := cell_size * 0.16
+		var projectile_rect := Rect2(projectile_position - Vector2(projectile_radius, projectile_radius), Vector2(projectile_radius * 2.0, projectile_radius * 2.0))
+		merged = merged.merge(projectile_rect) if has_rect else projectile_rect
+		has_rect = true
+
+	for feedback in board_view.get_visual_state().attack_feedbacks:
+		var feedback_local_position: Vector2 = feedback.get("position", Vector2.ZERO)
+		var feedback_position := board_view.to_global(feedback_local_position)
+		var feedback_radius := cell_size * 0.32
+		var feedback_rect := Rect2(feedback_position - Vector2(feedback_radius, feedback_radius), Vector2(feedback_radius * 2.0, feedback_radius * 2.0))
+		merged = merged.merge(feedback_rect) if has_rect else feedback_rect
+		has_rect = true
+
+	return merged if has_rect else _board_global_rect(board_view)
 
 
 func _board_global_rect(board_view: BoardView) -> Rect2:
@@ -578,6 +804,14 @@ func _enemy_health_bar_rect(board_view: BoardView, enemy: Enemy) -> Rect2:
 		board_view.get_layout_metrics().cell_size,
 		enemy
 	)
+
+
+func _enemy_by_id(enemies: Array, enemy_id: String) -> Enemy:
+	for candidate in enemies:
+		var enemy := candidate as Enemy
+		if enemy != null and enemy.id == enemy_id:
+			return enemy
+	return null
 
 
 func _state_summary(board_view: BoardView) -> Dictionary:
@@ -741,6 +975,23 @@ func _draw_cross(image: Image, center: Vector2, color: Color, radius: int) -> vo
 	_draw_vertical_line(image, center.x, center.y - radius, center.y + radius, color, 2)
 
 
+func _draw_line(image: Image, start: Vector2, end: Vector2, color: Color, thickness: int) -> void:
+	var steps := maxi(1, ceili(start.distance_to(end)))
+	var half := maxi(0, thickness / 2)
+	for index in range(steps + 1):
+		var t := float(index) / float(steps)
+		var point := start.lerp(end, t)
+		var px := roundi(point.x)
+		var py := roundi(point.y)
+		for offset_y in range(-half, half + 1):
+			for offset_x in range(-half, half + 1):
+				var x := px + offset_x
+				var y := py + offset_y
+				if x < 0 or x >= image.get_width() or y < 0 or y >= image.get_height():
+					continue
+				image.set_pixel(x, y, color)
+
+
 func _draw_horizontal_line(image: Image, y: float, x0: float, x1: float, color: Color, thickness: int) -> void:
 	var yy := roundi(y)
 	var start_x := clampi(floori(minf(x0, x1)), 0, image.get_width() - 1)
@@ -820,12 +1071,13 @@ func _render_markdown_report() -> String:
 	lines.append("")
 	lines.append("## Manual Gameplay Visual Review Checklist")
 	lines.append("")
-	lines.append("- [ ] Board overlay: tower, enemy, projectile and health-bar markers align with the rendered objects.")
+	lines.append("- [ ] Board and focus overlays: tower, enemy, projectile, impact-effect and health-bar markers align with the rendered objects.")
 	lines.append("- [ ] Gameplay feedback: Gold/Lives/Wave/status/overlay text matches the checkpoint state summary.")
-	lines.append("- [ ] Combat readability: projectile, impact, death/reward, splash and slow checkpoints are visually understandable.")
+	lines.append("- [ ] Tower visual catalog: each tower has readable tower, projectile and impact-effect focus crops.")
+	lines.append("- [ ] Combat readability: projectile, impact, death/reward, splash, slow and burn checkpoints are visually understandable.")
 	lines.append("- [ ] Failure/victory readability: leak, defeat and victory feedback are visible without layout overlap.")
 	lines.append("")
-	lines.append("Overlay legend: cyan = board rect, green = tower, magenta = enemy, amber = health bar, white = projectile.")
+	lines.append("Overlay legend: cyan = board rect, green = tower, magenta = enemy, amber = health bar, white = projectile, orange = impact effect, yellow = attack guide.")
 	lines.append("")
 	for scenario in _report["scenarios"]:
 		lines.append("## %s / %s" % [scenario["viewport"], scenario["name"]])
@@ -852,11 +1104,19 @@ func _render_markdown_report() -> String:
 			lines.append("- Checkpoints:")
 			for checkpoint in scenario["checkpoints"]:
 				var state: Dictionary = checkpoint["state"]
-				lines.append("  - %s: [screen](%s), [board](%s), [overlay](%s); gold=%s lives=%s flow=%s status=\"%s\"" % [
-					checkpoint["name"],
+				var links := "[screen](%s), [board](%s), [overlay](%s)" % [
 					_artifact_link(checkpoint["screenshot"]["path"]),
 					_artifact_link(checkpoint["board_crop"]["path"]),
 					_artifact_link(checkpoint["board_overlay"]["path"]),
+				]
+				if checkpoint.has("focus_crop") and checkpoint.has("focus_overlay"):
+					links += ", [focus](%s), [focus overlay](%s)" % [
+						_artifact_link(checkpoint["focus_crop"]["path"]),
+						_artifact_link(checkpoint["focus_overlay"]["path"]),
+					]
+				lines.append("  - %s: %s; gold=%s lives=%s flow=%s status=\"%s\"" % [
+					checkpoint["name"],
+					links,
 					str(state["gold"]),
 					str(state["lives"]),
 					str(state["flow_state"]),

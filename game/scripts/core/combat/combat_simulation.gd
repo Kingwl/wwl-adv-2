@@ -13,6 +13,7 @@ var accumulator_seconds: float
 var tower_attack_service: TowerAttackService
 var projectile_service: ProjectileService
 var enemy_damage_service: EnemyDamageService
+var status_effect_service: StatusEffectService
 var wave_spawner: WaveSpawner
 var enemy_leak_service: EnemyLeakService
 var player_life: PlayerLife
@@ -30,7 +31,8 @@ func _init(
 	new_wave_spawner: WaveSpawner = null,
 	new_enemy_leak_service: EnemyLeakService = null,
 	new_player_life: PlayerLife = null,
-	new_projectile_service: ProjectileService = null
+	new_projectile_service: ProjectileService = null,
+	new_status_effect_service: StatusEffectService = null
 ) -> void:
 	assert(new_path_follower != null, "Path follower is required.")
 	assert(new_fixed_step_seconds > 0.0, "Fixed step seconds must be positive.")
@@ -44,6 +46,7 @@ func _init(
 	tower_attack_service = new_tower_attack_service if new_tower_attack_service != null else TowerAttackService.new()
 	projectile_service = new_projectile_service if new_projectile_service != null else ProjectileService.new()
 	enemy_damage_service = new_enemy_damage_service if new_enemy_damage_service != null else EnemyDamageService.new()
+	status_effect_service = new_status_effect_service if new_status_effect_service != null else StatusEffectService.new()
 	wave_spawner = new_wave_spawner
 	enemy_leak_service = new_enemy_leak_service if new_enemy_leak_service != null else EnemyLeakService.new()
 	player_life = new_player_life if new_player_life != null else PlayerLife.new()
@@ -94,10 +97,14 @@ func tick(delta_seconds: float) -> CombatTickResult:
 			spawned_projectiles.append(attack_result.projectile)
 
 	var projectile_result := projectile_service.advance(projectiles, enemies, path_follower, delta_seconds)
+	var status_advance_result := status_effect_service.advance_statuses(enemies, delta_seconds)
 	projectiles = projectile_result.active_projectiles
-	var damage_events := projectile_result.damage_events
+	var damage_events := []
+	damage_events.append_array(projectile_result.damage_events)
+	damage_events.append_array(status_advance_result.damage_events)
 	var status_events := projectile_result.status_events
 	var damage_result := enemy_damage_service.apply_damage_events(enemies, damage_events)
+	status_effect_service.apply_status_events(enemies, status_events)
 	if player_life.failed:
 		game_failed = true
 	elif wave_spawn_result.all_waves_cleared:

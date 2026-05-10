@@ -18,8 +18,9 @@ const HUD_MESSAGE_ROW_HEIGHT := 24.0
 const HUD_MESSAGE_ROW_GAP := 2.0
 const HUD_INLINE_MESSAGE_MIN_WIDTH := 420.0
 const TOWER_CARD_WIDTH := 184.0
-const TOWER_CARD_HEIGHT := 76.0
+const TOWER_CARD_HEIGHT := 68.0
 const TOWER_CARD_GAP := 8.0
+const TOWER_CARD_COUNT := 4
 const STAT_ICON_SIZE := 30.0
 const HUD_CHROME_MARGIN := 8.0
 const BOTTOM_TOWER_DECK_ASPECT_THRESHOLD := 1.45
@@ -37,7 +38,7 @@ func calculate(viewport_size: Vector2, board_width: int, board_height: int) -> B
 	var tower_reserved_width := 0.0
 	var tower_reserved_height := 0.0
 	if metrics.tower_deck_is_bottom:
-		tower_reserved_height = TOWER_CARD_HEIGHT + HUD_CHROME_MARGIN * 2.0 + BOTTOM_TOWER_DECK_GAP
+		tower_reserved_height = _bottom_tower_deck_content_size(viewport_size).y + HUD_CHROME_MARGIN * 2.0 + BOTTOM_TOWER_DECK_GAP
 	else:
 		tower_reserved_width = TOWER_CARD_WIDTH + SIDE_PANEL_GAP
 
@@ -129,10 +130,17 @@ func _calculate_hud(metrics: BoardLayoutMetrics) -> void:
 		metrics.hint_label_rect = Rect2(left, compact_status_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, compact_message_width, HUD_MESSAGE_ROW_HEIGHT)
 	else:
 		var side_left := viewport_size.x - SCREEN_PADDING - TOWER_CARD_WIDTH
-		var tower_buttons_bottom := HUD_RESERVED_HEIGHT + TOWER_CARD_HEIGHT * 3.0 + TOWER_CARD_GAP * 2.0
+		var tower_buttons_bottom := HUD_RESERVED_HEIGHT + TOWER_CARD_HEIGHT * TOWER_CARD_COUNT + TOWER_CARD_GAP * (TOWER_CARD_COUNT - 1)
+		var side_message_height := HUD_MESSAGE_ROW_HEIGHT * 2.0 + HUD_MESSAGE_ROW_GAP
+		var side_messages_fit_below := tower_buttons_bottom + HUD_CHROME_MARGIN + 4.0 + side_message_height <= viewport_size.y - SCREEN_PADDING
+		if not side_messages_fit_below:
+			metrics.status_label_rect = Rect2(message_left, message_top, message_width, HUD_MESSAGE_ROW_HEIGHT)
+			metrics.hint_label_rect = Rect2(message_left, message_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, message_width, HUD_MESSAGE_ROW_HEIGHT)
+			return
+
 		var side_message_top := minf(
 			tower_buttons_bottom + HUD_CHROME_MARGIN + 4.0,
-			viewport_size.y - SCREEN_PADDING - HUD_MESSAGE_ROW_HEIGHT * 2.0 - HUD_MESSAGE_ROW_GAP
+			viewport_size.y - SCREEN_PADDING - side_message_height
 		)
 		metrics.status_label_rect = Rect2(side_left, side_message_top, TOWER_CARD_WIDTH, HUD_MESSAGE_ROW_HEIGHT)
 		metrics.hint_label_rect = Rect2(side_left, side_message_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, TOWER_CARD_WIDTH, HUD_MESSAGE_ROW_HEIGHT)
@@ -141,18 +149,20 @@ func _calculate_hud(metrics: BoardLayoutMetrics) -> void:
 func _calculate_tower_deck(metrics: BoardLayoutMetrics) -> void:
 	var viewport_size := metrics.viewport_size
 	if metrics.tower_deck_is_bottom:
-		var total_width := TOWER_CARD_WIDTH * 3.0 + TOWER_CARD_GAP * 2.0
-		var deck_left := floorf((viewport_size.x - total_width) * 0.5)
-		var deck_top := viewport_size.y - SCREEN_PADDING - TOWER_CARD_HEIGHT
+		var columns := _bottom_tower_deck_columns(viewport_size)
+		var content_size := _bottom_tower_deck_content_size(viewport_size)
+		var deck_left := floorf((viewport_size.x - content_size.x) * 0.5)
+		var deck_top := viewport_size.y - SCREEN_PADDING - content_size.y
 		metrics.tower_deck_rect = Rect2(
 			deck_left - HUD_CHROME_MARGIN,
 			deck_top - HUD_CHROME_MARGIN,
-			total_width + HUD_CHROME_MARGIN * 2.0,
-			TOWER_CARD_HEIGHT + HUD_CHROME_MARGIN * 2.0
+			content_size.x + HUD_CHROME_MARGIN * 2.0,
+			content_size.y + HUD_CHROME_MARGIN * 2.0
 		)
-		metrics.single_tower_button_rect = Rect2(deck_left, deck_top, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT)
-		metrics.area_tower_button_rect = Rect2(deck_left + TOWER_CARD_WIDTH + TOWER_CARD_GAP, deck_top, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT)
-		metrics.slow_tower_button_rect = Rect2(deck_left + (TOWER_CARD_WIDTH + TOWER_CARD_GAP) * 2.0, deck_top, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT)
+		metrics.single_tower_button_rect = _bottom_tower_button_rect(deck_left, deck_top, columns, 0)
+		metrics.area_tower_button_rect = _bottom_tower_button_rect(deck_left, deck_top, columns, 1)
+		metrics.slow_tower_button_rect = _bottom_tower_button_rect(deck_left, deck_top, columns, 2)
+		metrics.flame_tower_button_rect = _bottom_tower_button_rect(deck_left, deck_top, columns, 3)
 		return
 
 	var panel_left := viewport_size.x - SCREEN_PADDING - TOWER_CARD_WIDTH
@@ -161,11 +171,39 @@ func _calculate_tower_deck(metrics: BoardLayoutMetrics) -> void:
 		panel_left - HUD_CHROME_MARGIN,
 		tower_top - HUD_CHROME_MARGIN,
 		TOWER_CARD_WIDTH + HUD_CHROME_MARGIN * 2.0,
-		TOWER_CARD_HEIGHT * 3.0 + TOWER_CARD_GAP * 2.0 + HUD_CHROME_MARGIN * 2.0
+		TOWER_CARD_HEIGHT * TOWER_CARD_COUNT + TOWER_CARD_GAP * (TOWER_CARD_COUNT - 1) + HUD_CHROME_MARGIN * 2.0
 	)
 	metrics.single_tower_button_rect = Rect2(panel_left, tower_top, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT)
 	metrics.area_tower_button_rect = Rect2(panel_left, tower_top + TOWER_CARD_HEIGHT + TOWER_CARD_GAP, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT)
 	metrics.slow_tower_button_rect = Rect2(panel_left, tower_top + (TOWER_CARD_HEIGHT + TOWER_CARD_GAP) * 2.0, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT)
+	metrics.flame_tower_button_rect = Rect2(panel_left, tower_top + (TOWER_CARD_HEIGHT + TOWER_CARD_GAP) * 3.0, TOWER_CARD_WIDTH, TOWER_CARD_HEIGHT)
+
+
+func _bottom_tower_deck_columns(viewport_size: Vector2) -> int:
+	var four_column_width := TOWER_CARD_WIDTH * TOWER_CARD_COUNT + TOWER_CARD_GAP * (TOWER_CARD_COUNT - 1)
+	if four_column_width <= viewport_size.x - SCREEN_PADDING * 2.0:
+		return TOWER_CARD_COUNT
+	return 2
+
+
+func _bottom_tower_deck_content_size(viewport_size: Vector2) -> Vector2:
+	var columns := _bottom_tower_deck_columns(viewport_size)
+	var rows := ceili(float(TOWER_CARD_COUNT) / float(columns))
+	return Vector2(
+		TOWER_CARD_WIDTH * columns + TOWER_CARD_GAP * (columns - 1),
+		TOWER_CARD_HEIGHT * rows + TOWER_CARD_GAP * (rows - 1)
+	)
+
+
+func _bottom_tower_button_rect(deck_left: float, deck_top: float, columns: int, index: int) -> Rect2:
+	var column := index % columns
+	var row := floori(float(index) / float(columns))
+	return Rect2(
+		deck_left + float(column) * (TOWER_CARD_WIDTH + TOWER_CARD_GAP),
+		deck_top + float(row) * (TOWER_CARD_HEIGHT + TOWER_CARD_GAP),
+		TOWER_CARD_WIDTH,
+		TOWER_CARD_HEIGHT
+	)
 
 
 func _calculate_overlay(metrics: BoardLayoutMetrics) -> void:

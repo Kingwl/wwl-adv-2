@@ -17,6 +17,7 @@ enum ReviewSpecKind {
 	MAIN,
 	START,
 	TOWER_DECK,
+	BOARD_PREVIEW,
 	TOWER_ACTION,
 	STATUS_HINT,
 	OVERLAY,
@@ -185,6 +186,7 @@ func _check_main_nodes(result: Dictionary, main_scene: Node) -> void:
 		"Hud/SingleTowerButton",
 		"Hud/AreaTowerButton",
 		"Hud/SlowTowerButton",
+		"Hud/FlameTowerButton",
 		"Hud/HudFrame",
 		"Hud/TowerDeck",
 		"Hud/TowerActionPanel",
@@ -230,6 +232,7 @@ func _check_layout(result: Dictionary, main_scene: Node, board_view: BoardView, 
 		"Hud/SingleTowerButton",
 		"Hud/AreaTowerButton",
 		"Hud/SlowTowerButton",
+		"Hud/FlameTowerButton",
 	]
 
 	for node_path in control_paths:
@@ -261,6 +264,26 @@ func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: Bo
 		return
 
 	var gold_before := board_view.get_session().wallet.gold
+	_hover_grid_cell(board_view, buildable_cell)
+	await _settle_frames(2)
+	_hover_grid_cell(board_view, buildable_cell)
+	_check(result, board_view.hover_grid_position == buildable_cell, "tower placement preview hover tracks buildable cell")
+	_check(result, board_view.get_renderer().should_draw_tower_placement_preview(
+		board_view.get_session().board,
+		board_view.get_session().placement_service,
+		buildable_cell,
+		board_view.get_session().flow_state == BoardGameSession.FlowState.PLAYING and not board_view.get_session().gameplay_paused
+	), "tower placement preview visible on hovered buildable cell")
+	await _capture_current_review_artifacts(
+		result,
+		String(result["name"]),
+		main_scene,
+		"tower placement preview",
+		ReviewSpecKind.BOARD_PREVIEW,
+		"tower-placement-preview",
+		"Tower placement preview"
+	)
+
 	_click_grid_cell(board_view, buildable_cell)
 	await _settle_frames(2)
 
@@ -308,13 +331,26 @@ func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: Bo
 
 
 func _find_buildable_cell(board_view: BoardView) -> Vector2i:
+	for preferred_position in [Vector2i(2, 2), Vector2i(3, 2), Vector2i(5, 2), Vector2i(1, 1)]:
+		if _is_empty_buildable_cell(board_view, preferred_position):
+			return preferred_position
+
 	for y in range(board_view.get_session().board.height):
 		for x in range(board_view.get_session().board.width):
 			var position := Vector2i(x, y)
-			var slot := board_view.get_session().board.get_slot(position)
-			if slot.slot_type == BoardSlot.Type.BUILDABLE and slot.is_empty():
+			if _is_empty_buildable_cell(board_view, position):
 				return position
 	return Vector2i(-1, -1)
+
+
+func _is_empty_buildable_cell(board_view: BoardView, position: Vector2i) -> bool:
+	if board_view == null or board_view.get_session().board == null:
+		return false
+	if not board_view.get_session().board.is_in_bounds(position):
+		return false
+
+	var slot := board_view.get_session().board.get_slot(position)
+	return slot.slot_type == BoardSlot.Type.BUILDABLE and slot.is_empty()
 
 
 func _find_occupied_cell(board_view: BoardView) -> Vector2i:
@@ -333,6 +369,11 @@ func _click_grid_cell(board_view: BoardView, grid_position: Vector2i) -> void:
 	event.pressed = true
 	event.position = board_view.to_global(board_view.grid_to_local_rect(grid_position).get_center())
 	board_view._unhandled_input(event)
+
+
+func _hover_grid_cell(board_view: BoardView, grid_position: Vector2i) -> void:
+	board_view.hover_grid_position = grid_position
+	board_view.queue_redraw()
 
 
 func _capture_screenshot(result: Dictionary, viewport_name: String, main_scene: Node) -> void:
@@ -437,6 +478,18 @@ func _capture_visual_state_artifacts(
 		ReviewSpecKind.TOWER_DECK,
 		"tower-deck-slow-selected",
 		"Tower deck: Slow selected"
+	)
+
+	board_view.select_tower_type(GameTower.Type.FLAME)
+	await _settle_frames(2)
+	await _capture_current_review_artifacts(
+		result,
+		viewport_name,
+		main_scene,
+		"flame tower selected",
+		ReviewSpecKind.TOWER_DECK,
+		"tower-deck-flame-selected",
+		"Tower deck: Flame selected"
 	)
 
 	board_view.get_session().wallet.gold = 0
@@ -546,6 +599,8 @@ func _review_specs_for_kind(
 			return [_start_screen_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.TOWER_DECK:
 			return [_tower_deck_review_spec(scene, image_size, spec_name, spec_title)]
+		ReviewSpecKind.BOARD_PREVIEW:
+			return [_board_preview_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.TOWER_ACTION:
 			return [_tower_action_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.STATUS_HINT:
@@ -623,17 +678,20 @@ func _tower_deck_review_spec(
 			"Hud/SingleTowerButton",
 			"Hud/AreaTowerButton",
 			"Hud/SlowTowerButton",
+			"Hud/FlameTowerButton",
 		], image_size),
 		"controls": [
 			{"path": "Hud/TowerDeck", "kind": "frame"},
 			{"path": "Hud/SingleTowerButton", "kind": "control"},
 			{"path": "Hud/AreaTowerButton", "kind": "control"},
 			{"path": "Hud/SlowTowerButton", "kind": "control"},
+			{"path": "Hud/FlameTowerButton", "kind": "control"},
 		],
 		"groups": [
 			["Hud/SingleTowerButton"],
 			["Hud/AreaTowerButton"],
 			["Hud/SlowTowerButton"],
+			["Hud/FlameTowerButton"],
 		],
 	}
 
@@ -650,18 +708,40 @@ func _tower_action_review_spec(
 		"rect": _expanded_control_group_rect(main_scene, [
 			"Hud/TowerActionPanel",
 			"Hud/TowerActionPanel/Title",
+			"Hud/TowerActionPanel/Preview",
 			"Hud/TowerActionPanel/UpgradeButton",
 			"Hud/TowerActionPanel/RemoveButton",
 		], image_size),
 		"controls": [
 			{"path": "Hud/TowerActionPanel", "kind": "frame"},
 			{"path": "Hud/TowerActionPanel/Title", "kind": "control"},
+			{"path": "Hud/TowerActionPanel/Preview", "kind": "control"},
 			{"path": "Hud/TowerActionPanel/UpgradeButton", "kind": "control"},
 			{"path": "Hud/TowerActionPanel/RemoveButton", "kind": "control"},
 		],
 		"groups": [
-			["Hud/TowerActionPanel/Title"],
+			["Hud/TowerActionPanel/Title", "Hud/TowerActionPanel/Preview"],
 			["Hud/TowerActionPanel/UpgradeButton", "Hud/TowerActionPanel/RemoveButton"],
+		],
+	}
+
+
+func _board_preview_review_spec(
+	main_scene: Node,
+	image_size: Vector2i,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> Dictionary:
+	var board_view := main_scene.get_node_or_null("BoardView") as BoardView
+	var preview_rect := _tower_preview_global_rect(board_view)
+	return {
+		"name": spec_name if not spec_name.is_empty() else "tower-placement-preview",
+		"title": spec_title if not spec_title.is_empty() else "Tower placement preview",
+		"rect": _tower_preview_crop_rect(board_view, image_size),
+		"controls": [],
+		"groups": [],
+		"rects": [
+			{"rect": preview_rect, "kind": "group"},
 		],
 	}
 
@@ -817,6 +897,26 @@ func _expanded_control_group_rect(main_scene: Node, paths: Array, image_size: Ve
 	return _clamp_rect(rect.grow(REVIEW_CROP_MARGIN), image_size)
 
 
+func _tower_preview_crop_rect(board_view: BoardView, image_size: Vector2i) -> Rect2:
+	var preview_rect := _tower_preview_global_rect(board_view)
+	if preview_rect.size.x <= 0.0 or preview_rect.size.y <= 0.0:
+		return Rect2()
+
+	var margin := maxf(REVIEW_CROP_MARGIN, preview_rect.size.x * 0.75)
+	return _clamp_rect(preview_rect.grow(margin), image_size)
+
+
+func _tower_preview_global_rect(board_view: BoardView) -> Rect2:
+	if board_view == null or board_view.hover_grid_position == BoardView.INVALID_GRID_POSITION:
+		return Rect2()
+
+	var local_rect := board_view.grid_to_local_rect(board_view.hover_grid_position)
+	var canvas_transform := board_view.get_global_transform_with_canvas()
+	var screen_position := canvas_transform * local_rect.position
+	var screen_end := canvas_transform * local_rect.end
+	return Rect2(screen_position, screen_end - screen_position).abs()
+
+
 func _control_group_rect(main_scene: Node, paths: Array) -> Rect2:
 	var has_rect := false
 	var merged := Rect2()
@@ -866,7 +966,16 @@ func _scaled_review_image(image: Image) -> Image:
 
 
 func _draw_review_overlay(image: Image, crop_origin: Vector2, main_scene: Node, spec: Dictionary) -> void:
-	for entry in spec["controls"]:
+	for rect_entry in spec.get("rects", []):
+		var rect: Rect2 = rect_entry.get("rect", Rect2())
+		if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+			continue
+		var local_direct_rect := Rect2(rect.position - crop_origin, rect.size)
+		var direct_color := _overlay_color_for_kind(String(rect_entry.get("kind", "control")))
+		_draw_rect_outline(image, local_direct_rect, direct_color, 2)
+		_draw_horizontal_line(image, local_direct_rect.get_center().y, local_direct_rect.position.x, local_direct_rect.end.x, OVERLAY_CENTER_COLOR, 1)
+
+	for entry in spec.get("controls", []):
 		var node_path := String(entry["path"])
 		var rect := _control_rect(main_scene, node_path)
 		if rect.size.x <= 0.0 or rect.size.y <= 0.0:
@@ -875,7 +984,7 @@ func _draw_review_overlay(image: Image, crop_origin: Vector2, main_scene: Node, 
 		var color := _overlay_color_for_kind(String(entry["kind"]))
 		_draw_rect_outline(image, local_rect, color, 2)
 
-	for group in spec["groups"]:
+	for group in spec.get("groups", []):
 		var group_rect := _control_group_rect(main_scene, group)
 		if group_rect.size.x <= 0.0 or group_rect.size.y <= 0.0:
 			continue
@@ -890,6 +999,8 @@ func _overlay_color_for_kind(kind: String) -> Color:
 			return OVERLAY_FRAME_COLOR
 		"icon":
 			return OVERLAY_ICON_COLOR
+		"group":
+			return OVERLAY_GROUP_COLOR
 		_:
 			return OVERLAY_CONTROL_COLOR
 
@@ -1042,6 +1153,7 @@ func _render_markdown_report() -> String:
 	lines.append("- [ ] Status/hint: text is readable, centered in its intended area, and not clipped or crowded by Menu, board, or tower deck.")
 	lines.append("- [ ] Status variants: reward and leak messages remain readable in compact and desktop layouts.")
 	lines.append("- [ ] Tower deck: cards fit the viewport, selected/disabled states are readable, and card text does not collide with icons or frames.")
+	lines.append("- [ ] Tower placement preview: hovered buildable tile shows a readable translucent preview of the selected tower.")
 	lines.append("- [ ] Tower action menu: floating Upgrade/Remove panel appears beside the selected tower, stays in viewport, and its button text is readable.")
 	lines.append("- [ ] Start and overlays: start, pause, victory, and defeat panels keep title, message, and buttons centered and readable.")
 	lines.append("- [ ] Compact viewports: top HUD, board, and bottom/side tower deck remain visually separated.")

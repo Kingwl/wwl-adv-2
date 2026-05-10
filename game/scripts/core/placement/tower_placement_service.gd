@@ -115,6 +115,8 @@ func try_upgrade_tower(tower_id: String) -> TowerUpgradeResult:
 	var previous_tier := tower.tier
 	tower.tier = next_tier
 	tower.invested_gold += upgrade_cost
+	var next_stats := tower_config.get_stats(tower.tower_type, tower.tier)
+	tower.cooldown_remaining = minf(tower.cooldown_remaining, next_stats.attack_interval)
 	return TowerUpgradeResult.success(tower, previous_tier, spend_result)
 
 

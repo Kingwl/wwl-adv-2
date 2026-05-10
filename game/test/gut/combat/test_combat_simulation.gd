@@ -81,6 +81,69 @@ func test_advance_does_not_tick_towers_before_fixed_step_is_available() -> void:
 	assert_eq(tower.cooldown_remaining, 1.0)
 
 
+func test_tick_applies_existing_slow_status_to_enemy_movement() -> void:
+	var enemy := Enemy.new("enemy-1", 1.0, 20.0, 5)
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)])
+	var simulation := CombatSimulation.new([], [enemy], follower, 0.1)
+	simulation.status_effect_service.apply_status_events(simulation.enemies, [
+		StatusEvent.new("enemy-1", StatusEvent.StatusType.SLOW, 1.0, 0.6, "tower-a"),
+	])
+
+	simulation.tick(0.1)
+
+	assert_almost_eq(enemy.path_distance, 0.06, 0.00001)
+	assert_eq(enemy.status_effects.size(), 1)
+	assert_almost_eq(enemy.status_effects[0].remaining_seconds, 0.9, 0.00001)
+
+
+func test_tick_keeps_slow_active_during_the_tick_it_expires() -> void:
+	var enemy := Enemy.new("enemy-1", 1.0, 20.0, 5)
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)])
+	var simulation := CombatSimulation.new([], [enemy], follower, 0.1)
+	simulation.status_effect_service.apply_status_events(simulation.enemies, [
+		StatusEvent.new("enemy-1", StatusEvent.StatusType.SLOW, 0.1, 0.5, "tower-a"),
+	])
+
+	simulation.tick(0.1)
+
+	assert_almost_eq(enemy.path_distance, 0.05, 0.00001)
+	assert_eq(enemy.status_effects.size(), 0)
+
+
+func test_tick_applies_dot_damage_through_damage_affinity() -> void:
+	var enemy := Enemy.new(
+		"enemy-1",
+		0.1,
+		40.0,
+		5,
+		DamageTypes.ArmorType.HEAVY,
+		DamageTypes.RaceType.UNDEAD
+	)
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)])
+	var simulation := CombatSimulation.new([], [enemy], follower, 0.5)
+	simulation.status_effect_service.apply_status_events(simulation.enemies, [
+		StatusEvent.new(
+			"enemy-1",
+			StatusEvent.StatusType.BURN,
+			1.0,
+			1.0,
+			"tower-a",
+			0.5,
+			4.0,
+			DamageTypes.AttackType.MAGIC,
+			DamageTypes.DamageSchool.FIRE
+		),
+	])
+
+	var result := simulation.tick(0.5)
+
+	assert_eq(result.damage_events.size(), 1)
+	assert_eq(result.damage_events[0].amount, 4.0)
+	assert_eq(result.damage_result.applied_damage_events.size(), 1)
+	assert_eq(result.damage_result.applied_damage_events[0].amount, 10.0)
+	assert_eq(enemy.health, 30.0)
+
+
 func test_tick_spawns_wave_enemies_before_movement() -> void:
 	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)])
 	var wave_spawner := WaveSpawner.new([

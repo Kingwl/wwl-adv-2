@@ -52,6 +52,8 @@ func _handle_key_shortcut(event: InputEventKey, keyboard_actions: Dictionary) ->
 			_call_action(keyboard_actions, "select_area_tower")
 		KEY_3:
 			_call_action(keyboard_actions, "select_slow_tower")
+		KEY_4:
+			_call_action(keyboard_actions, "select_flame_tower")
 		KEY_U:
 			_call_action(keyboard_actions, "upgrade_selected_tower")
 		KEY_X, KEY_DELETE, KEY_BACKSPACE:

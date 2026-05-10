@@ -31,4 +31,7 @@ func test_compact_square_layout_moves_tower_deck_below_board() -> void:
 	assert_true(metrics.hint_label_rect.end.y <= metrics.get_board_rect().position.y)
 	assert_true(metrics.get_board_rect().end.y <= metrics.single_tower_button_rect.position.y - BoardLayoutService.BOTTOM_TOWER_DECK_GAP)
 	assert_eq(metrics.area_tower_button_rect.position.y, metrics.single_tower_button_rect.position.y)
-	assert_eq(metrics.slow_tower_button_rect.position.y, metrics.single_tower_button_rect.position.y)
+	assert_eq(metrics.slow_tower_button_rect.position.x, metrics.single_tower_button_rect.position.x)
+	assert_eq(metrics.slow_tower_button_rect.position.y, metrics.single_tower_button_rect.position.y + BoardLayoutService.TOWER_CARD_HEIGHT + BoardLayoutService.TOWER_CARD_GAP)
+	assert_eq(metrics.flame_tower_button_rect.position.x, metrics.area_tower_button_rect.position.x)
+	assert_eq(metrics.flame_tower_button_rect.position.y, metrics.slow_tower_button_rect.position.y)

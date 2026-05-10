@@ -14,6 +14,8 @@
 
 ## UI 问题
 
+- [x] 移动横屏的塔放置预览 smoke crop 被裁成 2x2 像素，无法人工审查；已改用 canvas transform 计算棋盘局部 crop。
+- [x] 塔放置 hover 预览消失，棋盘上只剩 hover 边框；已恢复当前选中塔的半透明预览并加入 UI smoke crop 覆盖。
 - [x] 塔操作菜单关闭后，右侧 hint 仍保留 `Upgrade or remove this tower.` 截断文案；已在关闭菜单时恢复当前塔卡选择提示。
 - [x] 塔操作菜单的横向 `Upgrade 40g` / `Remove +12g` 按钮在 smoke crop 中被按钮框裁切；已改为纵向全宽按钮。
 - [x] 箭塔分层原型的 top 素材仍带一圈独立石质平台，运行时需要缩放和上移才贴合塔身；已改为单张圆形旋转塔顶并删除分层原型。

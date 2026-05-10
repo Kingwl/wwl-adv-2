@@ -27,7 +27,10 @@ func advance(enemy: Enemy, delta_seconds: float) -> void:
 
 	enemy.path_distance = minf(
 		total_distance,
-		enemy.path_distance + enemy.speed_cells_per_second * delta_seconds
+		enemy.path_distance
+			+ enemy.speed_cells_per_second
+			* enemy.get_movement_speed_multiplier()
+			* delta_seconds
 	)
 
 	if enemy.path_distance >= total_distance:

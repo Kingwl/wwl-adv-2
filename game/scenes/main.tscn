@@ -80,6 +80,13 @@ offset_right = 328.0
 offset_bottom = 96.0
 text = "Slow\n25g"
 
+[node name="FlameTowerButton" type="Button" parent="Hud"]
+offset_left = 336.0
+offset_top = 42.0
+offset_right = 432.0
+offset_bottom = 96.0
+text = "Flame\n25g"
+
 [node name="Overlay" type="CanvasLayer" parent="."]
 
 [node name="Screen" type="Control" parent="Overlay"]

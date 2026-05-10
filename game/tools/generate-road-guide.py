@@ -17,7 +17,7 @@ except ImportError as exc:
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LEVEL = "res://data/levels/level_001.json"
-DEFAULT_BASE_BACKGROUND = "res://assets/tilesets/stormwind_city_v2/background_frame.png"
+DEFAULT_BASE_BACKGROUND = "res://assets/tilesets/stormwind_city_v3/background_frame.png"
 
 
 def main() -> int:

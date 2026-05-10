@@ -8,7 +8,7 @@
 
 ## 已验证命令
 
-最近检查：2026-05-10。
+最近检查：2026-05-11。
 
 ```bash
 cd game
@@ -28,11 +28,11 @@ cd game
 
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
-- GUT 套件：159 个测试通过，979 个断言。
+- GUT 套件：186 个测试通过，1181 个断言。
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
-- Native gameplay smoke：8 个代表性 gameplay scenario 通过，trace、截图和 overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
+- Native gameplay smoke：10 个代表性 gameplay scenario 通过，trace、截图、board overlay 和 focus overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
 - Web export smoke：Web 导出页面通过本地 HTTP + headless browser 检查，报告和截图位于 `ci-artifacts/web-smoke/`。
-- Structural lint：Tree-sitter GDScript 解析 85 个文件，0 个 error，0 个 warning。
+- Structural lint：Tree-sitter GDScript 解析 92 个文件，0 个 error，0 个 warning。
 - Agent preflight fast：运行 `check-all.sh`，生成 Godot/GUT 结构化日志报告，不运行 native smoke。
 - Agent preflight full：运行 fast preflight、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
 - 已知警告：GUT 退出时有来自场景/资源清理的 ObjectDB leaked instances 警告，记录为 TD-007。
@@ -49,16 +49,20 @@ cd game
 - 波次生成和波次清空事件。
 - 玩家生命、胜利和失败状态。
 - 开始场景、主场景、暂停菜单、重开、返回开始、胜利和失败流程。
-- 三种基础塔：Single、Area 和 Slow。
+- 四种基础塔：Single、Area、Slow 和 Flame。
 - 点击已放置塔会显示右上角浮动操作菜单，支持直接升级和拆除。
-- 支持键盘快捷键：`1`/`2`/`3` 选择塔，`U` 升级选中塔，`X`/`Delete`/`Backspace` 拆除选中塔，`Esc` 优先关闭塔操作菜单再进入暂停。
-- 塔升级效果按塔类型和 tier 配置化；Single 提升单体伤害/射程/攻速，Area 提升溅射和伤害，Slow 增强减速和持续时间。
+- 支持键盘快捷键：`1`/`2`/`3`/`4` 选择塔，`U` 升级选中塔，`X`/`Delete`/`Backspace` 拆除选中塔，`Esc` 优先关闭塔操作菜单再进入暂停。
+- 塔升级效果按塔类型和 tier 配置化；普通升级只做数值提升，每次升级必须提升伤害和攻击范围；升级不清空攻击冷却，只会按新攻击间隔钳制剩余冷却。
+- 塔操作菜单显示下一次升级预览，包含伤害和范围成长。
+- 攻击、防御、伤害类型和种族抗性第一版已进入核心伤害结算；现有四塔带有武器形态、攻击类型、伤害类型和攻击模式元数据。
+- 通用状态和 DoT 第一版已进入核心战斗：Slow 会作为状态实际降低敌人移动速度，Flame 会施加 Burn DoT，Burn/Poison 类 DoT 可按完整 tick interval 产生携带攻击/伤害类型的 `DamageEvent` 并继续走伤害克制结算。
 - 拆除塔会返还 50% 建造和升级累计投入。
-- 三种基础塔在棋盘和塔卡中使用生成的圆形塔顶 sprite，运行时按当前目标方向旋转。
+- 四种基础塔在棋盘和塔卡中使用生成的圆形塔顶 sprite，运行时按当前目标方向旋转；Flame 塔和火焰命中特效使用本地生成的新素材。
 - 当前地图的数据驱动关卡路径/style 加载。
 - 生成的城市防御地图、道路 guide 产物、UI frame、塔 sprite、敌人 sprite 和攻击特效。
 - 覆盖 start-to-main 可玩性、响应式视口、单塔放置、塔操作菜单和截图产物的 native UI smoke。
-- 覆盖放塔、升级/拆除返还、Single 击杀奖励、Area 溅射、Slow 状态、漏怪、胜利和失败的 native gameplay smoke。
+- 覆盖放塔、升级/拆除返还、Single 击杀奖励、Area 溅射、Slow 状态、Flame 灼烧 DoT、逐塔视觉目录、漏怪、胜利和失败的 native gameplay smoke。
+- 逐塔视觉目录会为每种塔产出塔本体、投射物飞行中、命中/效果出现后的整屏截图、board crop、focus crop 和辅助线 overlay。
 - Tree-sitter structural lint，覆盖 core/scene/render 边界、BoardView 资产加载边界和结构回膨胀 warning 报告。
 - `BoardAssetCatalog`，集中管理主棋盘场景的关卡、map style、HUD 图标、塔/敌人 sprite 和特效贴图加载。
 - `BoardGameSession`，集中管理一局游戏的棋盘、钱包、放置服务、战斗模拟、波次、奖励和胜负 flow；场景测试和 smoke runner 通过 `BoardView.get_session()` 明确访问。
@@ -75,6 +79,9 @@ cd game
 ## 开放决策
 
 - 塔、敌人和波次配置的数据形状。
+- 初期塔类型和实现批次已记录为 accepted design；火焰塔已进入代码和测试，毒针塔、雷霆塔等后续塔仍待实现。
+- 塔机制、效果、状态、DoT 和视觉事件体系已记录为 accepted design；状态/DoT 核心规则和 Flame 塔第一版已实现，塔 `effects[]` 配置、毒针/雷霆塔和独立视觉事件仍未实现。
+- 塔升级机制第一版已实现；未来是否加入分支进化仍待决定。
 - 更长波次前，是否需要清理已完成/已击败但仍保留的敌人。
 - 生成的 road ribbon 资产是否应变成确定性的运行时/编辑器生成内容。
 
@@ -99,6 +106,6 @@ cd game
 
 ## 下一步最值得做的工作
 
-1. 将塔、敌人和波次定义推进到数据文件。
-2. 增加 MVP 敌人类型和至少 8 波可演示内容。
+1. 把毒针塔等新塔接到通用状态/DoT 机制，并补 effects[] 配置形状。
+2. 将塔、敌人和波次定义推进到数据文件，并为敌人配置 armor/race。
 3. 保持 `game/tools/check-all.sh` 作为默认验证命令。

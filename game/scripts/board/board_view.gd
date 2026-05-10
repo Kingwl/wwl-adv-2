@@ -13,6 +13,7 @@ const START_SCENE_PATH := "res://scenes/start.tscn"
 @export var single_tower_button_path: NodePath = NodePath("../Hud/SingleTowerButton")
 @export var area_tower_button_path: NodePath = NodePath("../Hud/AreaTowerButton")
 @export var slow_tower_button_path: NodePath = NodePath("../Hud/SlowTowerButton")
+@export var flame_tower_button_path: NodePath = NodePath("../Hud/FlameTowerButton")
 @export var overlay_root_path: NodePath = NodePath("../Overlay/Screen")
 @export var overlay_backdrop_path: NodePath = NodePath("../Overlay/Screen/Backdrop")
 @export var overlay_panel_path: NodePath = NodePath("../Overlay/Screen/Panel")
@@ -303,6 +304,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			"select_single_tower": Callable(self, "select_tower_type").bind(GameTower.Type.SINGLE_TARGET),
 			"select_area_tower": Callable(self, "select_tower_type").bind(GameTower.Type.AREA),
 			"select_slow_tower": Callable(self, "select_tower_type").bind(GameTower.Type.SLOW),
+			"select_flame_tower": Callable(self, "select_tower_type").bind(GameTower.Type.FLAME),
 			"upgrade_selected_tower": Callable(self, "upgrade_selected_tower"),
 			"remove_selected_tower": Callable(self, "remove_selected_tower"),
 			"has_tower_action_menu": Callable(self, "has_tower_action_menu"),
@@ -330,6 +332,8 @@ func _draw() -> void:
 		metrics.board_origin,
 		metrics.cell_size,
 		hover_grid_position,
+		_game_session.selected_tower_type,
+		_should_draw_tower_placement_preview(),
 		selected_tower_grid_position,
 		_game_session.last_placement_result
 	)
@@ -385,6 +389,7 @@ func _configure_hud() -> void:
 		single_tower_button_path,
 		area_tower_button_path,
 		slow_tower_button_path,
+		flame_tower_button_path,
 		overlay_root_path,
 		overlay_backdrop_path,
 		overlay_panel_path,
@@ -406,6 +411,7 @@ func _configure_hud() -> void:
 		Callable(self, "select_tower_type").bind(GameTower.Type.SINGLE_TARGET),
 		Callable(self, "select_tower_type").bind(GameTower.Type.AREA),
 		Callable(self, "select_tower_type").bind(GameTower.Type.SLOW),
+		Callable(self, "select_tower_type").bind(GameTower.Type.FLAME),
 		Callable(self, "_on_overlay_primary_pressed"),
 		Callable(self, "_on_overlay_secondary_pressed"),
 		Callable(self, "upgrade_selected_tower"),
@@ -572,6 +578,14 @@ func _update_hover(grid_position: Vector2i) -> void:
 
 	hover_grid_position = grid_position
 	queue_redraw()
+
+
+func _should_draw_tower_placement_preview() -> bool:
+	return (
+		_game_session != null
+		and _game_session.flow_state == BoardGameSession.FlowState.PLAYING
+		and not _game_session.gameplay_paused
+	)
 
 
 func _on_viewport_size_changed() -> void:

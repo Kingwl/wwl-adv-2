@@ -5,6 +5,7 @@ enum Type {
 	SINGLE_TARGET,
 	AREA,
 	SLOW,
+	FLAME,
 }
 
 var id: String

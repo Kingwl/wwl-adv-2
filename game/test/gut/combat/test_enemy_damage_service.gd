@@ -7,6 +7,8 @@ func test_basic_enemy_defaults_to_single_mvp_profile() -> void:
 	assert_eq(enemy.max_health, 20.0)
 	assert_eq(enemy.health, 20.0)
 	assert_eq(enemy.kill_reward, 5)
+	assert_eq(enemy.armor_type, DamageTypes.ArmorType.HEAVY)
+	assert_eq(enemy.race_type, DamageTypes.RaceType.BEAST)
 	assert_false(enemy.defeated)
 
 
@@ -59,6 +61,35 @@ func test_damage_against_defeated_enemy_is_ignored_without_duplicate_death() -> 
 	assert_eq(result.applied_damage_events.size(), 0)
 	assert_eq(result.death_events.size(), 0)
 	assert_eq(result.ignored_damage_events.size(), 1)
+
+
+func test_apply_damage_events_uses_attack_armor_and_race_affinity() -> void:
+	var enemy := Enemy.new(
+		"enemy-1",
+		1.0,
+		40.0,
+		5,
+		DamageTypes.ArmorType.HEAVY,
+		DamageTypes.RaceType.UNDEAD
+	)
+	var service := EnemyDamageService.new()
+
+	var result := service.apply_damage_events(
+		[enemy],
+		[DamageEvent.new(
+			"enemy-1",
+			10.0,
+			"tower-a",
+			DamageTypes.AttackType.MAGIC,
+			DamageTypes.DamageSchool.FIRE
+		)]
+	)
+
+	assert_eq(enemy.health, 15.0)
+	assert_eq(result.applied_damage_events.size(), 1)
+	assert_eq(result.applied_damage_events[0].amount, 25.0)
+	assert_eq(result.applied_damage_events[0].attack_type, DamageTypes.AttackType.MAGIC)
+	assert_eq(result.applied_damage_events[0].damage_school, DamageTypes.DamageSchool.FIRE)
 
 
 func test_damage_for_unknown_enemy_is_ignored() -> void:

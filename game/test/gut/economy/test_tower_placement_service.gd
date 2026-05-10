@@ -78,6 +78,36 @@ func test_try_upgrade_tower_uses_tower_type_specific_cost() -> void:
 	assert_eq(wallet.gold, 40)
 
 
+func test_try_upgrade_tower_does_not_clear_existing_cooldown() -> void:
+	var board := Board.new(3, 2)
+	var wallet := Wallet.new(100)
+	var service := TowerPlacementService.new(board, wallet, EconomyConfig.new(), func() -> String: return "tower-1")
+	assert_true(service.try_place_basic_tower(Vector2i(1, 1)).succeeded)
+	var tower := service.tower_registry.get_tower("tower-1")
+	tower.cooldown_remaining = 0.4
+
+	var result := service.try_upgrade_tower("tower-1")
+
+	assert_true(result.succeeded)
+	assert_eq(tower.tier, 2)
+	assert_eq(tower.cooldown_remaining, 0.4)
+
+
+func test_try_upgrade_tower_clamps_cooldown_to_new_attack_interval() -> void:
+	var board := Board.new(3, 2)
+	var wallet := Wallet.new(100)
+	var service := TowerPlacementService.new(board, wallet, EconomyConfig.new(), func() -> String: return "tower-1")
+	assert_true(service.try_place_basic_tower(Vector2i(1, 1)).succeeded)
+	var tower := service.tower_registry.get_tower("tower-1")
+	tower.cooldown_remaining = 5.0
+
+	var result := service.try_upgrade_tower("tower-1")
+
+	assert_true(result.succeeded)
+	assert_eq(tower.tier, 2)
+	assert_eq(tower.cooldown_remaining, 0.9)
+
+
 func test_try_upgrade_tower_with_insufficient_gold_does_not_change_tower() -> void:
 	var board := Board.new(3, 2)
 	var wallet := Wallet.new(50)

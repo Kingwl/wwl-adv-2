@@ -1,7 +1,7 @@
 class_name BoardHudController
 extends RefCounted
 
-const TOWER_ACTION_MENU_SIZE := Vector2(184.0, 132.0)
+const TOWER_ACTION_MENU_SIZE := Vector2(196.0, 156.0)
 const TOWER_ACTION_MENU_MARGIN := 10.0
 const TOWER_ACTION_BUTTON_HEIGHT := 30.0
 
@@ -14,6 +14,7 @@ var menu_button: Button
 var single_tower_button: Button
 var area_tower_button: Button
 var slow_tower_button: Button
+var flame_tower_button: Button
 var overlay_root: Control
 var overlay_backdrop: ColorRect
 var overlay_panel: Control
@@ -25,6 +26,7 @@ var hud_frame_panel: Panel
 var tower_deck_panel: Panel
 var tower_action_panel: Panel
 var tower_action_title: Label
+var tower_action_preview_label: Label
 var tower_action_upgrade_button: Button
 var tower_action_remove_button: Button
 var gold_icon_rect: TextureRect
@@ -44,6 +46,7 @@ func bind(
 	single_tower_button_path: NodePath,
 	area_tower_button_path: NodePath,
 	slow_tower_button_path: NodePath,
+	flame_tower_button_path: NodePath,
 	overlay_root_path: NodePath,
 	overlay_backdrop_path: NodePath,
 	overlay_panel_path: NodePath,
@@ -61,6 +64,7 @@ func bind(
 	single_tower_button = owner.get_node_or_null(single_tower_button_path) as Button
 	area_tower_button = owner.get_node_or_null(area_tower_button_path) as Button
 	slow_tower_button = owner.get_node_or_null(slow_tower_button_path) as Button
+	flame_tower_button = owner.get_node_or_null(flame_tower_button_path) as Button
 	overlay_root = owner.get_node_or_null(overlay_root_path) as Control
 	overlay_backdrop = owner.get_node_or_null(overlay_backdrop_path) as ColorRect
 	overlay_panel = owner.get_node_or_null(overlay_panel_path) as Control
@@ -129,7 +133,7 @@ func configure(menu_icon_texture: Texture2D) -> void:
 		menu_button.add_theme_constant_override("icon_max_width", 22)
 		menu_button.add_theme_constant_override("h_separation", 8)
 
-	for button in [single_tower_button, area_tower_button, slow_tower_button]:
+	for button in [single_tower_button, area_tower_button, slow_tower_button, flame_tower_button]:
 		if button == null:
 			continue
 
@@ -142,10 +146,16 @@ func configure(menu_icon_texture: Texture2D) -> void:
 
 	FrostRtsTheme.apply_hud_panel(tower_action_panel)
 	FrostRtsTheme.apply_body_label(tower_action_title, 13, FrostRtsTheme.TEXT)
+	FrostRtsTheme.apply_body_label(tower_action_preview_label, 11, FrostRtsTheme.TEXT_DIM)
 	if tower_action_title != null:
 		tower_action_title.clip_text = true
 		tower_action_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		tower_action_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	if tower_action_preview_label != null:
+		tower_action_preview_label.clip_text = true
+		tower_action_preview_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		tower_action_preview_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tower_action_preview_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 	for button in [tower_action_upgrade_button, tower_action_remove_button]:
 		if button == null:
@@ -161,6 +171,7 @@ func connect_signals(
 	single_pressed: Callable,
 	area_pressed: Callable,
 	slow_pressed: Callable,
+	flame_pressed: Callable,
 	primary_pressed: Callable,
 	secondary_pressed: Callable,
 	upgrade_pressed: Callable,
@@ -170,6 +181,7 @@ func connect_signals(
 	_connect_button(single_tower_button, single_pressed)
 	_connect_button(area_tower_button, area_pressed)
 	_connect_button(slow_tower_button, slow_pressed)
+	_connect_button(flame_tower_button, flame_pressed)
 	_connect_button(overlay_primary_button, primary_pressed)
 	_connect_button(overlay_secondary_button, secondary_pressed)
 	_connect_button(tower_action_upgrade_button, upgrade_pressed)
@@ -190,6 +202,7 @@ func apply_layout(metrics: BoardLayoutMetrics) -> void:
 	_set_control_rect(single_tower_button, metrics.single_tower_button_rect)
 	_set_control_rect(area_tower_button, metrics.area_tower_button_rect)
 	_set_control_rect(slow_tower_button, metrics.slow_tower_button_rect)
+	_set_control_rect(flame_tower_button, metrics.flame_tower_button_rect)
 	_set_control_rect(status_label, metrics.status_label_rect)
 	_set_control_rect(hint_label, metrics.hint_label_rect)
 	_set_message_label_alignment(HORIZONTAL_ALIGNMENT_CENTER)
@@ -254,6 +267,8 @@ func show_tower_action_menu(
 	var actions_enabled := flow_state == BoardGameSession.FlowState.PLAYING
 	if tower_action_title != null:
 		tower_action_title.text = "%s T%d" % [tower_type_label(tower.tower_type), tower.tier]
+	if tower_action_preview_label != null:
+		tower_action_preview_label.text = tower_config.get_upgrade_preview(tower.tower_type, tower.tier)
 	if tower_action_upgrade_button != null:
 		tower_action_upgrade_button.text = "Upgrade %dg" % upgrade_cost if can_upgrade else "Max tier"
 		tower_action_upgrade_button.disabled = not actions_enabled or not can_upgrade or not can_afford
@@ -301,6 +316,7 @@ func sync_tower_button_state(
 	_set_tower_button_text(single_tower_button, GameTower.Type.SINGLE_TARGET, "Single", flow_state, selected_tower_type, wallet, economy_config, get_tower_sprite_texture)
 	_set_tower_button_text(area_tower_button, GameTower.Type.AREA, "Area", flow_state, selected_tower_type, wallet, economy_config, get_tower_sprite_texture)
 	_set_tower_button_text(slow_tower_button, GameTower.Type.SLOW, "Slow", flow_state, selected_tower_type, wallet, economy_config, get_tower_sprite_texture)
+	_set_tower_button_text(flame_tower_button, GameTower.Type.FLAME, "Flame", flow_state, selected_tower_type, wallet, economy_config, get_tower_sprite_texture)
 
 
 func update_gold_label(wallet: Wallet) -> void:
@@ -368,6 +384,8 @@ func tower_type_label(tower_type: GameTower.Type) -> String:
 			return "Area"
 		GameTower.Type.SLOW:
 			return "Slow"
+		GameTower.Type.FLAME:
+			return "Flame"
 
 	return "Single"
 
@@ -378,6 +396,8 @@ func tower_type_description(tower_type: GameTower.Type) -> String:
 			return "Splash hit"
 		GameTower.Type.SLOW:
 			return "Frost slow"
+		GameTower.Type.FLAME:
+			return "Burn DoT"
 
 	return "Focus fire"
 
@@ -468,6 +488,7 @@ func _ensure_tower_action_panel(parent: Node) -> Panel:
 		parent.add_child(panel)
 
 	tower_action_title = _ensure_action_label(panel, "Title")
+	tower_action_preview_label = _ensure_action_label(panel, "Preview")
 	tower_action_upgrade_button = _ensure_action_button(panel, "UpgradeButton")
 	tower_action_remove_button = _ensure_action_button(panel, "RemoveButton")
 	return panel
@@ -498,11 +519,13 @@ func _layout_tower_action_menu(menu_size: Vector2) -> void:
 	var inner_left := TOWER_ACTION_MENU_MARGIN
 	var inner_width := menu_size.x - TOWER_ACTION_MENU_MARGIN * 2.0
 	var title_height := 22.0
+	var preview_height := 18.0
 	var button_gap := 8.0
-	var first_button_top := 44.0
+	var first_button_top := 68.0
 	var second_button_top := first_button_top + TOWER_ACTION_BUTTON_HEIGHT + button_gap
 
 	_set_control_rect(tower_action_title, Rect2(inner_left, 8.0, inner_width, title_height))
+	_set_control_rect(tower_action_preview_label, Rect2(inner_left, 32.0, inner_width, preview_height))
 	_set_control_rect(tower_action_upgrade_button, Rect2(inner_left, first_button_top, inner_width, TOWER_ACTION_BUTTON_HEIGHT))
 	_set_control_rect(tower_action_remove_button, Rect2(inner_left, second_button_top, inner_width, TOWER_ACTION_BUTTON_HEIGHT))
 

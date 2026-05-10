@@ -21,6 +21,27 @@ func test_advance_moves_enemy_along_first_segment() -> void:
 	assert_false(enemy.completed)
 
 
+func test_advance_uses_enemy_movement_status_multiplier() -> void:
+	var enemy := Enemy.new("enemy-1", 1.0)
+	enemy.status_effects.append(StatusEffect.new(
+		StatusEffect.StatusType.SLOW,
+		"tower-a",
+		1.0,
+		0.5,
+		0.0,
+		0.0,
+		DamageTypes.AttackType.MAGIC,
+		DamageTypes.DamageSchool.FROST,
+		StatusEffect.StackPolicy.STRONGEST
+	))
+	var follower := PathFollower.new([Vector2i(0, 3), Vector2i(1, 3), Vector2i(2, 3)])
+
+	follower.advance(enemy, 1.0)
+
+	assert_eq(enemy.path_distance, 0.5)
+	assert_eq(follower.get_grid_space_position(enemy), Vector2(1.0, 3.5))
+
+
 func test_advance_can_cross_multiple_segments() -> void:
 	var enemy := Enemy.new("enemy-1", 2.0)
 	var follower := PathFollower.new([

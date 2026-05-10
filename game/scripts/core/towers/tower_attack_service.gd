@@ -4,6 +4,7 @@ extends RefCounted
 const SINGLE_PROJECTILE_SPEED_CELLS_PER_SECOND := 6.0
 const AREA_PROJECTILE_SPEED_CELLS_PER_SECOND := 4.5
 const SLOW_PROJECTILE_SPEED_CELLS_PER_SECOND := 5.25
+const FLAME_PROJECTILE_SPEED_CELLS_PER_SECOND := 5.0
 const PROJECTILE_HIT_RADIUS_CELLS := 0.12
 
 var tower_config: TowerConfig
@@ -59,7 +60,16 @@ func _build_projectile(tower: GameTower, stats: TowerStats, target: Enemy) -> Co
 		stats.damage,
 		stats.splash_radius_cells,
 		stats.slow_multiplier,
-		stats.slow_duration
+		stats.slow_duration,
+		CombatProjectile.DEFAULT_MAX_LIFETIME_SECONDS,
+		stats.attack_type,
+		stats.damage_school,
+		stats.status_type,
+		stats.status_duration,
+		stats.status_move_speed_multiplier,
+		stats.status_tick_interval,
+		stats.status_tick_damage,
+		stats.status_stack_policy
 	)
 
 
@@ -69,5 +79,7 @@ func _projectile_speed(tower_type: GameTower.Type) -> float:
 			return AREA_PROJECTILE_SPEED_CELLS_PER_SECOND
 		GameTower.Type.SLOW:
 			return SLOW_PROJECTILE_SPEED_CELLS_PER_SECOND
+		GameTower.Type.FLAME:
+			return FLAME_PROJECTILE_SPEED_CELLS_PER_SECOND
 
 	return SINGLE_PROJECTILE_SPEED_CELLS_PER_SECOND

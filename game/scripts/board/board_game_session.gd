@@ -364,5 +364,7 @@ func _tower_type_label(tower_type: GameTower.Type) -> String:
 			return "Area"
 		GameTower.Type.SLOW:
 			return "Slow"
+		GameTower.Type.FLAME:
+			return "Flame"
 
 	return "Single"

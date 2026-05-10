@@ -20,6 +20,10 @@
 | `scene-ui-architecture.md` | Implemented | `game/scripts/board/`, `game/scenes/`, `docs/ui/` | 当前场景、UI、BoardView adapter 边界和验证入口。 |
 | `map-and-asset-pipeline.md` | Accepted | `game/data/levels/`, `game/data/map_styles/`, assets, `BoardAssetCatalog`, `BoardMapRenderer` | 当前地图/资产流水线和仍未实现的多关卡、数据引用校验。 |
 | `test-and-harness-architecture.md` | Implemented | `game/tools/`, `.github/workflows/`, `ci-artifacts/` | 当前测试层级、agent preflight、CI artifacts 和日志报告。 |
+| `2026-05-10-attack-defense-damage-system.md` | Implemented | `DamageTypes`, `DamageAffinityConfig`, `Enemy`, `DamageEvent`, `EnemyDamageService`, `TowerConfig` | 参考 Warcraft III 的攻击/护甲克制，并加入伤害类型和种族抗性：武器形态推导攻击类型，防御类型处理武器克制，种族处理冰火毒电抗性。数据文件和 UI 展示仍待后续。 |
+| `2026-05-10-initial-tower-roster.md` | Accepted | `TowerConfig`, `BoardHudController`, `BoardAssetCatalog` | 初期塔类型和实现批次：弩塔、炮塔、冰霜塔、火焰塔、毒针塔、雷霆塔；当前已实现 Single/Area/Slow/Flame 四塔，毒针塔和雷霆塔仍待后续。 |
+| `2026-05-10-tower-mechanics-effects-system.md` | Accepted | `StatusEffect`, `StatusEffectService`, `CombatSimulation`, `PathFollower`, `TowerConfig`, `ProjectileService` | 塔机制扩展框架：攻击模式、效果列表、通用状态、DoT、视觉事件，以及短期和长期塔机制边界。第一版已实现通用状态运行时、减速移动倍率、DoT 伤害事件和 Flame 灼烧塔；塔效果列表、独立视觉事件、毒针塔和雷霆塔仍待实现。 |
+| `2026-05-10-tower-upgrade-system.md` | Implemented | `TowerConfig`, `TowerPlacementService`, `BoardHudController`, `test_tower_config.gd`, `test_tower_placement_service.gd`, `test_main_scene.gd` | 塔升级机制第一版：普通升级只做数值提升，每次升级都提升伤害和攻击范围，升级不清空冷却，菜单显示升级预览。 |
 | `2026-05-10-tower-action-menu-upgrades.md` | Implemented | `TowerConfig`, `TowerPlacementService`, `BoardView`, `BoardHudController`, `ui_smoke_runner.gd` | Prototype 塔成长模型：点击塔弹出 Upgrade/Remove 菜单，直接升级和 50% 拆除返还。 |
 | `2026-05-09-road-ribbon-rendering-and-asset-contract.md` | Accepted | `game/tools/generate-road-guide.py`, map assets | 契约已部分验证；确定性道路材质生成仍是未来工作。 |
 | `2026-05-09-merge-ui-integration.md` | Superseded | Core merge only: `game/scripts/core/towers/tower_merge_service.gd` | Prototype 已选择直接升级菜单；此文档仅保留为未来随机召唤/合成经济参考。 |

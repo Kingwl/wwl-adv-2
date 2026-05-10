@@ -11,6 +11,7 @@ const SCENE_BACKGROUND_TEXTURE_PATH := "res://assets/ui/frost_rts/frost_stone_bg
 const SINGLE_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/single.png"
 const AREA_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/area.png"
 const SLOW_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/slow.png"
+const FLAME_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/flame.png"
 const BASIC_ENEMY_TEXTURE_PATH := "res://assets/sprites/mmo-v1/enemies/basic_enemy.png"
 const ENEMY_WALK_TEXTURE_PATHS := [
 	"res://assets/sprites/mmo-v1/enemies/enemy_walk_1.png",
@@ -44,6 +45,12 @@ const SLOW_IMPACT_TEXTURE_PATHS := [
 	"res://assets/sprites/mvp-v1/fx/slow_impact_3.png",
 	"res://assets/sprites/mvp-v1/fx/slow_impact_4.png",
 ]
+const FLAME_IMPACT_TEXTURE_PATHS := [
+	"res://assets/sprites/mvp-v1/fx/flame_impact_1.png",
+	"res://assets/sprites/mvp-v1/fx/flame_impact_2.png",
+	"res://assets/sprites/mvp-v1/fx/flame_impact_3.png",
+	"res://assets/sprites/mvp-v1/fx/flame_impact_4.png",
+]
 
 var level_definition: LevelDefinition
 var map_style_definition: MapStyleDefinition
@@ -56,12 +63,14 @@ var scene_background_texture: Texture2D
 var single_tower_texture: Texture2D
 var area_tower_texture: Texture2D
 var slow_tower_texture: Texture2D
+var flame_tower_texture: Texture2D
 var basic_enemy_texture: Texture2D
 var enemy_walk_textures: Array = []
 var enemy_death_textures: Array = []
 var single_projectile_textures: Array = []
 var area_impact_textures: Array = []
 var slow_impact_textures: Array = []
+var flame_impact_textures: Array = []
 
 
 func load_all() -> void:
@@ -100,12 +109,14 @@ func load_sprite_assets() -> void:
 	single_tower_texture = _load_texture(SINGLE_TOWER_TEXTURE_PATH)
 	area_tower_texture = _load_texture(AREA_TOWER_TEXTURE_PATH)
 	slow_tower_texture = _load_texture(SLOW_TOWER_TEXTURE_PATH)
+	flame_tower_texture = _load_texture(FLAME_TOWER_TEXTURE_PATH)
 	basic_enemy_texture = _load_texture(BASIC_ENEMY_TEXTURE_PATH)
 	enemy_walk_textures = _load_texture_sequence(ENEMY_WALK_TEXTURE_PATHS)
 	enemy_death_textures = _load_texture_sequence(ENEMY_DEATH_TEXTURE_PATHS)
 	single_projectile_textures = _load_texture_sequence(SINGLE_PROJECTILE_TEXTURE_PATHS)
 	area_impact_textures = _load_texture_sequence(AREA_IMPACT_TEXTURE_PATHS)
 	slow_impact_textures = _load_texture_sequence(SLOW_IMPACT_TEXTURE_PATHS)
+	flame_impact_textures = _load_texture_sequence(FLAME_IMPACT_TEXTURE_PATHS)
 
 
 func _load_texture(resource_path: String) -> Texture2D:
