@@ -5,8 +5,8 @@
 ## Agent 阅读顺序
 
 1. `status.md`：当前状态、开放决策、已验证命令和已知风险。
-2. `designs/README.md`：设计状态索引。
-3. `designs/` 下的相关设计文档。
+2. `designs/README.md`：当前架构设计索引。
+3. `designs/` 下的当前聚合设计文档；不要从 `designs/archive/` 开始阅读。
 4. `gameplay/features.md` 或 `ui/features.md`：本次改动影响的玩家可见功能。
 5. `testing/gates.md`：本次改动的验证期望。
 6. `todo/backlog.md` 和 `tech-debt/register.md`：后续工作。
@@ -26,7 +26,7 @@
 | 路径 | 用途 |
 | --- | --- |
 | `status.md` | 给 agent 和人类使用的一页式当前项目状态。 |
-| `designs/` | 设计提案、架构说明和决策记录。 |
+| `designs/` | 当前架构设计、仍未完成的决策和归档历史设计。 |
 | `gameplay/` | 当前核心玩法功能、规则状态、自动化覆盖和测试计划。 |
 | `ui/` | 当前 UI surface、玩家可见状态、交互、验证覆盖和测试计划。 |
 | `milestone/` | 路线图、交付计划和进度检查点。 |
@@ -37,7 +37,7 @@
 ## 维护
 
 - 里程碑状态、开放决策、已验证命令或主要风险变化时，保持 `status.md` 最新。
-- 新增设计或设计状态变化时，更新 `designs/README.md`。
+- 新增顶层设计或设计状态变化时，更新 `designs/README.md`；已实现并被聚合设计吸收的旧设计放入 `designs/archive/`。
 - 新增或改变核心玩法功能、规则状态、配置形状、数值来源或核心测试覆盖时，检查并更新 `gameplay/features.md` 和 `gameplay/test-plan.md`。
 - 新增或改变玩家可见 UI surface、状态、交互、响应式行为或 UI smoke review artifact 时，检查并更新 `ui/features.md` 和 `ui/test-plan.md`。
 - 持久测试期望放在 `testing/`，不要放在 `todo/`。

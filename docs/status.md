@@ -60,6 +60,7 @@ cd game
 - `BoardMapRenderer` 已从 `game/scripts/core/` 迁到 `game/scripts/board/`，core 目录下渲染/资源加载耦合现在由 structural lint 作为 error 阻止。
 - 用于本地 agent 迭代反馈的 agent preflight 和 UI smoke 摘要脚本。
 - Godot/GUT 日志结构化报告，输出到 `ci-artifacts/godot-log/report.json` 和 `report.md`。
+- 设计文档已收敛为当前架构聚合文档；历史细分设计归档到 `docs/designs/archive/`。
 - 面向核心玩法规则、场景/UI 验证和 harness 维护的项目 Codex skills。
 - 面向核心玩法和 UI 的功能清单与测试计划文档。
 

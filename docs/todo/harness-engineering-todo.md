@@ -9,14 +9,14 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
 ## P0 - 下一批 Harness 工作
 
 - [x] 添加开发期可玩性的 native UI smoke 测试门禁。
-  - 设计：`docs/designs/2026-05-09-ui-playability-validation.md`。
+  - 设计：`docs/designs/test-and-harness-architecture.md`。
   - 不做 Web 导出，直接运行 Godot 项目。
   - 覆盖桌面、移动横屏和方形/紧凑视口。
   - 从开始场景进入主场景，放置一座塔并捕获截图。
   - 在 CI 中上传截图、Godot 日志和报告产物。
 
 - [ ] 添加 Web 导出 smoke 门禁，用于发布信心。
-  - 复用同一份设计：`docs/designs/2026-05-09-ui-playability-validation.md`。
+  - 复用同一份设计：`docs/designs/test-and-harness-architecture.md`。
   - 导出到 `game/` 外的目录。
   - 通过本地 HTTP 服务导出产物。
   - 用浏览器 runner 打开页面。
@@ -53,7 +53,7 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
   - 校验数据文件和运行时资产之间的引用。
 
 - [ ] 将 structural lint 的 warning 分阶段收敛成更严格规则。
-  - 已按 `docs/designs/2026-05-10-board-view-decomposition.md` 拆出 `BoardView` 的 layout、HUD、input、visual state 和 renderer。
+  - 已按 `docs/designs/scene-ui-architecture.md` 拆出 `BoardView` 的 layout、HUD、input、visual state 和 renderer。
   - 已将 `BoardMapRenderer` 从 `game/scripts/core/` 迁出到场景/渲染 adapter，并把 core 渲染/资源加载耦合收紧为 error。
   - 将 `BoardGameSession` 中的默认经济配置和波次定义迁移到数据/配置层。
 

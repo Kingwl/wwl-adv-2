@@ -22,7 +22,7 @@
 | 当前状态、开放决策、已验证命令 | `docs/status.md` |
 | 文档地图 | `docs/README.md` |
 | 专用 agent 的项目 skills | `.codex/skills/` |
-| 架构决策和提案 | `docs/designs/` 和 `docs/designs/README.md` |
+| 架构决策和提案 | `docs/designs/README.md` 和 `docs/designs/` 的当前聚合设计；不要默认阅读 `docs/designs/archive/` |
 | 当前核心玩法功能、状态和测试计划 | `docs/gameplay/features.md` 和 `docs/gameplay/test-plan.md` |
 | 当前 UI surface、状态、验证覆盖和测试计划 | `docs/ui/features.md` 和 `docs/ui/test-plan.md` |
 | 交付范围和路线图 | `docs/milestone/` |
@@ -33,7 +33,7 @@
 
 ## 文档规则
 
-- 使用 `docs/designs/template.md`，把长期架构或玩法决策加入 `docs/designs/`。
+- 使用 `docs/designs/template.md`，把长期架构或玩法决策加入 `docs/designs/`。已实现且被聚合设计吸收的历史设计放入 `docs/designs/archive/`。
 - 新增、延后、替代或实现设计时，更新 `docs/designs/README.md`。
 - 当前里程碑状态、已验证命令、开放决策或主要风险变化时，更新 `docs/status.md`。
 - 新增或改变核心玩法功能、规则状态、配置形状、数值来源或测试覆盖时，检查并更新 `docs/gameplay/features.md` 和 `docs/gameplay/test-plan.md`。

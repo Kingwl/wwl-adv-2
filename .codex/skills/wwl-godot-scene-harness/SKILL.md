@@ -15,7 +15,7 @@ metadata:
 2. 阅读 `docs/status.md`。
 3. 阅读 `docs/testing/gates.md`。
 4. 做 UI surface、状态或交互改动时，阅读 `docs/ui/features.md` 和 `docs/ui/test-plan.md`。
-5. 做场景验证工作时，阅读 `docs/designs/2026-05-09-ui-playability-validation.md`。
+5. 做场景验证工作时，阅读 `docs/designs/scene-ui-architecture.md` 和 `docs/designs/test-and-harness-architecture.md`。
 6. 如果用户指定了场景或功能，用 `rg --files game/scenes game/scripts game/test/gut` 找匹配文件。
 
 ## 场景开发规则

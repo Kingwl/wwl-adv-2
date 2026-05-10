@@ -15,7 +15,7 @@ metadata:
 2. 阅读 `docs/status.md`。
 3. 阅读 `docs/testing/gates.md`。
 4. 做 harness backlog 时，阅读 `docs/todo/harness-engineering-todo.md`。
-5. 做 UI/可玩性验证时，阅读 `docs/designs/2026-05-09-ui-playability-validation.md`。
+5. 做 UI/可玩性验证时，阅读 `docs/designs/test-and-harness-architecture.md`。
 
 ## Harness 规则
 

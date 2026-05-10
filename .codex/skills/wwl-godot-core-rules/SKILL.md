@@ -13,7 +13,7 @@ metadata:
 
 1. 阅读 `AGENTS.md`。
 2. 阅读 `docs/status.md`。
-3. 如果改动触及已有决策，阅读 `docs/designs/` 下相关设计。
+3. 如果改动触及已有决策，阅读 `docs/designs/core-gameplay-architecture.md` 和 `docs/designs/README.md`。
 4. 阅读 `docs/gameplay/features.md` 和 `docs/gameplay/test-plan.md` 中相关条目。
 5. 在选择验证命令前阅读 `docs/testing/gates.md`。
 
