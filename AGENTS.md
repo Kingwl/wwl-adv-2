@@ -112,6 +112,7 @@ cd game
 ./tools/check-structure.sh
 ./tools/check-ui-smoke.sh
 ./tools/check-gameplay-smoke.sh
+./tools/check-web-smoke.sh ../build/web-smoke
 ./tools/summarize-godot-log.py ../ci-artifacts/check-all.log
 ./tools/summarize-ui-smoke.py
 ./tools/export-web.sh ../build/web

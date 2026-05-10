@@ -15,13 +15,14 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
   - 从开始场景进入主场景，放置一座塔并捕获截图。
   - 在 CI 中上传截图、Godot 日志和报告产物。
 
-- [ ] 添加 Web 导出 smoke 门禁，用于发布信心。
+- [x] 添加 Web 导出 smoke 门禁，用于发布信心。
   - 复用同一份设计：`docs/designs/test-and-harness-architecture.md`。
   - 导出到 `game/` 外的目录。
   - 通过本地 HTTP 服务导出产物。
   - 用浏览器 runner 打开页面。
   - 断言 canvas 存在、非空白，并且没有关键 console 错误。
   - 把它当作 export/Pages 门禁，而不是默认本地调试循环。
+  - 命令：`game/tools/check-web-smoke.sh ../build/web-smoke`；报告：`ci-artifacts/web-smoke/`。
 
 - [x] 添加 Godot 架构边界 structural lint。
   - 保持 `game/scripts/core/` 独立于场景/UI 节点。

@@ -37,13 +37,14 @@ jobs:
       - name: Add local bin to PATH
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Cache Godot and export templates
+      - name: Cache Godot, export templates, and browsers
         id: cache-godot-web
         uses: actions/cache@v5.0.5
         with:
           path: |
             ~/.local/bin/godot
             ~/.local/share/godot/export_templates/4.6.2.stable
+            ~/.cache/ms-playwright
             build/cache/godot-export-templates
           key: godot-web-${{ runner.os }}-${{ env.GODOT_VERSION }}-${{ env.GODOT_RELEASE }}
 
@@ -62,6 +63,14 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v6.0.0
 
+      - name: Install Web smoke dependencies
+        run: |
+          set -euo pipefail
+          python3 -m venv build/web-smoke-python
+          build/web-smoke-python/bin/python -m pip install --upgrade pip
+          build/web-smoke-python/bin/python -m pip install "playwright>=1.40,<2"
+          build/web-smoke-python/bin/python -m playwright install --with-deps chromium
+
       - name: Build static shell and playable Web export
         env:
           GODOT_BIN: godot
@@ -75,6 +84,19 @@ jobs:
           ./game/tools/export-web.sh "$PWD/_site/play"
           touch _site/.nojekyll
           du -sh _site _site/play
+
+      - name: Run Web export smoke
+        run: |
+          set -euo pipefail
+          WEB_SMOKE_SKIP_EXPORT=1 ./game/tools/check-web-smoke.sh "$PWD/_site/play"
+
+      - name: Upload Web smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: web-smoke-artifacts
+          path: ci-artifacts/web-smoke/
+          if-no-files-found: warn
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5.0.0

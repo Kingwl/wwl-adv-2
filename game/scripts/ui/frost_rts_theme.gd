@@ -19,6 +19,9 @@ const TOWER_CARD_FRAME := "res://assets/ui/frost_rts/frames/tower_card_normal.pn
 const TOWER_CARD_SELECTED_FRAME := "res://assets/ui/frost_rts/frames/tower_card_selected.png"
 const TOWER_CARD_DISABLED_FRAME := "res://assets/ui/frost_rts/frames/tower_card_disabled.png"
 const MENU_PANEL_FRAME := "res://assets/ui/frost_rts/frames/menu_panel_frame.png"
+const TITLE_FONT_PATH := "res://assets/fonts/wwl-title-noto-sans-sc-subset.ttf"
+
+static var _title_font_cache: Font
 
 
 static func apply_title_label(label: Label, font_size: int = 42) -> void:
@@ -28,9 +31,18 @@ static func apply_title_label(label: Label, font_size: int = 42) -> void:
 	label.add_theme_color_override("font_color", Color(0.86, 0.94, 1.0, 1.0))
 	label.add_theme_color_override("font_outline_color", Color(0.0, 0.02, 0.04, 1.0))
 	label.add_theme_constant_override("outline_size", 7)
+	var title_font := _load_title_font()
+	if title_font != null:
+		label.add_theme_font_override("font", title_font)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+
+static func _load_title_font() -> Font:
+	if _title_font_cache == null:
+		_title_font_cache = load(TITLE_FONT_PATH) as Font
+	return _title_font_cache
 
 
 static func apply_body_label(label: Label, font_size: int = 16, color: Color = TEXT) -> void:

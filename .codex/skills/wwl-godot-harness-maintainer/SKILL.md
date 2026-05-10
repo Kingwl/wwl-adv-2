@@ -82,6 +82,7 @@ Web 导出或 Pages 改动：
 ```bash
 cd game
 ./tools/export-web.sh ../build/web
+./tools/check-web-smoke.sh ../build/web-smoke
 ```
 
 除非 GitHub run 已经实际完成，不要声称 CI 或 Pages 改动已经在远端验证。

@@ -16,6 +16,8 @@ func test_start_scene_loads_title_and_start_button() -> void:
 
 	assert_not_null(scene as StartScreen)
 	assert_eq(title.text, "WWL 大冒险 2")
+	assert_not_null(title.get_theme_font("font"))
+	assert_true(title.get_theme_font("font").has_char("大".unicode_at(0)))
 	assert_eq(title.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
 	assert_eq(title.vertical_alignment, VERTICAL_ALIGNMENT_CENTER)
 	assert_eq(start_button.text, "Start")

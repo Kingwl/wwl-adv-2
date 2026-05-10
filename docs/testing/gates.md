@@ -153,3 +153,12 @@ cd game
 ```
 
 脚本会拒绝 `game/` 内的输出路径。
+
+发布信心检查使用 Web export smoke：
+
+```bash
+cd game
+./tools/check-web-smoke.sh ../build/web-smoke
+```
+
+这个命令会导出到项目外目录，启动本地 HTTP 服务，用 headless browser 打开 `index.html`，验证 canvas 存在、尺寸合理、截图非空白，并检查关键 console/page/request 错误。报告和截图写入 `ci-artifacts/web-smoke/`。如果当前 Python 没有 Playwright，脚本会在 `build/web-smoke-python/` 建隔离 venv；不会写入 Godot 项目目录。Pages workflow 在上传 Pages artifact 前运行同一脚本。

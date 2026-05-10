@@ -21,6 +21,7 @@ cd game
 ./tools/check-structure.sh
 ./tools/check-ui-smoke.sh
 ./tools/check-gameplay-smoke.sh
+./tools/check-web-smoke.sh ../build/web-smoke
 ```
 
 当前已知测试状态：
@@ -30,6 +31,7 @@ cd game
 - GUT 套件：136 个测试通过，760 个断言。
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
 - Native gameplay smoke：代表性 gameplay scenario 通过，trace、截图和 overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
+- Web export smoke：Web 导出页面通过本地 HTTP + headless browser 检查，报告和截图位于 `ci-artifacts/web-smoke/`。
 - Structural lint：Tree-sitter GDScript 解析 83 个文件，0 个 error，0 个 warning。
 - Agent preflight fast：运行 `check-all.sh`，生成 Godot/GUT 结构化日志报告，不运行 native smoke。
 - Agent preflight full：运行 fast preflight、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
@@ -60,6 +62,7 @@ cd game
 - `BoardMapRenderer` 已从 `game/scripts/core/` 迁到 `game/scripts/board/`，core 目录下渲染/资源加载耦合现在由 structural lint 作为 error 阻止。
 - 用于本地 agent 迭代反馈的 agent preflight 和 UI smoke 摘要脚本。
 - Godot/GUT 日志结构化报告，输出到 `ci-artifacts/godot-log/report.json` 和 `report.md`。
+- Web export smoke，验证 Godot Web 导出页面 canvas 非空且无关键浏览器错误，并作为 Pages 发布前门禁。
 - 设计文档已收敛为当前架构聚合文档；历史细分设计归档到 `docs/designs/archive/`。
 - 面向核心玩法规则、场景/UI 验证和 harness 维护的项目 Codex skills。
 - 面向核心玩法和 UI 的功能清单与测试计划文档。
@@ -77,7 +80,6 @@ cd game
 - 塔和波次数值仍有一部分硬编码在 GDScript 中。
 - 测试质量依赖 GUT 加 checklist，而不是行覆盖率。
 - 场景测试当前会输出 ObjectDB leak 警告，记录为 TD-007。
-- GitHub Pages 发布静态项目页，以及 `/play/` 下的可玩 Godot Web 导出。
 
 ## GitHub 自动化
 
@@ -87,6 +89,7 @@ cd game
 - CI 将 `ci-artifacts/` 上传为 `godot-check-artifacts` artifact。
 - GitHub Pages workflow：`.github/workflows/pages.yml`。
 - Pages 来源：GitHub Actions workflow 从 `site/` 加 `_site/play/` 下的 Godot Web 导出进行部署。
+- Pages 发布前运行 Web export smoke，并上传 `ci-artifacts/web-smoke/` 作为失败证据。
 - 本地 Web 导出默认输出到 Godot 项目目录外的 `build/web/`。
 - 项目 skills 版本化存放在 `.codex/skills/`；本地 Codex runtime 不会自动加载仓库内 skills 时，将它们链接到 `$CODEX_HOME/skills`。
 
