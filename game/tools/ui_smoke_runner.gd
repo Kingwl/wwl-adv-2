@@ -456,41 +456,20 @@ func _capture_visual_state_artifacts(
 		board_view.clear_tower_action_menu()
 		await _settle_frames(1)
 
-	board_view.select_tower_type(GameTower.Type.AREA)
-	await _settle_frames(2)
-	await _capture_current_review_artifacts(
-		result,
-		viewport_name,
-		main_scene,
-		"area tower selected",
-		ReviewSpecKind.TOWER_DECK,
-		"tower-deck-area-selected",
-		"Tower deck: Area selected"
-	)
-
-	board_view.select_tower_type(GameTower.Type.SLOW)
-	await _settle_frames(2)
-	await _capture_current_review_artifacts(
-		result,
-		viewport_name,
-		main_scene,
-		"slow tower selected",
-		ReviewSpecKind.TOWER_DECK,
-		"tower-deck-slow-selected",
-		"Tower deck: Slow selected"
-	)
-
-	board_view.select_tower_type(GameTower.Type.FLAME)
-	await _settle_frames(2)
-	await _capture_current_review_artifacts(
-		result,
-		viewport_name,
-		main_scene,
-		"flame tower selected",
-		ReviewSpecKind.TOWER_DECK,
-		"tower-deck-flame-selected",
-		"Tower deck: Flame selected"
-	)
+	for spec in TowerConfig.new().get_visual_test_tower_specs():
+		var tower_name := String(spec["name"])
+		var tower_type: GameTower.Type = spec["tower_type"]
+		board_view.select_tower_type(tower_type)
+		await _settle_frames(2)
+		await _capture_current_review_artifacts(
+			result,
+			viewport_name,
+			main_scene,
+			"%s tower selected" % tower_name,
+			ReviewSpecKind.TOWER_DECK,
+			"tower-deck-%s-selected" % tower_name,
+			"Tower deck: %s selected" % tower_name.capitalize()
+		)
 
 	board_view.get_session().wallet.gold = 0
 	board_view.refresh_hud()

@@ -33,7 +33,7 @@ GitHub Actions 会在 `.github/workflows/ci.yml` 中运行这个项目门禁，�
 
 CI 每次运行都会把完整 `ci-artifacts/` 目录上传为 `godot-check-artifacts` artifact，包括失败运行。
 
-`check-all.sh` 包含对 `game/data/levels` 和 `game/data/map_styles` 的 JSON/schema 校验。
+`check-all.sh` 包含对 `game/data/levels`、`game/data/map_styles` 和 `game/data/towers` 的 JSON/schema 校验。
 
 `check-all.sh` 还包含 Tree-sitter structural lint：
 

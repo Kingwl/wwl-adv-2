@@ -64,19 +64,27 @@ func _get_active_enemy(enemy_id: String, enemies: Array) -> Enemy:
 
 
 func _build_damage_events(projectile: CombatProjectile, enemies: Array, path_follower: PathFollower) -> Array:
-	if projectile.tower_type == GameTower.Type.AREA:
-		return _build_area_damage_events(projectile, enemies, path_follower)
+	var damage_events := []
+	for candidate in projectile.effects:
+		var effect := candidate as TowerEffect
+		if effect == null:
+			continue
 
-	return [DamageEvent.new(
-		projectile.target_enemy_id,
-		projectile.damage,
-		projectile.tower_id,
-		projectile.attack_type,
-		projectile.damage_school
-	)]
+		match effect.effect_type:
+			TowerEffect.EffectType.DAMAGE_PRIMARY:
+				damage_events.append(_build_damage_event(projectile, projectile.target_enemy_id, effect))
+			TowerEffect.EffectType.SPLASH_DAMAGE:
+				damage_events.append_array(_build_splash_damage_events(projectile, effect, enemies, path_follower))
+
+	return damage_events
 
 
-func _build_area_damage_events(projectile: CombatProjectile, enemies: Array, path_follower: PathFollower) -> Array:
+func _build_splash_damage_events(
+	projectile: CombatProjectile,
+	effect: TowerEffect,
+	enemies: Array,
+	path_follower: PathFollower
+) -> Array:
 	var damage_events := []
 
 	for candidate in enemies:
@@ -85,33 +93,42 @@ func _build_area_damage_events(projectile: CombatProjectile, enemies: Array, pat
 			continue
 
 		var enemy_position := path_follower.get_grid_space_position(enemy)
-		if projectile.position.distance_to(enemy_position) <= projectile.splash_radius_cells:
-			damage_events.append(DamageEvent.new(
-				enemy.id,
-				projectile.damage,
-				projectile.tower_id,
-				projectile.attack_type,
-				projectile.damage_school
-			))
+		if projectile.position.distance_to(enemy_position) <= effect.radius_cells:
+			damage_events.append(_build_damage_event(projectile, enemy.id, effect))
 
 	return damage_events
 
 
-func _build_status_events(projectile: CombatProjectile, target: Enemy) -> Array:
-	if projectile.status_type < 0 or projectile.status_duration <= 0.0:
-		return []
+func _build_damage_event(projectile: CombatProjectile, enemy_id: String, effect: TowerEffect) -> DamageEvent:
+	return DamageEvent.new(
+		enemy_id,
+		projectile.damage * effect.damage_multiplier,
+		projectile.tower_id,
+		effect.resolved_attack_type(projectile.attack_type),
+		effect.resolved_damage_school(projectile.damage_school)
+	)
 
-	return [
-		StatusEvent.new(
+
+func _build_status_events(projectile: CombatProjectile, target: Enemy) -> Array:
+	var status_events := []
+	for candidate in projectile.effects:
+		var effect := candidate as TowerEffect
+		if effect == null or effect.effect_type != TowerEffect.EffectType.APPLY_STATUS:
+			continue
+		if effect.status_type < 0 or effect.duration <= 0.0:
+			continue
+
+		status_events.append(StatusEvent.new(
 			target.id,
-			projectile.status_type,
-			projectile.status_duration,
-			projectile.status_move_speed_multiplier,
+			effect.status_type,
+			effect.duration,
+			effect.move_speed_multiplier,
 			projectile.tower_id,
-			projectile.status_tick_interval,
-			projectile.status_tick_damage,
-			projectile.attack_type,
-			projectile.damage_school,
-			projectile.status_stack_policy
-		)
-	]
+			effect.tick_interval,
+			effect.tick_damage,
+			effect.resolved_attack_type(projectile.attack_type),
+			effect.resolved_damage_school(projectile.damage_school),
+			effect.resolved_stack_policy()
+		))
+
+	return status_events

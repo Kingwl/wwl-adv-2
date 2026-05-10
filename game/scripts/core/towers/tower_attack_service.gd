@@ -1,12 +1,6 @@
 class_name TowerAttackService
 extends RefCounted
 
-const SINGLE_PROJECTILE_SPEED_CELLS_PER_SECOND := 6.0
-const AREA_PROJECTILE_SPEED_CELLS_PER_SECOND := 4.5
-const SLOW_PROJECTILE_SPEED_CELLS_PER_SECOND := 5.25
-const FLAME_PROJECTILE_SPEED_CELLS_PER_SECOND := 5.0
-const PROJECTILE_HIT_RADIUS_CELLS := 0.12
-
 var tower_config: TowerConfig
 var targeting_service: TargetingService
 var _next_projectile_sequence := 1
@@ -55,8 +49,8 @@ func _build_projectile(tower: GameTower, stats: TowerStats, target: Enemy) -> Co
 		target.id,
 		tower.tower_type,
 		Vector2(float(tower.grid_position.x) + 0.5, float(tower.grid_position.y) + 0.5),
-		_projectile_speed(tower.tower_type),
-		PROJECTILE_HIT_RADIUS_CELLS,
+		stats.projectile_speed_cells_per_second,
+		stats.projectile_hit_radius_cells,
 		stats.damage,
 		stats.splash_radius_cells,
 		stats.slow_multiplier,
@@ -69,17 +63,6 @@ func _build_projectile(tower: GameTower, stats: TowerStats, target: Enemy) -> Co
 		stats.status_move_speed_multiplier,
 		stats.status_tick_interval,
 		stats.status_tick_damage,
-		stats.status_stack_policy
+		stats.status_stack_policy,
+		stats.effects
 	)
-
-
-func _projectile_speed(tower_type: GameTower.Type) -> float:
-	match tower_type:
-		GameTower.Type.AREA:
-			return AREA_PROJECTILE_SPEED_CELLS_PER_SECOND
-		GameTower.Type.SLOW:
-			return SLOW_PROJECTILE_SPEED_CELLS_PER_SECOND
-		GameTower.Type.FLAME:
-			return FLAME_PROJECTILE_SPEED_CELLS_PER_SECOND
-
-	return SINGLE_PROJECTILE_SPEED_CELLS_PER_SECOND

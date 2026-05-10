@@ -2,7 +2,7 @@
 
 ## 现在
 
-- [ ] 将塔、敌人和波次定义推进到数据文件，并扩展 schema 检查。
+- [ ] 将敌人和波次定义推进到数据文件，并扩展 schema 检查。
 - [ ] 评估确定性 road ribbon 渲染，用于未来可编辑路径地图。
 - [ ] 为塔、敌人、投射物和命中特效 sprite 添加 normal map，并接入 2D lighting。
 
@@ -100,5 +100,6 @@
 - [x] 移除语义化道路 tile style、资产、renderer 分支和测试。
 - [x] 在 `docs/testing/` 下添加 Prototype 规则覆盖 checklist。
 - [x] 为关卡和 map style 数据添加 JSON/schema 资产检查。
+- [x] 将塔定义推进到 `game/data/towers/towers.json`，并扩展 schema/effects 检查。
 - [x] 为 GitHub Pages 可玩构建添加 Godot Web 导出流水线。
 - [x] 决定并实现 Prototype 塔成长模型：点击塔显示操作菜单，支持配置化升级和 50% 拆除返还。

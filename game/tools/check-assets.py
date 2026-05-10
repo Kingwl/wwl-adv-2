@@ -13,6 +13,27 @@ DATA_DIR = GAME_DIR / "data"
 SCHEMA_DIR = DATA_DIR / "schemas"
 LEVEL_DIR = DATA_DIR / "levels"
 STYLE_DIR = DATA_DIR / "map_styles"
+TOWER_DIR = DATA_DIR / "towers"
+TOWER_CONFIG_PATH = TOWER_DIR / "towers.json"
+
+TOWER_TYPES = {"SINGLE_TARGET", "AREA", "SLOW", "FLAME"}
+WEAPON_TYPES = {"BOW", "CROSSBOW", "CANNON", "BLADE", "SPELL", "HEROIC", "CHAOS"}
+ATTACK_TYPES = {"NORMAL", "PIERCE", "SIEGE", "MAGIC", "HERO", "CHAOS"}
+DAMAGE_SCHOOLS = {"PHYSICAL", "FROST", "FIRE", "POISON", "LIGHTNING", "ARCANE", "SHADOW"}
+ATTACK_PATTERNS = {
+    "SINGLE_PROJECTILE",
+    "SPLASH_PROJECTILE",
+    "STATUS_PROJECTILE",
+    "STATUS_DOT",
+    "CHAIN",
+    "AURA",
+    "GROUND_AREA",
+    "MULTI_SHOT",
+    "SUMMON_OR_TRAP",
+}
+EFFECT_TYPES = {"damage_primary", "splash_damage", "apply_status"}
+STATUS_TYPES = {"SLOW", "BURN", "POISON"}
+STACK_POLICIES = {"REFRESH", "STRONGEST", "REPLACE", "STACK", "INDEPENDENT"}
 
 
 class ValidationError(Exception):
@@ -172,10 +193,136 @@ def validate_style(path: Path, schema: dict[str, Any]) -> str:
     return str(style["id"])
 
 
+def validate_enum(value: Any, allowed: set[str], path: str) -> None:
+    if value not in allowed:
+        raise ValidationError(f"{path}: expected one of {sorted(allowed)!r}, got {value!r}")
+
+
+def validate_positive_number(value: Any, path: str) -> None:
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or float(value) <= 0:
+        raise ValidationError(f"{path}: expected positive number")
+
+
+def validate_tower_effect(effect: dict[str, Any], path: str) -> str:
+    effect_type = str(effect["type"])
+    validate_enum(effect_type, EFFECT_TYPES, f"{path}.type")
+
+    damage_multiplier = effect.get("damage_multiplier", 1.0)
+    if not isinstance(damage_multiplier, (int, float)) or isinstance(damage_multiplier, bool) or damage_multiplier < 0:
+        raise ValidationError(f"{path}.damage_multiplier: cannot be negative")
+
+    if "attack_type" in effect:
+        validate_enum(effect["attack_type"], ATTACK_TYPES, f"{path}.attack_type")
+    if "damage_school" in effect:
+        validate_enum(effect["damage_school"], DAMAGE_SCHOOLS, f"{path}.damage_school")
+
+    if effect_type == "splash_damage":
+        validate_positive_number(effect.get("radius_cells"), f"{path}.radius_cells")
+
+    if effect_type == "apply_status":
+        if "status_type" not in effect:
+            raise ValidationError(f"{path}.status_type: required for apply_status")
+        validate_enum(effect["status_type"], STATUS_TYPES, f"{path}.status_type")
+        validate_positive_number(effect.get("duration"), f"{path}.duration")
+
+        move_speed_multiplier = effect.get("move_speed_multiplier", 1.0)
+        validate_positive_number(move_speed_multiplier, f"{path}.move_speed_multiplier")
+
+        tick_interval = effect.get("tick_interval", 0.0)
+        tick_damage = effect.get("tick_damage", 0.0)
+        if not isinstance(tick_interval, (int, float)) or isinstance(tick_interval, bool) or tick_interval < 0:
+            raise ValidationError(f"{path}.tick_interval: cannot be negative")
+        if not isinstance(tick_damage, (int, float)) or isinstance(tick_damage, bool) or tick_damage < 0:
+            raise ValidationError(f"{path}.tick_damage: cannot be negative")
+        if tick_damage > 0 and tick_interval <= 0:
+            raise ValidationError(f"{path}.tick_interval: must be positive when tick_damage is positive")
+
+        if "stack_policy" in effect:
+            validate_enum(effect["stack_policy"], STACK_POLICIES, f"{path}.stack_policy")
+
+    return effect_type
+
+
+def validate_towers(path: Path, schema: dict[str, Any]) -> int:
+    tower_config = load_json(path)
+    validate_schema(tower_config, schema, path.name)
+
+    tower_ids: set[str] = set()
+    tower_types: set[str] = set()
+    for tower_index, tower in enumerate(tower_config["towers"]):
+        tower_path = f"{path.name}.towers[{tower_index}]"
+        tower_id = str(tower["id"])
+        tower_type = str(tower["type"])
+        if tower_id in tower_ids:
+            raise ValidationError(f"{tower_path}.id: duplicate tower id {tower_id!r}")
+        if tower_type in tower_types:
+            raise ValidationError(f"{tower_path}.type: duplicate tower type {tower_type!r}")
+        tower_ids.add(tower_id)
+        tower_types.add(tower_type)
+
+        validate_enum(tower_type, TOWER_TYPES, f"{tower_path}.type")
+        validate_enum(tower["weapon_type"], WEAPON_TYPES, f"{tower_path}.weapon_type")
+        validate_enum(tower["attack_type"], ATTACK_TYPES, f"{tower_path}.attack_type")
+        validate_enum(tower["damage_school"], DAMAGE_SCHOOLS, f"{tower_path}.damage_school")
+        validate_enum(tower["attack_pattern"], ATTACK_PATTERNS, f"{tower_path}.attack_pattern")
+
+        projectile = tower["projectile"]
+        validate_positive_number(projectile["speed_cells_per_second"], f"{tower_path}.projectile.speed_cells_per_second")
+        if projectile["hit_radius_cells"] < 0:
+            raise ValidationError(f"{tower_path}.projectile.hit_radius_cells: cannot be negative")
+
+        previous_damage: float | None = None
+        previous_range: float | None = None
+        previous_splash = False
+        previous_status_types: set[str] | None = None
+        for tier_index, tier in enumerate(tower["tiers"]):
+            tier_number = tier_index + 1
+            tier_path = f"{tower_path}.tiers[{tier_index}]"
+            if int(tier["tier"]) != tier_number:
+                raise ValidationError(f"{tier_path}.tier: expected sequential tier {tier_number}")
+
+            validate_positive_number(tier["range_cells"], f"{tier_path}.range_cells")
+            validate_positive_number(tier["attack_interval"], f"{tier_path}.attack_interval")
+
+            is_max_tier = tier_index == len(tower["tiers"]) - 1
+            upgrade_cost = int(tier.get("upgrade_cost", 0))
+            if is_max_tier and upgrade_cost != 0:
+                raise ValidationError(f"{tier_path}.upgrade_cost: max tier cannot define upgrade_cost")
+            if not is_max_tier and upgrade_cost <= 0:
+                raise ValidationError(f"{tier_path}.upgrade_cost: non-max tiers require positive upgrade_cost")
+
+            if previous_damage is not None and float(tier["damage"]) <= previous_damage:
+                raise ValidationError(f"{tier_path}.damage: must be greater than previous tier")
+            if previous_range is not None and float(tier["range_cells"]) <= previous_range:
+                raise ValidationError(f"{tier_path}.range_cells: must be greater than previous tier")
+
+            effect_types: set[str] = set()
+            status_types: set[str] = set()
+            for effect_index, effect in enumerate(tier["effects"]):
+                effect_type = validate_tower_effect(effect, f"{tier_path}.effects[{effect_index}]")
+                effect_types.add(effect_type)
+                if effect_type == "apply_status":
+                    status_types.add(str(effect["status_type"]))
+
+            has_splash = "splash_damage" in effect_types
+            if tier_index > 0 and not previous_splash and has_splash:
+                raise ValidationError(f"{tier_path}.effects: cannot add splash_damage after tier 1")
+            if previous_status_types is not None and status_types != previous_status_types:
+                raise ValidationError(f"{tier_path}.effects: cannot change apply_status status types across tiers")
+
+            previous_damage = float(tier["damage"])
+            previous_range = float(tier["range_cells"])
+            previous_splash = has_splash
+            previous_status_types = status_types
+
+    return len(tower_config["towers"])
+
+
 def main() -> int:
     try:
         level_schema = load_json(SCHEMA_DIR / "level.schema.json")
         style_schema = load_json(SCHEMA_DIR / "map_style.schema.json")
+        towers_schema = load_json(SCHEMA_DIR / "towers.schema.json")
 
         style_files = sorted(STYLE_DIR.glob("*.json"))
         level_files = sorted(LEVEL_DIR.glob("*.json"))
@@ -198,7 +345,12 @@ def main() -> int:
                 raise ValidationError(f"{path.name}.id: duplicate level id {level_id!r}")
             level_ids.add(level_id)
 
-        print(f"asset check passed: {len(level_files)} level(s), {len(style_files)} map style(s)")
+        tower_count = validate_towers(TOWER_CONFIG_PATH, towers_schema)
+
+        print(
+            "asset check passed: "
+            f"{len(level_files)} level(s), {len(style_files)} map style(s), {tower_count} tower(s)"
+        )
         return 0
     except ValidationError as exc:
         print(f"asset check failed: {exc}", file=sys.stderr)

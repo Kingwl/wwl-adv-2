@@ -6,7 +6,7 @@ Implemented
 
 ## 背景
 
-Prototype 已经实现点击已放置塔后显示操作菜单，并支持直接升级和拆除。当前升级本质上是按塔类型读取 tier 数值：Single 提升单体伤害和攻速，Area 提升溅射，Slow 提升减速效果。
+Prototype 已经实现点击已放置塔后显示操作菜单，并支持直接升级和拆除。当前升级按塔数据文件读取 tier 快照：Single 提升单体伤害和攻速，Area 提升溅射，Slow 提升减速效果，Flame 提升灼烧 DoT。
 
 接下来塔会扩展到弩塔、炮塔、冰霜塔、火焰塔、毒针塔和雷霆塔，同时引入攻击类型、防御类型、伤害类型、种族抗性、通用状态、DoT 和视觉事件。近期升级机制先不做性质变化，只做数值成长；每次升级必须同时提升伤害和攻击范围，其他成长也只允许调整已有机制的数值参数。
 
@@ -136,7 +136,7 @@ new_cooldown_remaining = min(old_cooldown_remaining, new_tier.attack_interval)
 
 ### 配置形状
 
-短期可以沿用当前 `tiers[n].upgrade_cost` 表示“从当前 tier 升到下一 tier 的费用”。迁移到数据文件时建议扩展为：
+当前 `game/data/towers/towers.json` 沿用 `tiers[n].upgrade_cost` 表示“从当前 tier 升到下一 tier 的费用”，并用 `effects[]` 表达每个 tier 的命中效果。未来如果加入分支升级，可扩展为：
 
 ```gdscript
 {
@@ -307,6 +307,7 @@ new_cooldown_remaining = min(old_cooldown_remaining, new_tier.attack_interval)
 - `TowerConfig` 校验默认和自定义 tier 配置，要求每次升级都严格提升 `damage` 和 `range_cells`。
 - `TowerConfig` 校验普通升级不能给原本没有溅射或减速的塔新增这类机制。
 - `TowerConfig.get_upgrade_preview()` 生成包含伤害和范围成长的升级预览。
+- `check-assets.sh` 校验 `towers.json` 的 schema、非满级升级费用、满级无升级费用、tier 成长和 effect 语义。
 - `TowerPlacementService.try_upgrade_tower()` 升级后不会清空冷却，并会把剩余冷却钳制到新 tier 的攻击间隔。
 - 塔操作菜单显示升级预览，并继续显示升级费用、满级、拆除返还和禁用状态。
 
@@ -332,8 +333,7 @@ new_cooldown_remaining = min(old_cooldown_remaining, new_tier.attack_interval)
 
 数据化后：
 
-- `check-assets.sh` 校验塔配置 schema。
-- 新增逐塔 fixture，验证数据文件能加载为 `TowerDefinition`。
+- 新增逐塔 fixture，验证数据文件能加载为更正式的 `TowerDefinition`/Resource 结构。
 - gameplay smoke trace 记录 tower id、tier、upgrade cost、invested gold 和 refund。
 
 ## 替代方案

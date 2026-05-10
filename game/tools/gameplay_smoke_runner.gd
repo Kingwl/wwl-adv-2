@@ -487,12 +487,7 @@ func _load_main_board(result: Dictionary, viewport_size: Vector2i) -> BoardView:
 
 
 func _tower_visual_specs() -> Array:
-	return [
-		{"name": "single", "tower_type": GameTower.Type.SINGLE_TARGET},
-		{"name": "area", "tower_type": GameTower.Type.AREA},
-		{"name": "slow", "tower_type": GameTower.Type.SLOW},
-		{"name": "flame", "tower_type": GameTower.Type.FLAME},
-	]
+	return TowerConfig.new().get_visual_test_tower_specs()
 
 
 func _visual_catalog_enemy(tower_name: String) -> Enemy:

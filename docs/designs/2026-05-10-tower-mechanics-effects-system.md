@@ -13,14 +13,16 @@ Accepted
 - `slow` 使用 `strongest` 叠加规则，敌人移动通过 `PathFollower` 读取当前最强移动倍率。
 - `burn` 和 `poison` 预留为 `refresh` DoT；DoT 伤害事件会继续走攻击/防御/伤害类型和种族抗性结算。
 - `CombatSimulation` 已把已有状态推进接入固定 tick，新命中状态从下一次完整状态 tick 开始生效。
-- Flame 塔已接入通用状态字段，命中后施加 `burn`，并有塔 sprite、火焰命中特效和 gameplay smoke 视觉 checkpoint。
+- 塔 tier 已通过 `effects[]` 表达命中效果：`damage_primary`、`splash_damage` 和 `apply_status`。
+- `ProjectileService` 消费 `effects[]` 生成伤害和状态事件，不再按塔类型写死 Area/Slow/Flame 分支。
+- Flame 塔已通过数据文件和通用状态效果施加 `burn`，并有塔 sprite、火焰命中特效和 gameplay smoke 视觉 checkpoint。
+- `game/data/towers/towers.json` 和 `game/data/schemas/towers.schema.json` 已纳入 `check-assets.sh`，校验塔枚举、投射物字段、tier 成长和 effect 语义。
 
 尚未实现：
 
-- 塔定义中的通用 `effects[]` 数据结构。
 - 毒针塔、雷霆塔等后续新塔接入。
 - `StatusAppliedEvent`、`StatusTickEvent`、`StatusExpiredEvent` 和 `VisualEvent` 的独立事件对象。
-- 状态图标、独立 DoT tick 视觉表现、HUD 展示和数据文件 schema。
+- 状态图标、独立 DoT tick 视觉表现和 HUD 展示。
 
 ## 背景
 
@@ -95,8 +97,9 @@ TowerDefinition
 
 | 效果 | 英文枚举 | 说明 | 短期状态 |
 | --- | --- | --- | --- |
-| 即时伤害 | `damage` | 立即造成一次伤害 | 短期 |
-| 附加状态 | `apply_status` | 给敌人添加状态 | 短期 |
+| 主目标伤害 | `damage_primary` | 对命中主目标造成一次伤害 | 已实现 |
+| 溅射伤害 | `splash_damage` | 对命中点范围内敌人造成伤害 | 已实现 |
+| 附加状态 | `apply_status` | 给敌人添加状态 | 已实现 |
 | 连锁伤害 | `chain_damage` | 查找额外目标并造成伤害 | 雷霆塔阶段 |
 | 易伤 | `vulnerability` | 目标承伤提高 | 长期 |
 | 护甲削弱 | `armor_break` | 降低护甲或防御效果 | 长期 |
@@ -304,7 +307,7 @@ VisualEvent
 - `test_projectile_service.gd` 覆盖命中时附加状态和生成视觉事件。
 - `test_enemy_damage_service.gd` 覆盖 DoT 伤害仍走最终伤害公式。
 - `test_combat_simulation.gd` 覆盖固定 tick 中状态移动倍率、DoT 伤害、死亡和奖励。
-- `test_tower_config.gd` 覆盖塔配置里的 `attack_pattern` 和 `effects`。
+- `test_tower_config.gd` 覆盖塔配置里的 `attack_pattern`、JSON 加载、schema 语义和 `effects`。
 - `check-gameplay-smoke.sh` 后续增加火焰或毒素 DoT 的代表 scenario。
 
 ## 替代方案

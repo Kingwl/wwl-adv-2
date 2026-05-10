@@ -22,6 +22,7 @@ var status_move_speed_multiplier: float
 var status_tick_interval: float
 var status_tick_damage: float
 var status_stack_policy: int
+var effects: Array
 var elapsed_seconds: float
 var max_lifetime_seconds: float
 var active: bool
@@ -47,7 +48,8 @@ func _init(
 	new_status_move_speed_multiplier: float = 1.0,
 	new_status_tick_interval: float = 0.0,
 	new_status_tick_damage: float = 0.0,
-	new_status_stack_policy: int = -1
+	new_status_stack_policy: int = -1,
+	new_effects: Array = []
 ) -> void:
 	assert(not new_id.is_empty(), "Projectile id is required.")
 	assert(not new_tower_id.is_empty(), "Tower id is required.")
@@ -87,6 +89,9 @@ func _init(
 		if new_status_stack_policy < 0 and status_type >= 0
 		else new_status_stack_policy
 	)
+	effects = _duplicate_effects(new_effects)
+	if effects.is_empty():
+		effects = _build_legacy_effects()
 	elapsed_seconds = 0.0
 	max_lifetime_seconds = new_max_lifetime_seconds
 	active = true
@@ -116,3 +121,35 @@ static func _default_status_type(projectile_tower_type: GameTower.Type, projecti
 	if projectile_tower_type == GameTower.Type.SLOW and projectile_slow_duration > 0.0:
 		return StatusEvent.StatusType.SLOW
 	return -1
+
+
+func _build_legacy_effects() -> Array:
+	var result := []
+	if splash_radius_cells > 0.0:
+		result.append(TowerEffect.splash_damage(splash_radius_cells))
+	else:
+		result.append(TowerEffect.damage_primary())
+
+	if status_type >= 0 and status_duration > 0.0:
+		result.append(TowerEffect.apply_status(
+			status_type,
+			status_duration,
+			status_move_speed_multiplier,
+			status_tick_interval,
+			status_tick_damage,
+			-1,
+			-1,
+			status_stack_policy
+		))
+
+	return result
+
+
+static func _duplicate_effects(source_effects: Array) -> Array:
+	var result := []
+	for candidate in source_effects:
+		var effect := candidate as TowerEffect
+		if effect != null:
+			result.append(effect.duplicate_effect())
+
+	return result

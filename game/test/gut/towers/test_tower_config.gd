@@ -17,6 +17,26 @@ func test_single_target_tier_one_stats() -> void:
 	assert_eq(stats.slow_multiplier, 1.0)
 	assert_eq(stats.slow_duration, 0.0)
 	assert_eq(stats.targeting, TowerStats.Targeting.FIRST)
+	assert_eq(stats.projectile_speed_cells_per_second, 6.0)
+	assert_eq(stats.projectile_hit_radius_cells, 0.12)
+	assert_eq(stats.effects.size(), 1)
+	assert_eq(stats.effects[0].effect_type, TowerEffect.EffectType.DAMAGE_PRIMARY)
+
+
+func test_default_tower_config_loads_json_tower_definitions() -> void:
+	var definitions := TowerConfig.load_definitions_from_path(TowerConfig.DEFAULT_TOWER_DEFINITION_PATH)
+	var config := TowerConfig.new(definitions)
+
+	assert_eq(config.get_tower_types(), [
+		GameTower.Type.SINGLE_TARGET,
+		GameTower.Type.AREA,
+		GameTower.Type.SLOW,
+		GameTower.Type.FLAME,
+	])
+	assert_eq(config.get_tower_id(GameTower.Type.SINGLE_TARGET), "single")
+	assert_eq(config.get_tower_id(GameTower.Type.FLAME), "flame")
+	assert_true(config.is_visual_test_enabled(GameTower.Type.SLOW))
+	assert_eq(config.get_visual_test_tower_specs().size(), 4)
 
 
 func test_single_target_upgrade_tiers_focus_damage_and_fire_rate() -> void:
@@ -73,6 +93,10 @@ func test_area_tier_one_stats() -> void:
 	assert_eq(stats.attack_pattern, DamageTypes.AttackPattern.SPLASH_PROJECTILE)
 	assert_eq(stats.splash_radius_cells, 0.75)
 	assert_eq(stats.targeting, TowerStats.Targeting.FIRST)
+	assert_eq(stats.projectile_speed_cells_per_second, 4.5)
+	assert_eq(stats.effects.size(), 1)
+	assert_eq(stats.effects[0].effect_type, TowerEffect.EffectType.SPLASH_DAMAGE)
+	assert_eq(stats.effects[0].radius_cells, 0.75)
 
 
 func test_area_upgrade_tiers_expand_splash_and_improve_damage() -> void:
@@ -109,6 +133,12 @@ func test_slow_tier_one_stats() -> void:
 	assert_eq(stats.slow_multiplier, 0.6)
 	assert_eq(stats.slow_duration, 1.5)
 	assert_eq(stats.targeting, TowerStats.Targeting.FIRST)
+	assert_eq(stats.projectile_speed_cells_per_second, 5.25)
+	assert_eq(stats.effects.size(), 2)
+	assert_eq(stats.effects[0].effect_type, TowerEffect.EffectType.DAMAGE_PRIMARY)
+	assert_eq(stats.effects[1].effect_type, TowerEffect.EffectType.APPLY_STATUS)
+	assert_eq(stats.effects[1].status_type, StatusEvent.StatusType.SLOW)
+	assert_eq(stats.effects[1].move_speed_multiplier, 0.6)
 
 
 func test_slow_upgrade_tiers_strengthen_duration_and_multiplier() -> void:
@@ -150,6 +180,13 @@ func test_flame_tier_one_stats() -> void:
 	assert_eq(stats.status_tick_damage, 2.0)
 	assert_eq(stats.status_stack_policy, StatusEffect.StackPolicy.REFRESH)
 	assert_eq(stats.targeting, TowerStats.Targeting.FIRST)
+	assert_eq(stats.projectile_speed_cells_per_second, 5.0)
+	assert_eq(stats.effects.size(), 2)
+	assert_eq(stats.effects[0].effect_type, TowerEffect.EffectType.DAMAGE_PRIMARY)
+	assert_eq(stats.effects[1].effect_type, TowerEffect.EffectType.APPLY_STATUS)
+	assert_eq(stats.effects[1].status_type, StatusEvent.StatusType.BURN)
+	assert_eq(stats.effects[1].tick_interval, 1.0)
+	assert_eq(stats.effects[1].tick_damage, 2.0)
 
 
 func test_flame_upgrade_tiers_improve_damage_range_and_dot_numbers() -> void:
@@ -201,6 +238,8 @@ func test_custom_tower_definitions_drive_stats_and_upgrade_cost() -> void:
 	assert_eq(stats.splash_radius_cells, 0.0)
 	assert_eq(stats.slow_multiplier, 1.0)
 	assert_eq(stats.slow_duration, 0.0)
+	assert_eq(stats.effects.size(), 1)
+	assert_eq(stats.effects[0].effect_type, TowerEffect.EffectType.DAMAGE_PRIMARY)
 
 
 func test_validate_definitions_rejects_damage_or_range_not_increasing() -> void:
@@ -281,6 +320,35 @@ func test_validate_definitions_rejects_status_type_change_during_upgrade() -> vo
 	})
 
 	assert_has(errors, "FLAME tier 2 cannot change status type from tier 1.")
+
+
+func test_validate_definitions_rejects_invalid_effects() -> void:
+	var errors := TowerConfig.validate_definitions({
+		GameTower.Type.AREA: {
+			"tiers": [
+				{
+					"damage": 5.0,
+					"range_cells": 2.0,
+					"attack_interval": 1.0,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.SPLASH_DAMAGE,
+							"radius_cells": 0.0,
+						},
+						{
+							"type": TowerEffect.EffectType.APPLY_STATUS,
+							"status_type": StatusEvent.StatusType.BURN,
+							"duration": 3.0,
+							"tick_damage": 2.0,
+						},
+					],
+				},
+			],
+		},
+	})
+
+	assert_has(errors, "AREA tier 1 effect 1 radius_cells must be positive for splash_damage.")
+	assert_has(errors, "AREA tier 1 effect 2 tick_interval must be positive when tick_damage is positive.")
 
 
 func test_game_tower_has_runtime_position_and_cooldown_defaults() -> void:

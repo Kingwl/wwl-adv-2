@@ -49,6 +49,9 @@ func test_single_target_tower_emits_one_damage_event() -> void:
 	assert_eq(result.projectile.damage_school, DamageTypes.DamageSchool.PHYSICAL)
 	assert_eq(result.projectile.tower_id, "tower-a")
 	assert_eq(result.projectile.tower_type, GameTower.Type.SINGLE_TARGET)
+	assert_eq(result.projectile.speed_cells_per_second, 6.0)
+	assert_eq(result.projectile.effects.size(), 1)
+	assert_eq(result.projectile.effects[0].effect_type, TowerEffect.EffectType.DAMAGE_PRIMARY)
 	assert_eq(tower.cooldown_remaining, 1.0)
 
 
@@ -90,6 +93,9 @@ func test_area_tower_damages_enemies_near_target() -> void:
 	assert_eq(result.projectile.damage_school, DamageTypes.DamageSchool.PHYSICAL)
 	assert_eq(result.projectile.splash_radius_cells, 0.75)
 	assert_eq(result.projectile.tower_type, GameTower.Type.AREA)
+	assert_eq(result.projectile.speed_cells_per_second, 4.5)
+	assert_eq(result.projectile.effects.size(), 1)
+	assert_eq(result.projectile.effects[0].effect_type, TowerEffect.EffectType.SPLASH_DAMAGE)
 	assert_eq(tower.cooldown_remaining, 1.4)
 
 
@@ -127,6 +133,9 @@ func test_slow_tower_emits_damage_and_slow_status_events() -> void:
 	assert_eq(result.projectile.slow_duration, 1.5)
 	assert_eq(result.projectile.slow_multiplier, 0.6)
 	assert_eq(result.projectile.tower_type, GameTower.Type.SLOW)
+	assert_eq(result.projectile.speed_cells_per_second, 5.25)
+	assert_eq(result.projectile.effects.size(), 2)
+	assert_eq(result.projectile.effects[1].effect_type, TowerEffect.EffectType.APPLY_STATUS)
 	assert_eq(tower.cooldown_remaining, 1.2)
 
 
@@ -164,4 +173,7 @@ func test_flame_tower_emits_fire_projectile_with_burn_status() -> void:
 	assert_eq(result.projectile.status_duration, 3.0)
 	assert_eq(result.projectile.status_tick_interval, 1.0)
 	assert_eq(result.projectile.status_tick_damage, 2.0)
+	assert_eq(result.projectile.speed_cells_per_second, 5.0)
+	assert_eq(result.projectile.effects.size(), 2)
+	assert_eq(result.projectile.effects[1].status_type, StatusEvent.StatusType.BURN)
 	assert_eq(tower.cooldown_remaining, 1.25)

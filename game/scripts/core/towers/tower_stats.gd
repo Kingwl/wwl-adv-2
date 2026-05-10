@@ -24,6 +24,9 @@ var status_tick_interval: float
 var status_tick_damage: float
 var status_stack_policy: int
 var targeting: Targeting
+var effects: Array
+var projectile_speed_cells_per_second: float
+var projectile_hit_radius_cells: float
 
 
 func _init(
@@ -43,7 +46,10 @@ func _init(
 	new_status_tick_interval: float = 0.0,
 	new_status_tick_damage: float = 0.0,
 	new_status_stack_policy: int = -1,
-	new_targeting: Targeting = Targeting.FIRST
+	new_targeting: Targeting = Targeting.FIRST,
+	new_effects: Array = [],
+	new_projectile_speed_cells_per_second: float = 6.0,
+	new_projectile_hit_radius_cells: float = 0.12
 ) -> void:
 	assert(new_damage >= 0.0, "Tower damage cannot be negative.")
 	assert(new_range_cells > 0.0, "Tower range must be positive.")
@@ -55,6 +61,8 @@ func _init(
 	assert(new_status_move_speed_multiplier > 0.0, "Tower status move speed multiplier must be positive.")
 	assert(new_status_tick_interval >= 0.0, "Tower status tick interval cannot be negative.")
 	assert(new_status_tick_damage >= 0.0, "Tower status tick damage cannot be negative.")
+	assert(new_projectile_speed_cells_per_second > 0.0, "Tower projectile speed must be positive.")
+	assert(new_projectile_hit_radius_cells >= 0.0, "Tower projectile hit radius cannot be negative.")
 
 	damage = new_damage
 	range_cells = new_range_cells
@@ -73,7 +81,29 @@ func _init(
 	status_tick_damage = new_status_tick_damage
 	status_stack_policy = new_status_stack_policy
 	targeting = new_targeting
+	effects = _duplicate_effects(new_effects)
+	projectile_speed_cells_per_second = new_projectile_speed_cells_per_second
+	projectile_hit_radius_cells = new_projectile_hit_radius_cells
 
 
 func has_status_effect() -> bool:
 	return status_type >= 0 and status_duration > 0.0
+
+
+func has_effect_type(effect_type: int) -> bool:
+	for candidate in effects:
+		var effect := candidate as TowerEffect
+		if effect != null and effect.effect_type == effect_type:
+			return true
+
+	return false
+
+
+static func _duplicate_effects(source_effects: Array) -> Array:
+	var result := []
+	for candidate in source_effects:
+		var effect := candidate as TowerEffect
+		if effect != null:
+			result.append(effect.duplicate_effect())
+
+	return result

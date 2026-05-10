@@ -49,8 +49,8 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
   - `agent-preflight.sh` / `agent-preflight-fast.sh` 只运行项目门禁和日志报告，适合开发迭代。
   - `agent-preflight-full.sh` 额外运行 native UI smoke 和 native gameplay smoke，适合交付前视觉/可玩性证据。
 
-- [ ] 将塔、敌人和波次配置迁移到带 schema 检查的数据文件。
-  - 扩展 `check-assets.sh`，不只校验关卡和 map style 定义。
+- [ ] 将敌人和波次配置迁移到带 schema 检查的数据文件。
+  - `check-assets.sh` 已扩展到塔配置；下一步继续覆盖敌人和波次定义。
   - 校验数据文件和运行时资产之间的引用。
 
 - [ ] 将 structural lint 的 warning 分阶段收敛成更严格规则。

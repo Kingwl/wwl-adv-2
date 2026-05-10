@@ -268,12 +268,13 @@ final_damage = 10 * 2.0 * 1.25 = 25
 - `Enemy` 增加 `armor_type`、`race_type` 和 `school_resistance_overrides`。
 - `DamageEvent` 携带 `attack_type` 和 `damage_school`。
 - `EnemyDamageService` 在应用伤害前按攻击/防御/伤害/种族公式计算最终伤害。
-- `TowerConfig` 给现有四塔提供类型元数据：Single = CROSSBOW/PIERCE/PHYSICAL，Area = CANNON/SIEGE/PHYSICAL，Slow = SPELL/MAGIC/FROST，Flame = SPELL/MAGIC/FIRE。
+- `TowerConfig` 从 `game/data/towers/towers.json` 给现有四塔提供类型元数据：Single = CROSSBOW/PIERCE/PHYSICAL，Area = CANNON/SIEGE/PHYSICAL，Slow = SPELL/MAGIC/FROST，Flame = SPELL/MAGIC/FIRE。
 - `TowerAttackService` 和 `ProjectileService` 将塔的攻击类型和伤害类型传递到投射物与伤害事件。
+- `check-assets.sh` 已校验塔配置 schema 中的攻击类型、伤害类型、攻击模式和 effect 字段。
 
 第一版尚未实现：
 
-- 塔、敌人和波次的数据文件 schema。
+- 敌人和波次的数据文件 schema。
 - 多敌人类型和波次配置中的 armor/race 分布。
 - UI 中展示克制关系或敌人抗性。
 
@@ -299,7 +300,7 @@ final_damage = 10 * 0.35 * 0.25 = 0.875
 4. 新增 `DamageAffinityConfig` 或同类服务，负责攻击/防御倍率和种族抗性查表。
 5. 让 projectile 或 damage event 携带 `attack_type` 和 `damage_school`。
 6. 在 `EnemyDamageService` 中使用新公式结算最终伤害。
-7. 把塔、敌人、种族抗性迁移到数据文件，并补 schema。
+7. 把敌人、种族抗性和波次迁移到数据文件，并补 schema。
 
 ## 测试要求
 
@@ -307,7 +308,7 @@ final_damage = 10 * 0.35 * 0.25 = 0.875
 - `test_enemy_damage_service.gd` 覆盖最终伤害公式。
 - `test_tower_config.gd` 覆盖现有四塔的武器形态、攻击类型和伤害类型。
 - `test_projectile_service.gd` 覆盖 projectile 携带并传递攻击/伤害类型。
-- 数据化后 `check-assets.sh` 必须校验 tower/enemy/race resistance 的枚举值和必填字段。
+- 数据化后 `check-assets.sh` 必须继续校验 tower/enemy/race resistance 的枚举值和必填字段；当前已覆盖 tower。
 - Gameplay smoke 后续增加一个克制场景，例如火焰打亡灵、毒素打构装的伤害摘要。
 
 ## 替代方案
