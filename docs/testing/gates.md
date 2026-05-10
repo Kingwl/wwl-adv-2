@@ -11,14 +11,25 @@ cd game
 ./tools/check-all.sh
 ```
 
-交付非平凡改动前的 agent preflight：
+本地快速 agent preflight：
 
 ```bash
 cd game
 ./tools/agent-preflight.sh
 ```
 
-GitHub Actions 会在 `.github/workflows/ci.yml` 中运行这个项目门禁，然后运行 native UI smoke 门禁。
+这个命令运行 `check-all.sh`，生成 `ci-artifacts/check-all.log`，并把 Godot/GUT 日志解析为 `ci-artifacts/godot-log/report.json` 和 `report.md`。它不跑 native smoke，适合开发过程中的 agent 反馈，不会主动弹出视觉测试窗口。
+
+完整 agent preflight：
+
+```bash
+cd game
+./tools/agent-preflight-full.sh
+```
+
+这个命令先运行 fast preflight，再运行 native UI smoke 和 native gameplay smoke。需要交付 UI、场景、可玩路径或需要截图证据时使用。
+
+GitHub Actions 会在 `.github/workflows/ci.yml` 中运行这个项目门禁，生成 Godot/GUT 结构化日志报告，然后运行 native UI smoke 和 native gameplay smoke 门禁。
 
 CI 每次运行都会把完整 `ci-artifacts/` 目录上传为 `godot-check-artifacts` artifact，包括失败运行。
 

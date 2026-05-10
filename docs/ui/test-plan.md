@@ -26,7 +26,7 @@ cd game
 
 ```bash
 cd game
-./tools/agent-preflight.sh
+./tools/agent-preflight-full.sh
 ```
 
 只改文档：

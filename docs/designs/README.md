@@ -40,7 +40,7 @@
 | --- | --- | --- | --- |
 | 关卡和 map style schema 检查 | Implemented | `game/data/schemas/`, `game/tools/check-assets.sh` | 在 `check-all.sh` 中运行。 |
 | Native UI smoke | Implemented | `game/tools/check-ui-smoke.sh`, `game/tools/ui_smoke_runner.gd`, `.github/workflows/ci.yml` | 运行桌面/移动横屏/方形可玩性 smoke，并上传截图。 |
-| Agent preflight | Implemented | `game/tools/agent-preflight.sh`, `game/tools/summarize-ui-smoke.py` | 本地 agent 反馈环：项目门禁加 UI smoke 摘要。 |
+| Agent preflight | Implemented | `game/tools/agent-preflight-fast.sh`, `game/tools/agent-preflight-full.sh`, `game/tools/summarize-godot-log.py`, `game/tools/summarize-ui-smoke.py` | 本地 fast 反馈环不跑视觉 smoke；full 入口保留 UI/gameplay smoke 和截图证据。 |
 | Godot Web 导出和 Pages 可玩构建 | Implemented | `game/export_presets.cfg`, `game/tools/export-web.sh`, `.github/workflows/pages.yml` | 导出产物位于 `game/` 外；Pages 发布到 `/play/`。 |
 
 ## 期望

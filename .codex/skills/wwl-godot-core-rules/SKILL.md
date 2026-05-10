@@ -59,11 +59,18 @@ cd game
 ./tools/check-ui-smoke.sh
 ```
 
-交付非平凡改动前：
+交付非平凡核心改动前：
 
 ```bash
 cd game
 ./tools/agent-preflight.sh
+```
+
+如果核心玩法改动影响玩家可见结果、战斗表现、奖励、漏怪或胜负状态，再运行：
+
+```bash
+cd game
+./tools/agent-preflight-full.sh
 ```
 
 最终说明新增或修改了哪些测试、运行了哪些命令，以及是否有 TD-007 这类已知警告。

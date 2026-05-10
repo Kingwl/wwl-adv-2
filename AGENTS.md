@@ -80,11 +80,18 @@ cd game
 ./tools/check-all.sh
 ```
 
-agent 交付非平凡改动前运行：
+agent 本地快速 preflight 运行：
 
 ```bash
 cd game
 ./tools/agent-preflight.sh
+```
+
+完整交付或需要视觉证据时运行：
+
+```bash
+cd game
+./tools/agent-preflight-full.sh
 ```
 
 场景、布局、渲染、输入或 UI 资产改动时，遵循 `docs/testing/gates.md` 的 UI 变更验证流程，运行 `./tools/check-ui-smoke.sh`，并检查打印摘要、`../ci-artifacts/ui-smoke/native/report.md`、整屏截图、局部 crop 和 overlay 辅助线图。
@@ -96,6 +103,7 @@ cd game
 ```bash
 cd game
 ./tools/agent-preflight.sh
+./tools/agent-preflight-full.sh
 ./tools/check-env.sh
 ./tools/godot-headless.sh
 ./tools/test-gut.sh
@@ -104,6 +112,7 @@ cd game
 ./tools/check-structure.sh
 ./tools/check-ui-smoke.sh
 ./tools/check-gameplay-smoke.sh
+./tools/summarize-godot-log.py ../ci-artifacts/check-all.log
 ./tools/summarize-ui-smoke.py
 ./tools/export-web.sh ../build/web
 ```

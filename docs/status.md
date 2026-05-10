@@ -14,6 +14,7 @@
 cd game
 ./tools/check-all.sh
 ./tools/agent-preflight.sh
+./tools/agent-preflight-full.sh
 ./tools/check-env.sh
 ./tools/godot-headless.sh
 ./tools/test-gut.sh
@@ -30,7 +31,8 @@ cd game
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
 - Native gameplay smoke：代表性 gameplay scenario 通过，trace、截图和 overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
 - Structural lint：Tree-sitter GDScript 解析 83 个文件，0 个 error，0 个 warning。
-- Agent preflight：运行 `check-all.sh`、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
+- Agent preflight fast：运行 `check-all.sh`，生成 Godot/GUT 结构化日志报告，不运行 native smoke。
+- Agent preflight full：运行 fast preflight、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
 - 已知警告：GUT 退出时有来自场景/资源清理的 ObjectDB leaked instances 警告，记录为 TD-007。
 
 ## 已实现
@@ -57,6 +59,7 @@ cd game
 - `BoardView` 不再保留 session、layout、asset 或 visual state 的兼容镜像字段；场景测试和 smoke runner 通过显式 getter 访问拆出的边界。
 - `BoardMapRenderer` 已从 `game/scripts/core/` 迁到 `game/scripts/board/`，core 目录下渲染/资源加载耦合现在由 structural lint 作为 error 阻止。
 - 用于本地 agent 迭代反馈的 agent preflight 和 UI smoke 摘要脚本。
+- Godot/GUT 日志结构化报告，输出到 `ci-artifacts/godot-log/report.json` 和 `report.md`。
 - 面向核心玩法规则、场景/UI 验证和 harness 维护的项目 Codex skills。
 - 面向核心玩法和 UI 的功能清单与测试计划文档。
 
@@ -79,6 +82,7 @@ cd game
 
 - CI workflow：`.github/workflows/ci.yml`。
 - CI 运行 `check-all.sh`、native UI smoke 和 native gameplay smoke；`check-all.sh` 包含资产/schema 检查和 Tree-sitter structural lint。
+- CI 将 `check-all.log` 解析为 Godot/GUT 结构化报告。
 - CI 将 `ci-artifacts/` 上传为 `godot-check-artifacts` artifact。
 - GitHub Pages workflow：`.github/workflows/pages.yml`。
 - Pages 来源：GitHub Actions workflow 从 `site/` 加 `_site/play/` 下的 Godot Web 导出进行部署。

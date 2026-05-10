@@ -155,7 +155,8 @@ Web smoke 应在以下情况失败：
 - `game/tools/check-ui-smoke.sh`：shell 编排器。
 - `game/tools/ui_smoke_runner.gd`：Godot runner，负责加载场景、驱动输入、捕获截图并写报告。
 - `game/tools/summarize-ui-smoke.py`：agent 迭代用报告摘要器。
-- `game/tools/agent-preflight.sh`：本地交付命令，运行项目门禁、UI smoke 和产物摘要。
+- `game/tools/agent-preflight.sh`：本地 fast 反馈命令，运行项目门禁、Godot/GUT 日志报告和产物摘要。
+- `game/tools/agent-preflight-full.sh`：完整交付命令，额外运行 UI smoke、gameplay smoke 和截图产物摘要。
 - `docs/testing/gates.md`：实现后记录 native UI smoke 门禁。
 
 预期 Web 文件：
@@ -176,7 +177,7 @@ Native 命令覆盖项：
 
 新增 UI surface 时，应同步扩展 native smoke 的 review artifact。至少为新面板、HUD 区域或卡片添加一个局部 crop 和 overlay；如果该 surface 有关键状态，runner 应能进入至少一个代表状态。
 
-交付 UI 改动前，检查 `docs/ui/features.md` 和 `docs/ui/test-plan.md` 是否需要更新，运行 `./tools/check-ui-smoke.sh` 或 `./tools/agent-preflight.sh`，检查 `report.md`、整屏截图、局部 crop 和 overlay。看到的每个 UI 问题或美观度问题都应单独记录到 `docs/todo/backlog.md`。
+交付 UI 改动前，检查 `docs/ui/features.md` 和 `docs/ui/test-plan.md` 是否需要更新，运行 `./tools/check-ui-smoke.sh` 或 `./tools/agent-preflight-full.sh`，检查 `report.md`、整屏截图、局部 crop 和 overlay。看到的每个 UI 问题或美观度问题都应单独记录到 `docs/todo/backlog.md`。
 
 Web 命令覆盖项：
 

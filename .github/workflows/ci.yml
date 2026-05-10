@@ -64,7 +64,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ../ci-artifacts
+          set +e
           ./tools/check-all.sh 2>&1 | tee ../ci-artifacts/check-all.log
+          status="${PIPESTATUS[0]}"
+          set -e
+          ./tools/summarize-godot-log.py ../ci-artifacts/check-all.log \
+            --exit-status "${status}" \
+            --out-dir ../ci-artifacts/godot-log
+          exit "${status}"
 
       - name: Run native UI smoke
         working-directory: game

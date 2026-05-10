@@ -67,7 +67,7 @@ UI smoke、场景验证或 agent 反馈环改动：
 
 ```bash
 cd game
-./tools/agent-preflight.sh
+./tools/agent-preflight-full.sh
 ```
 
 只验证 gameplay smoke 改动：

@@ -61,11 +61,18 @@ cd game
 ./tools/summarize-ui-smoke.py
 ```
 
-交付前：
+本地快速 preflight：
 
 ```bash
 cd game
 ./tools/agent-preflight.sh
+```
+
+完整视觉/可玩性 preflight：
+
+```bash
+cd game
+./tools/agent-preflight-full.sh
 ```
 
 修改 BoardView 结构、资源加载或场景/核心边界时：

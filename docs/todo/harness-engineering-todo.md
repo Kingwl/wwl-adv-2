@@ -40,9 +40,13 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
 
 ## P1 - 更强的 Agent 反馈
 
-- [ ] 将 Godot 和 GUT 日志解析成 `report.json` 和 `report.md`。
+- [x] 将 Godot 和 GUT 日志解析成 `report.json` 和 `report.md`。
   - 分类错误、警告、测试失败，以及 TD-007 这类已知警告。
   - 将解析后的报告作为 CI artifact 上传。
+
+- [x] 将本地 agent preflight 拆成 fast/full。
+  - `agent-preflight.sh` / `agent-preflight-fast.sh` 只运行项目门禁和日志报告，适合开发迭代。
+  - `agent-preflight-full.sh` 额外运行 native UI smoke 和 native gameplay smoke，适合交付前视觉/可玩性证据。
 
 - [ ] 将塔、敌人和波次配置迁移到带 schema 检查的数据文件。
   - 扩展 `check-assets.sh`，不只校验关卡和 map style 定义。
@@ -55,6 +59,8 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
 
 - [x] 添加 agent preflight 命令。
   - 运行标准本地门禁。
+  - fast 入口不运行 native smoke，避免开发过程打断操作。
+  - full 入口保留 UI/gameplay smoke 和截图证据。
   - 汇总已改文件、生成产物和已知警告。
   - 相关时打印 Pages 可玩 URL。
 
