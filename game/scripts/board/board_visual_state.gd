@@ -2,11 +2,9 @@ class_name BoardVisualState
 extends RefCounted
 
 const ATTACK_FEEDBACK_DURATION_SECONDS := 0.18
-const TOWER_ATTACK_ANIMATION_SECONDS := 0.32
 const ENEMY_DEATH_ANIMATION_SECONDS := 0.54
 
 var attack_feedbacks: Array
-var tower_attack_animations: Dictionary
 var enemy_death_animations: Array
 var visual_elapsed_seconds := 0.0
 
@@ -17,31 +15,13 @@ func _init() -> void:
 
 func reset() -> void:
 	attack_feedbacks = []
-	tower_attack_animations = {}
 	enemy_death_animations = []
 	visual_elapsed_seconds = 0.0
 
 
 func advance(delta_seconds: float) -> void:
 	visual_elapsed_seconds += delta_seconds
-	advance_tower_attack_animations(delta_seconds)
 	advance_enemy_death_animations(delta_seconds)
-
-
-func advance_tower_attack_animations(delta_seconds: float) -> void:
-	if tower_attack_animations.is_empty():
-		return
-
-	for tower_id in tower_attack_animations.keys():
-		var animation: Dictionary = tower_attack_animations.get(tower_id, {})
-		var elapsed: float = animation.get("elapsed", 0.0) + delta_seconds
-		var duration: float = animation.get("duration", TOWER_ATTACK_ANIMATION_SECONDS)
-		if elapsed >= duration:
-			tower_attack_animations.erase(tower_id)
-			continue
-
-		animation["elapsed"] = elapsed
-		tower_attack_animations[tower_id] = animation
 
 
 func advance_enemy_death_animations(delta_seconds: float) -> void:
@@ -59,23 +39,6 @@ func advance_enemy_death_animations(delta_seconds: float) -> void:
 		active_animations.append(animation)
 
 	enemy_death_animations = active_animations
-
-
-func spawn_tower_attack_animations(tick_results: Array) -> void:
-	for candidate in tick_results:
-		var tick_result := candidate as CombatTickResult
-		if tick_result == null:
-			continue
-
-		for attack_candidate in tick_result.attack_results:
-			var attack_result := attack_candidate as AttackResult
-			if attack_result == null or not attack_result.succeeded or attack_result.tower_id.is_empty():
-				continue
-
-			tower_attack_animations[attack_result.tower_id] = {
-				"elapsed": 0.0,
-				"duration": TOWER_ATTACK_ANIMATION_SECONDS,
-			}
 
 
 func spawn_enemy_death_animations(tick_results: Array, get_enemy_position: Callable) -> void:

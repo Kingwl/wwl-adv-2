@@ -5,11 +5,10 @@ const ENEMY_RADIUS_FACTOR := 0.18
 const ENEMY_HEALTH_BAR_WIDTH_FACTOR := 0.54
 const ENEMY_HEALTH_BAR_HEIGHT_FACTOR := 0.075
 const ENEMY_HEALTH_BAR_OFFSET_FACTOR := 0.08
-const TOWER_SPRITE_SIZE_FACTOR := 0.88
+const TOWER_SPRITE_SIZE_FACTOR := 1.0
 const ENEMY_SPRITE_SIZE_FACTOR := 0.64
 const PROJECTILE_SPRITE_SIZE_FACTOR := 0.46
 const IMPACT_SPRITE_SIZE_FACTOR := 0.90
-const TOWER_ATTACK_ANIMATION_SECONDS := 0.32
 const ENEMY_WALK_FRAME_SECONDS := 0.16
 
 
@@ -45,6 +44,7 @@ func draw(
 				board,
 				placement_service,
 				combat_simulation,
+				path_follower,
 				visual_state,
 				asset_catalog,
 				board_origin,
@@ -72,21 +72,12 @@ func enemy_local_position(path_follower: PathFollower, board_origin: Vector2, ce
 
 func get_tower_sprite_texture(
 	tower_type: GameTower.Type,
-	tower_id: String,
-	visual_state: BoardVisualState,
+	_tower_id: String,
+	_visual_state: BoardVisualState,
 	asset_catalog: BoardAssetCatalog
 ) -> Texture2D:
 	if asset_catalog == null:
 		return null
-
-	if visual_state != null and not tower_id.is_empty() and visual_state.tower_attack_animations.has(tower_id):
-		var animation: Dictionary = visual_state.tower_attack_animations.get(tower_id, {})
-		var elapsed: float = animation.get("elapsed", 0.0)
-		var duration: float = animation.get("duration", TOWER_ATTACK_ANIMATION_SECONDS)
-		var progress := clampf(elapsed / duration, 0.0, 0.9999)
-		var attack_texture := _texture_for_progress(_tower_attack_textures_for_type(tower_type, asset_catalog), progress)
-		if attack_texture != null:
-			return attack_texture
 
 	match tower_type:
 		GameTower.Type.AREA:
@@ -144,6 +135,19 @@ func projectile_draw_rotation(projectile: CombatProjectile, path_follower: PathF
 
 	var target_position := path_follower.get_grid_space_position(target)
 	return projectile.position.angle_to_point(target_position)
+
+
+func tower_draw_rotation(tower: GameTower, combat_simulation: CombatSimulation, path_follower: PathFollower) -> float:
+	if tower == null or combat_simulation == null or path_follower == null:
+		return 0.0
+
+	var target := _select_current_target(tower, combat_simulation, path_follower)
+	if target == null:
+		return 0.0
+
+	var tower_position := Vector2(float(tower.grid_position.x) + 0.5, float(tower.grid_position.y) + 0.5)
+	var target_position := path_follower.get_grid_space_position(target)
+	return tower_position.angle_to_point(target_position)
 
 
 func get_enemy_health_ratio(enemy: Enemy) -> float:
@@ -247,6 +251,7 @@ func _draw_slot(
 	board: Board,
 	placement_service: TowerPlacementService,
 	combat_simulation: CombatSimulation,
+	path_follower: PathFollower,
 	visual_state: BoardVisualState,
 	asset_catalog: BoardAssetCatalog,
 	board_origin: Vector2,
@@ -263,7 +268,7 @@ func _draw_slot(
 	var inner_rect := rect.grow(-1)
 
 	if slot.occupant_id != "":
-		_draw_tower_sprite(canvas, placement_service, combat_simulation, visual_state, asset_catalog, cell_size, slot.occupant_id, inner_rect)
+		_draw_tower_sprite(canvas, placement_service, combat_simulation, path_follower, visual_state, asset_catalog, cell_size, slot.occupant_id, inner_rect)
 
 	if grid_position == hover_grid_position:
 		var outline_color := Color(0.85, 0.95, 1.0, 1.0)
@@ -279,6 +284,7 @@ func _draw_tower_sprite(
 	canvas: CanvasItem,
 	placement_service: TowerPlacementService,
 	combat_simulation: CombatSimulation,
+	path_follower: PathFollower,
 	visual_state: BoardVisualState,
 	asset_catalog: BoardAssetCatalog,
 	cell_size: float,
@@ -293,7 +299,13 @@ func _draw_tower_sprite(
 	var texture := get_tower_sprite_texture(tower_type, tower_id, visual_state, asset_catalog)
 	if texture != null:
 		canvas.draw_circle(slot_rect.get_center() + Vector2(0.0, cell_size * 0.16), cell_size * 0.25, Color(0.04, 0.035, 0.03, 0.45))
-		_draw_sprite_texture(canvas, texture, slot_rect.get_center(), cell_size * TOWER_SPRITE_SIZE_FACTOR)
+		_draw_oriented_sprite_texture(
+			canvas,
+			texture,
+			slot_rect.get_center(),
+			cell_size * TOWER_SPRITE_SIZE_FACTOR,
+			tower_draw_rotation(tower, combat_simulation, path_follower)
+		)
 		return
 
 	canvas.draw_circle(slot_rect.get_center(), cell_size * 0.25, _tower_fill_color(placement_service, combat_simulation, tower_id))
@@ -443,14 +455,17 @@ func _board_rect(board: Board, board_origin: Vector2, cell_size: float) -> Rect2
 	return Rect2(board_origin, Vector2(float(board.width) * cell_size, float(board.height) * cell_size))
 
 
-func _tower_attack_textures_for_type(tower_type: GameTower.Type, asset_catalog: BoardAssetCatalog) -> Array:
-	match tower_type:
-		GameTower.Type.AREA:
-			return asset_catalog.area_tower_attack_textures
-		GameTower.Type.SLOW:
-			return asset_catalog.slow_tower_attack_textures
+func _select_current_target(tower: GameTower, combat_simulation: CombatSimulation, path_follower: PathFollower) -> Enemy:
+	if combat_simulation.tower_attack_service == null:
+		return null
 
-	return asset_catalog.single_tower_attack_textures
+	var tower_config := combat_simulation.tower_attack_service.tower_config
+	var targeting_service := combat_simulation.tower_attack_service.targeting_service
+	if tower_config == null or targeting_service == null:
+		return null
+
+	var stats := tower_config.get_stats(tower.tower_type, tower.tier)
+	return targeting_service.select_target(tower, stats, combat_simulation.enemies, path_follower)
 
 
 func _texture_for_progress(textures: Array, progress: float) -> Texture2D:

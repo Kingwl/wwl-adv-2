@@ -349,7 +349,6 @@ func _prepare_manual_combat(board_view: BoardView) -> void:
 	board_view.get_session().last_wave_reward_transaction_results = []
 	board_view.get_visual_state().attack_feedbacks = []
 	board_view.get_visual_state().enemy_death_animations = []
-	board_view.get_visual_state().tower_attack_animations = {}
 	board_view.get_session().sync_combat_towers()
 	board_view.refresh_hud()
 	board_view.queue_redraw()

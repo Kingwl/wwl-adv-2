@@ -20,7 +20,7 @@ UI 改动后先检查本文档是否需要更新。以下情况必须更新：
 | Surface | 主要节点或文件 | 玩家功能 | 状态和反馈 | 当前验证覆盖 |
 | --- | --- | --- | --- | --- |
 | 开始界面 | `game/scenes/start.tscn`, `game/scripts/start_screen.gd` | 显示标题、装饰框、crest 图标和 `Start` 按钮；点击进入主场景。 | 响应式居中布局。 | GUT 检查标题、按钮和入口场景；native smoke 通过开始按钮进入主场景，并生成 `*-start-screen.png` 和 `*-start-screen-overlay.png`。 |
-| 主棋盘和地图 | `game/scenes/main.tscn`, `game/scripts/board/board_view.gd` | 显示 baked 地图、道路、可建造区域、已放置塔、敌人、敌人血条和攻击反馈。 | hover、非法点击、投射物/命中特效、敌人行走/死亡动画。 | GUT 覆盖加载、地图资源、坐标映射、放置、敌人/攻击反馈；native smoke 覆盖一次放塔和整屏截图。 |
+| 主棋盘和地图 | `game/scenes/main.tscn`, `game/scripts/board/board_view.gd` | 显示 baked 地图、道路、可建造区域、已放置塔、敌人、敌人血条和攻击反馈。 | hover、非法点击、Single/Area/Slow 圆形塔顶按当前目标旋转、投射物/命中特效、敌人行走/死亡动画。 | GUT 覆盖加载、地图资源、圆形塔顶资源、坐标映射、放置、敌人/攻击反馈和塔朝向；native smoke 覆盖一次放塔和整屏截图；gameplay smoke 输出放塔和 Single 攻击 board crop。 |
 | HUD 资源栏 | `Hud/Gold`, `Hud/Lives`, `Hud/Wave`, `GoldIcon`, `LivesIcon`, `WaveIcon` | 显示金币、生命和波次。 | 放塔扣金币、击杀/清波奖励加金币、漏怪扣生命、波次显示保持可读。 | GUT 覆盖文本和状态更新；native smoke 生成 `*-hud-resources.png` 和 `*-hud-resources-overlay.png`。 |
 | Status / Hint | `Hud/Status`, `Hud/Hint` | 显示当前操作提示、选中塔信息、放置失败原因、奖励、漏怪、胜负状态。 | 紧凑布局使用短文本和 ellipsis，避免覆盖棋盘或塔卡。 | GUT 覆盖移动横屏和方形布局边界；native smoke 生成 `*-status-hint.png`、`*-status-reward.png`、`*-status-leak.png` 及对应 overlay。 |
 | 塔选择卡组 | `Hud/SingleTowerButton`, `Hud/AreaTowerButton`, `Hud/SlowTowerButton`, `Hud/TowerDeck` | 选择下一次放置的塔：Single、Area、Slow；显示图标、描述和费用。 | 选中态、暂停禁用、金币不足禁用、tooltip、桌面/移动横屏侧栏、方形视口底栏。 | GUT 覆盖选择、禁用、费用、响应式布局；native smoke 生成默认、Area 选中、Slow 选中、金币不足禁用四组 tower deck crop/overlay。 |
@@ -47,5 +47,5 @@ UI 改动后先检查本文档是否需要更新。以下情况必须更新：
 ## 已知覆盖边界
 
 - Native smoke 当前不单独截图 Area/Slow 实际放置后的棋盘状态，只截图塔卡选中态。
-- 主棋盘和地图当前没有单独局部 overlay；如果棋盘 UI 元素增多，应补 board crop/overlay。
+- UI smoke 的主棋盘没有单独局部 overlay；需要看塔/敌人/投射物贴合时使用 gameplay smoke 的 board crop/overlay。
 - 当前没有像素级 golden image baseline；视觉审查依赖 smoke crop、overlay 和人工 checklist。

@@ -28,7 +28,7 @@ cd game
 
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
-- GUT 套件：136 个测试通过，760 个断言。
+- GUT 套件：135 个测试通过，761 个断言。
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
 - Native gameplay smoke：代表性 gameplay scenario 通过，trace、截图和 overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
 - Web export smoke：Web 导出页面通过本地 HTTP + headless browser 检查，报告和截图位于 `ci-artifacts/web-smoke/`。
@@ -50,6 +50,7 @@ cd game
 - 玩家生命、胜利和失败状态。
 - 开始场景、主场景、暂停菜单、重开、返回开始、胜利和失败流程。
 - 三种基础塔：Single、Area 和 Slow。
+- 三种基础塔在棋盘和塔卡中使用生成的圆形塔顶 sprite，运行时按当前目标方向旋转。
 - 当前地图的数据驱动关卡路径/style 加载。
 - 生成的城市防御地图、道路 guide 产物、UI frame、塔 sprite、敌人 sprite 和攻击特效。
 - 覆盖 start-to-main 可玩性、响应式视口、单塔放置和截图产物的 native UI smoke。

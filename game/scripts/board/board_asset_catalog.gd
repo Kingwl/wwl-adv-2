@@ -8,28 +8,10 @@ const LIVES_ICON_PATH := "res://assets/ui/frost_rts/lives_icon.png"
 const WAVE_ICON_PATH := "res://assets/ui/frost_rts/wave_icon.png"
 const MENU_ICON_PATH := "res://assets/ui/frost_rts/menu_icon.png"
 const SCENE_BACKGROUND_TEXTURE_PATH := "res://assets/ui/frost_rts/frost_stone_bg.png"
-const SINGLE_TOWER_TEXTURE_PATH := "res://assets/sprites/mmo-v1/towers/single_tower.png"
-const AREA_TOWER_TEXTURE_PATH := "res://assets/sprites/mmo-v1/towers/area_tower.png"
-const SLOW_TOWER_TEXTURE_PATH := "res://assets/sprites/mmo-v1/towers/slow_tower.png"
+const SINGLE_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/single.png"
+const AREA_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/area.png"
+const SLOW_TOWER_TEXTURE_PATH := "res://assets/sprites/towers/round_rotating/slow.png"
 const BASIC_ENEMY_TEXTURE_PATH := "res://assets/sprites/mmo-v1/enemies/basic_enemy.png"
-const SINGLE_TOWER_ATTACK_TEXTURE_PATHS := [
-	"res://assets/sprites/mmo-v1/towers/single_tower_attack_1.png",
-	"res://assets/sprites/mmo-v1/towers/single_tower_attack_2.png",
-	"res://assets/sprites/mmo-v1/towers/single_tower_attack_3.png",
-	"res://assets/sprites/mmo-v1/towers/single_tower_attack_4.png",
-]
-const AREA_TOWER_ATTACK_TEXTURE_PATHS := [
-	"res://assets/sprites/mmo-v1/towers/area_tower_attack_1.png",
-	"res://assets/sprites/mmo-v1/towers/area_tower_attack_2.png",
-	"res://assets/sprites/mmo-v1/towers/area_tower_attack_3.png",
-	"res://assets/sprites/mmo-v1/towers/area_tower_attack_4.png",
-]
-const SLOW_TOWER_ATTACK_TEXTURE_PATHS := [
-	"res://assets/sprites/mmo-v1/towers/slow_tower_attack_1.png",
-	"res://assets/sprites/mmo-v1/towers/slow_tower_attack_2.png",
-	"res://assets/sprites/mmo-v1/towers/slow_tower_attack_3.png",
-	"res://assets/sprites/mmo-v1/towers/slow_tower_attack_4.png",
-]
 const ENEMY_WALK_TEXTURE_PATHS := [
 	"res://assets/sprites/mmo-v1/enemies/enemy_walk_1.png",
 	"res://assets/sprites/mmo-v1/enemies/enemy_walk_2.png",
@@ -75,9 +57,6 @@ var single_tower_texture: Texture2D
 var area_tower_texture: Texture2D
 var slow_tower_texture: Texture2D
 var basic_enemy_texture: Texture2D
-var single_tower_attack_textures: Array = []
-var area_tower_attack_textures: Array = []
-var slow_tower_attack_textures: Array = []
 var enemy_walk_textures: Array = []
 var enemy_death_textures: Array = []
 var single_projectile_textures: Array = []
@@ -122,9 +101,6 @@ func load_sprite_assets() -> void:
 	area_tower_texture = _load_texture(AREA_TOWER_TEXTURE_PATH)
 	slow_tower_texture = _load_texture(SLOW_TOWER_TEXTURE_PATH)
 	basic_enemy_texture = _load_texture(BASIC_ENEMY_TEXTURE_PATH)
-	single_tower_attack_textures = _load_texture_sequence(SINGLE_TOWER_ATTACK_TEXTURE_PATHS)
-	area_tower_attack_textures = _load_texture_sequence(AREA_TOWER_ATTACK_TEXTURE_PATHS)
-	slow_tower_attack_textures = _load_texture_sequence(SLOW_TOWER_ATTACK_TEXTURE_PATHS)
 	enemy_walk_textures = _load_texture_sequence(ENEMY_WALK_TEXTURE_PATHS)
 	enemy_death_textures = _load_texture_sequence(ENEMY_DEATH_TEXTURE_PATHS)
 	single_projectile_textures = _load_texture_sequence(SINGLE_PROJECTILE_TEXTURE_PATHS)

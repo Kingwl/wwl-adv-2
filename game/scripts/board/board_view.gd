@@ -62,7 +62,6 @@ func _process(delta: float) -> void:
 	var previous_flow_state := _game_session.flow_state
 	var tick_results := _game_session.advance_combat(delta)
 	_visual_state.advance_attack_feedbacks(delta)
-	_visual_state.spawn_tower_attack_animations(tick_results)
 	_visual_state.spawn_enemy_death_animations(tick_results, Callable(self, "_enemy_position_for_id"))
 	_visual_state.spawn_attack_feedback(
 		tick_results,

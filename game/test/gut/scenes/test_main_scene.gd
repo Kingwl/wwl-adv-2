@@ -80,7 +80,7 @@ func test_main_scene_loads_board_view_and_hud() -> void:
 	assert_true(single_button.button_pressed)
 
 
-func test_board_view_loads_mmo_sprite_assets() -> void:
+func test_board_view_loads_board_sprite_assets() -> void:
 	var packed_scene: PackedScene = load("res://scenes/main.tscn")
 	var scene: Node = packed_scene.instantiate()
 	add_child_autoqfree(scene)
@@ -107,13 +107,13 @@ func test_board_view_loads_mmo_sprite_assets() -> void:
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.SINGLE_TARGET, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.AREA, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.SLOW, "", board_view.get_visual_state(), board_view.get_asset_catalog()))
+	assert_eq(board_view.get_asset_catalog().single_tower_texture.get_size(), Vector2(128.0, 128.0))
+	assert_eq(board_view.get_asset_catalog().area_tower_texture.get_size(), Vector2(128.0, 128.0))
+	assert_eq(board_view.get_asset_catalog().slow_tower_texture.get_size(), Vector2(128.0, 128.0))
 	assert_not_null(board_view.get_renderer().get_enemy_sprite_texture(null, board_view.get_visual_state(), board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.SINGLE_TARGET, 0.0, board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.AREA, 0.5, board_view.get_asset_catalog()))
 	assert_not_null(board_view.get_renderer().get_attack_feedback_texture(GameTower.Type.SLOW, 0.99, board_view.get_asset_catalog()))
-	assert_eq(board_view.get_asset_catalog().single_tower_attack_textures.size(), 4)
-	assert_eq(board_view.get_asset_catalog().area_tower_attack_textures.size(), 4)
-	assert_eq(board_view.get_asset_catalog().slow_tower_attack_textures.size(), 4)
 	assert_eq(board_view.get_asset_catalog().enemy_walk_textures.size(), 4)
 	assert_eq(board_view.get_asset_catalog().enemy_death_textures.size(), 6)
 
@@ -582,7 +582,14 @@ func test_board_view_spawns_attack_feedback_when_tower_attacks() -> void:
 
 	assert_eq(board_view.get_session().combat_simulation.projectiles.size(), 1)
 	assert_eq(board_view.get_visual_state().attack_feedbacks.size(), 0)
-	assert_true(board_view.get_visual_state().tower_attack_animations.has(result.tower_id))
+	var tower := board_view.get_session().placement_service.tower_registry.get_tower(result.tower_id)
+	var tower_rotation := board_view.get_renderer().tower_draw_rotation(
+		tower,
+		board_view.get_session().combat_simulation,
+		board_view.get_session().path_follower
+	)
+	assert_true(tower_rotation > 1.0)
+	assert_true(tower_rotation < 2.0)
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.SINGLE_TARGET, result.tower_id, board_view.get_visual_state(), board_view.get_asset_catalog()))
 
 	board_view._process(0.2)

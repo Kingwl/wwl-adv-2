@@ -1,22 +1,6 @@
 extends GutTest
 
 
-func test_spawn_and_advance_tower_attack_animation() -> void:
-	var visual_state := BoardVisualState.new()
-	var tick_result := CombatTickResult.new(
-		0.1,
-		[AttackResult.success("tower-1", "enemy-1", CombatProjectile.new("projectile-1", "tower-1", "enemy-1", GameTower.Type.SINGLE_TARGET, Vector2.ZERO, 1.0, 1.0, 10.0))]
-	)
-
-	visual_state.spawn_tower_attack_animations([tick_result])
-
-	assert_true(visual_state.tower_attack_animations.has("tower-1"))
-
-	visual_state.advance_tower_attack_animations(BoardVisualState.TOWER_ATTACK_ANIMATION_SECONDS)
-
-	assert_false(visual_state.tower_attack_animations.has("tower-1"))
-
-
 func test_spawn_and_advance_enemy_death_animation() -> void:
 	var visual_state := BoardVisualState.new()
 	var damage_result := EnemyDamageResult.new(
