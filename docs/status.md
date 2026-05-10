@@ -89,6 +89,10 @@ cd game
 
 - `BoardGameSession` 仍构造默认经济配置和波次定义，记录为 TD-009。
 - 敌人和波次数值仍有一部分硬编码在 GDScript 中。
+- 塔 roster 仍受 `GameTower.Type`、tower schema、asset catalog 和工具枚举多处绑定，新增塔不是纯数据改动，记录为 TD-011 和 TD-016。
+- `TowerConfig`、`BoardRenderer`、`BoardHudController` 和 `test_main_scene.gd` 是当前体积最大的维护点，记录为 TD-012、TD-015 和 TD-017。
+- 建塔费用仍是全局经济配置，无法按塔类型做建造成本平衡，记录为 TD-013。
+- 紧凑视口 status/hint 依赖自由文本解析，文案调整可能破坏 UI 状态同步，记录为 TD-014。
 - 测试质量依赖 GUT 加 checklist，而不是行覆盖率。
 - 场景测试当前会输出 ObjectDB leak 警告，记录为 TD-007。
 
@@ -107,5 +111,5 @@ cd game
 ## 下一步最值得做的工作
 
 1. 将敌人和波次定义推进到数据文件，并为敌人配置 armor/race。
-2. 继续新增雷霆塔，验证后续 `effects[]` 扩展到 chain/感电类机制。
+2. 在雷霆塔前或同步处理塔 roster、建造费用和视觉资源的数据契约，降低新增塔的跨模块改动面。
 3. 保持 `game/tools/check-all.sh` 作为默认验证命令。

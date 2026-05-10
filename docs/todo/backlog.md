@@ -3,6 +3,8 @@
 ## 现在
 
 - [ ] 将敌人和波次定义推进到数据文件，并扩展 schema 检查。
+- [ ] 拆分 `TowerConfig` 的加载、解析、语义校验和 UI spec 职责，并清理已被 `effects[]` 取代的 legacy tier/effect fallback。
+- [ ] 将塔 roster、建造费用和塔/投射物/命中特效资源引用从 enum 与 `BoardAssetCatalog` 硬编码推进到数据契约。
 - [ ] 评估确定性 road ribbon 渲染，用于未来可编辑路径地图。
 - [ ] 为塔、敌人、投射物和命中特效 sprite 添加 normal map，并接入 2D lighting。
 
@@ -11,6 +13,9 @@
 - [ ] 塔成长模型确定后，设计随机召唤塔的概率。
 - [ ] 如果攻击应在造成伤害前有飞行时间，设计真实投射物实体。
 - [ ] 如果保留的敌人影响长期运行性能，添加敌人清理服务。
+- [ ] 将 HUD status/hint 从自由文本解析改为结构化状态码或 presentation model，以稳定紧凑视口文案。
+- [ ] 拆分 `test_main_scene.gd` 的 HUD、输入、布局、overlay 和流程断言，沉淀共享场景 fixture helper。
+- [ ] 收敛 tower schema、`check-assets.py` 和 `TowerConfig.validate_definitions()` 的重复枚举与语义校验规则。
 
 ## UI 问题
 
