@@ -290,27 +290,24 @@ func sync_menu_button_state(flow_state: int) -> void:
 		menu_button.disabled = flow_state != BoardGameSession.FlowState.PLAYING
 
 
-func sync_message_labels(status_text: String, hint_text: String) -> void:
+func sync_message_labels(status_message: BoardMessage, hint_message: BoardMessage) -> void:
 	if status_label != null:
-		status_label.text = compact_status_text(status_text) if compact_messages else status_text
+		status_label.text = _message_text(status_message)
 	if hint_label != null:
-		hint_label.text = compact_hint_text(hint_text) if compact_messages else hint_text
+		hint_label.text = _message_text(hint_message)
 
 
-func update_selected_tower_hint(
+func selected_tower_hint_message(
 	selected_tower_type: GameTower.Type,
 	economy_config: EconomyConfig,
 	tower_config: TowerConfig = null
-) -> String:
+) -> BoardMessage:
 	var cost := 0
 	if economy_config != null:
 		cost = economy_config.basic_tower_cost
 	if tower_config != null and economy_config != null:
 		cost = tower_config.get_build_cost(selected_tower_type, economy_config.basic_tower_cost)
-	return "%s tower: %dg. Enemies follow the paved road." % [
-		tower_type_label(selected_tower_type, tower_config),
-		cost,
-	]
+	return BoardMessage.selected_tower_hint(tower_type_label(selected_tower_type, tower_config), cost)
 
 
 func sync_tower_button_state(
@@ -360,39 +357,10 @@ func update_wave_label(wave_spawner: WaveSpawner) -> void:
 	]
 
 
-func compact_status_text(text: String) -> String:
-	if text.begins_with("Cannot place"):
-		if text.find("buildable") != -1:
-			return "Road tile blocked."
-		if text.find("Need") != -1:
-			return text.get_slice(": ", 1)
-		return "Cannot place."
-	if text.begins_with("Cannot upgrade"):
-		return text.get_slice(": ", 1)
-	if text.begins_with("Placed"):
-		return "Tower placed."
-	if text.begins_with("Upgraded"):
-		return "Tower upgraded."
-	if text.begins_with("Removed"):
-		return "+%s refund" % text.get_slice(" for ", 1).get_slice(" gold", 0)
-	if text.begins_with("Click a green"):
-		return "Place on green tile."
-	if text.begins_with("Select a tower"):
-		return "Select tower."
-	if text.begins_with("Defeated"):
-		return "+%s gold" % text.get_slice(" for ", 1).get_slice(" gold", 0)
-	if text.begins_with("Cleared"):
-		return "Wave clear +%s" % text.get_slice(" for ", 1).get_slice(" gold", 0)
-	if text.begins_with("Earned"):
-		return "+%s gold" % text.get_slice("Earned ", 1).get_slice(" gold", 0)
-	return text
-
-
-func compact_hint_text(text: String) -> String:
-	var first_sentence := text.get_slice(".", 0)
-	if not first_sentence.is_empty():
-		return first_sentence
-	return text
+func _message_text(message: BoardMessage) -> String:
+	if message == null:
+		return ""
+	return message.display_text(compact_messages)
 
 
 func tower_type_label(tower_type: GameTower.Type, tower_config: TowerConfig = null) -> String:

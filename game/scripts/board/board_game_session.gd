@@ -33,6 +33,8 @@ var last_wave_reward_transaction_results: Array
 var flow_state: int = FlowState.PLAYING
 var gameplay_paused := false
 var selected_tower_type: GameTower.Type = GameTower.Type.SINGLE_TARGET
+var status_message: BoardMessage
+var hint_message: BoardMessage
 var status_text := ""
 var hint_text := ""
 
@@ -43,6 +45,8 @@ func _init(default_board_width: int = DEFAULT_BOARD_WIDTH, default_board_height:
 	last_tick_results = []
 	last_reward_transaction_results = []
 	last_wave_reward_transaction_results = []
+	status_message = BoardMessage.empty()
+	hint_message = BoardMessage.empty()
 
 
 func initialize_board() -> void:
@@ -135,16 +139,23 @@ func try_place_at_grid(grid_position: Vector2i) -> TowerPlacementResult:
 
 	if result.succeeded:
 		sync_combat_towers()
-		set_status("Placed %s at (%d, %d) for %d gold." % [
+		set_status_message(BoardMessage.tower_placed(
 			result.tower_id,
-			grid_position.x,
-			grid_position.y,
-			result.transaction_result.amount,
-		])
+			grid_position,
+			result.transaction_result.amount
+		))
 	elif result.placement_result != null:
-		set_status("Cannot place at (%d, %d): %s" % [grid_position.x, grid_position.y, result.placement_result.message])
+		set_status_message(BoardMessage.tower_place_failed(
+			grid_position,
+			result.placement_result.message,
+			_placement_failure_compact_text(result.placement_result)
+		))
 	else:
-		set_status("Cannot place at (%d, %d): %s" % [grid_position.x, grid_position.y, result.message])
+		set_status_message(BoardMessage.tower_place_failed(
+			grid_position,
+			result.message,
+			_placement_transaction_failure_compact_text(result)
+		))
 
 	return result
 
@@ -156,18 +167,22 @@ func try_upgrade_tower(tower_id: String) -> TowerUpgradeResult:
 	if result.succeeded:
 		sync_combat_towers()
 		var tower := get_tower_by_id(tower_id)
-		set_status("Upgraded %s to %s T%d for %d gold." % [
+		set_status_message(BoardMessage.tower_upgraded(
 			tower_id,
 			_tower_type_label(tower.tower_type),
 			result.new_tier,
-			result.cost,
-		])
+			result.cost
+		))
 	elif result.failure_reason == TowerUpgradeResult.FailureReason.MAX_TIER:
-		set_status("%s is fully upgraded." % tower_id)
+		set_status_message(BoardMessage.tower_max_tier(tower_id))
 	elif result.transaction_result != null:
-		set_status("Cannot upgrade %s: %s" % [tower_id, result.transaction_result.message])
+		set_status_message(BoardMessage.tower_upgrade_failed(
+			tower_id,
+			result.transaction_result.message,
+			result.transaction_result.message
+		))
 	else:
-		set_status("Cannot upgrade %s: %s" % [tower_id, result.message])
+		set_status_message(BoardMessage.tower_upgrade_failed(tower_id, result.message, result.message))
 
 	return result
 
@@ -178,15 +193,15 @@ func try_remove_tower_at(grid_position: Vector2i) -> TowerRemovalResult:
 
 	if result.succeeded:
 		sync_combat_towers()
-		set_status("Removed %s for %d gold refund." % [result.tower_id, result.refund_amount])
+		set_status_message(BoardMessage.tower_removed(result.tower_id, result.refund_amount))
 	elif result.removal_result != null:
-		set_status("Cannot remove at (%d, %d): %s" % [
-			grid_position.x,
-			grid_position.y,
+		set_status_message(BoardMessage.tower_remove_failed_at(
+			grid_position,
 			result.removal_result.message,
-		])
+			_removal_failure_compact_text(result.removal_result)
+		))
 	else:
-		set_status("Cannot remove %s: %s" % [result.tower_id, result.message])
+		set_status_message(BoardMessage.tower_remove_failed(result.tower_id, result.message, result.message))
 
 	return result
 
@@ -194,7 +209,7 @@ func try_remove_tower_at(grid_position: Vector2i) -> TowerRemovalResult:
 func start_game() -> void:
 	flow_state = FlowState.PLAYING
 	gameplay_paused = false
-	set_status("Click a green slot to place a tower.")
+	set_status_message(BoardMessage.place_tower_hint())
 
 
 func open_pause_menu() -> bool:
@@ -306,11 +321,11 @@ func apply_tick_rewards(tick_results: Array) -> void:
 		return
 
 	if last_reward_transaction_results.size() == 1 and last_wave_reward_transaction_results.is_empty():
-		set_status("Defeated %s for %d gold." % [defeated_enemy_id, earned_gold])
+		set_status_message(BoardMessage.kill_reward(defeated_enemy_id, earned_gold))
 	elif last_reward_transaction_results.is_empty() and last_wave_reward_transaction_results.size() == 1:
-		set_status("Cleared %s for %d gold." % [cleared_wave_id, earned_gold])
+		set_status_message(BoardMessage.wave_clear_reward(cleared_wave_id, earned_gold))
 	else:
-		set_status("Earned %d gold." % earned_gold)
+		set_status_message(BoardMessage.gold_earned(earned_gold))
 
 
 func apply_tick_outcome(tick_results: Array) -> void:
@@ -329,17 +344,17 @@ func apply_tick_outcome(tick_results: Array) -> void:
 		latest_lives = tick_result.lives_remaining
 
 		if tick_result.game_failed:
-			set_status("Defeat. Enemies breached the path.")
+			set_status_message(BoardMessage.defeat())
 			show_defeat_screen()
 			return
 
 		if tick_result.game_won:
-			set_status("Victory. All waves cleared.")
+			set_status_message(BoardMessage.victory())
 			show_victory_screen()
 			return
 
 	if leak_count > 0:
-		set_status("Enemy leaked. Lives: %d" % latest_lives)
+		set_status_message(BoardMessage.enemy_leaked(latest_lives))
 
 
 func get_tower_by_id(tower_id: String) -> GameTower:
@@ -369,11 +384,61 @@ func get_enemy_by_id(enemy_id: String) -> Enemy:
 
 
 func set_status(text: String) -> void:
-	status_text = text
+	set_status_message(BoardMessage.text(text))
 
 
 func set_hint(text: String) -> void:
-	hint_text = text
+	set_hint_message(BoardMessage.text(text))
+
+
+func set_status_message(message: BoardMessage) -> void:
+	status_message = message if message != null else BoardMessage.empty()
+	status_text = status_message.full_text
+
+
+func set_hint_message(message: BoardMessage) -> void:
+	hint_message = message if message != null else BoardMessage.empty()
+	hint_text = hint_message.full_text
+
+
+func _placement_failure_compact_text(result: PlacementResult) -> String:
+	if result == null:
+		return "Cannot place."
+
+	match result.failure_reason:
+		PlacementResult.FailureReason.OUT_OF_BOUNDS:
+			return "Out of bounds."
+		PlacementResult.FailureReason.NOT_BUILDABLE:
+			return "Road tile blocked."
+		PlacementResult.FailureReason.OCCUPIED:
+			return "Tile occupied."
+		PlacementResult.FailureReason.RESERVED:
+			return "Tile reserved."
+
+	return "Cannot place."
+
+
+func _placement_transaction_failure_compact_text(result: TowerPlacementResult) -> String:
+	if result != null and result.transaction_result != null and not result.transaction_result.message.is_empty():
+		return result.transaction_result.message
+	if result != null and not result.message.is_empty():
+		return result.message
+	return "Cannot place."
+
+
+func _removal_failure_compact_text(result: RemovalResult) -> String:
+	if result == null:
+		return "Cannot remove."
+
+	match result.failure_reason:
+		RemovalResult.FailureReason.OUT_OF_BOUNDS:
+			return "Out of bounds."
+		RemovalResult.FailureReason.EMPTY:
+			return "No tower there."
+		RemovalResult.FailureReason.OCCUPANT_MISMATCH:
+			return "Different tower selected."
+
+	return "Cannot remove."
 
 
 func _tower_type_label(tower_type: GameTower.Type) -> String:

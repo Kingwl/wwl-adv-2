@@ -23,11 +23,11 @@ cd game
 
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
-- GUT 套件：208 个测试通过，1432 个断言。
+- GUT 套件：208 个测试通过，1440 个断言。
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
 - Native gameplay smoke：11 个代表性 gameplay scenario 通过，trace、截图、board overlay 和 focus overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
 - Web export smoke：Web 导出页面通过本地 HTTP + headless browser 检查，报告和截图位于 `ci-artifacts/web-smoke/`。
-- Structural lint：Tree-sitter GDScript 解析 103 个文件，0 个 error，0 个 warning。
+- Structural lint：Tree-sitter GDScript 解析 104 个文件，0 个 error，0 个 warning。
 - Agent preflight fast：运行 `check-all.sh`，生成 Godot/GUT 结构化日志报告，不运行 native smoke。
 - Agent preflight full：运行 fast preflight、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
 - 已知警告：GUT 退出时有来自场景/资源清理的 ObjectDB leaked instances 警告，记录为 TD-007。
@@ -63,6 +63,7 @@ cd game
 - `BoardAssetCatalog`，集中管理主棋盘场景的关卡、map style、HUD 图标、敌人 sprite 和特效贴图加载；塔本体、投射物和命中特效资源从 `TowerConfig` 读取。
 - `BoardGameSession`，集中管理一局游戏的棋盘、钱包、放置服务、战斗模拟、波次、奖励和胜负 flow；场景测试和 smoke runner 通过 `BoardView.get_session()` 明确访问。
 - `BoardLayoutService`、`BoardHudController`、`BoardInputAdapter`、`BoardVisualState`、`BoardRenderer` 和 `TowerPresentationCatalog`，分别承接主棋盘响应式布局、HUD/overlay 同步、输入路由、表现层动画状态、绘制 adapter 和塔卡/smoke 展示清单。
+- HUD status/hint 通过 `BoardMessage` 输出结构化状态码、参数、完整文案和紧凑文案；紧凑视口不再依赖英文文案前缀或 `get_slice()` 解析。
 - `BoardView` 不再保留 session、layout、asset 或 visual state 的兼容镜像字段；场景测试和 smoke runner 通过显式 getter 访问拆出的边界。
 - `BoardMapRenderer` 已从 `game/scripts/core/` 迁到 `game/scripts/board/`，core 目录下渲染/资源加载耦合现在由 structural lint 作为 error 阻止。
 - `TowerConfig` 的 JSON 加载/原始解析、语义校验和 UI/smoke 展示清单已拆到 `TowerDefinitionParser`、`TowerDefinitionValidator` 和 `TowerPresentationCatalog`；`TowerConfig` 保留运行时读取 API、tower id lookup 和 parser/validator 委托入口。
@@ -88,7 +89,6 @@ cd game
 - `TowerConfig` 已拆出 loader/parser/validator/presentation catalog，并删除旧 tier/effect fallback；仍保留 enum/default 映射以支撑现有运行时 roster，记录为 TD-011/TD-012 的剩余边界。
 - `BoardRenderer`、`BoardHudController` 和 `test_main_scene.gd` 仍是体积最大的维护点，记录为 TD-015 和 TD-017。
 - 当前敌人和波次已数据化，但只有三类基础敌人和 prototype 三波；MVP 长局仍缺平衡快照。
-- 紧凑视口 status/hint 依赖自由文本解析，文案调整可能破坏 UI 状态同步，记录为 TD-014。
 - 测试质量依赖 GUT 加 checklist，而不是行覆盖率。
 - 场景测试当前会输出 ObjectDB leak 警告，记录为 TD-007。
 

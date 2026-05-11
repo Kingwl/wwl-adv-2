@@ -46,7 +46,7 @@ func _ready() -> void:
 	if viewport != null:
 		viewport.size_changed.connect(_on_viewport_size_changed)
 
-	set_status_text("Select a tower, then click an open tile.")
+	set_status_message(BoardMessage.select_tower_prompt())
 	_update_selected_tower_hint()
 	_refresh_hud()
 	start_game()
@@ -167,7 +167,7 @@ func clear_tower_action_menu() -> void:
 	if _hud_controller != null:
 		_hud_controller.hide_tower_action_menu()
 	if _game_session != null and _game_session.economy_config != null and _hud_controller != null:
-		_game_session.set_hint(_hud_controller.update_selected_tower_hint(
+		_game_session.set_hint_message(_hud_controller.selected_tower_hint_message(
 			_game_session.selected_tower_type,
 			_game_session.economy_config,
 			_game_session.placement_service.tower_config
@@ -254,7 +254,7 @@ func show_victory_screen() -> void:
 	_ensure_dependencies()
 	clear_tower_action_menu()
 	_game_session.show_victory_screen()
-	_game_session.set_status("Victory. All waves cleared.")
+	_game_session.set_status_message(BoardMessage.victory())
 	_show_overlay("Victory", "All waves cleared.", "Restart", "Start")
 	_refresh_hud()
 
@@ -263,7 +263,7 @@ func show_defeat_screen() -> void:
 	_ensure_dependencies()
 	clear_tower_action_menu()
 	_game_session.show_defeat_screen()
-	_game_session.set_status("Defeat. Enemies breached the path.")
+	_game_session.set_status_message(BoardMessage.defeat())
 	_show_overlay("Defeat", "Enemies breached the path.", "Restart", "Start")
 	_refresh_hud()
 
@@ -289,6 +289,18 @@ func select_tower_id(tower_id: String) -> void:
 func set_status_text(text: String) -> void:
 	_ensure_dependencies()
 	_game_session.set_status(text)
+	_sync_message_labels()
+
+
+func set_status_message(message: BoardMessage) -> void:
+	_ensure_dependencies()
+	_game_session.set_status_message(message)
+	_sync_message_labels()
+
+
+func set_hint_message(message: BoardMessage) -> void:
+	_ensure_dependencies()
+	_game_session.set_hint_message(message)
 	_sync_message_labels()
 
 
@@ -508,17 +520,17 @@ func _on_overlay_secondary_pressed() -> void:
 		return_to_start_screen()
 
 
-func _set_hint(text: String) -> void:
-	_game_session.set_hint(text)
+func _set_hint_message(message: BoardMessage) -> void:
+	_game_session.set_hint_message(message)
 	_sync_message_labels()
 
 
 func _sync_message_labels() -> void:
-	_hud_controller.sync_message_labels(_game_session.status_text, _game_session.hint_text)
+	_hud_controller.sync_message_labels(_game_session.status_message, _game_session.hint_message)
 
 
 func _update_selected_tower_hint() -> void:
-	_set_hint(_hud_controller.update_selected_tower_hint(
+	_set_hint_message(_hud_controller.selected_tower_hint_message(
 		_game_session.selected_tower_type,
 		_game_session.economy_config,
 		_game_session.placement_service.tower_config
@@ -610,11 +622,11 @@ func _select_tower_if_occupied(grid_position: Vector2i) -> bool:
 
 	selected_tower_grid_position = grid_position
 	selected_tower_id = tower_id
-	_game_session.set_status("%s T%d selected." % [
+	_game_session.set_status_message(BoardMessage.tower_selected(
 		_hud_controller.tower_type_label(tower.tower_type, _game_session.placement_service.tower_config),
-		tower.tier,
-	])
-	_game_session.set_hint("Upgrade or remove this tower.")
+		tower.tier
+	))
+	_game_session.set_hint_message(BoardMessage.tower_action_hint())
 	_sync_tower_action_menu()
 	_sync_message_labels()
 	queue_redraw()

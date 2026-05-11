@@ -483,7 +483,7 @@ func _capture_visual_state_artifacts(
 
 	board_view.get_session().wallet.gold = 100
 	board_view.refresh_hud()
-	board_view.set_status_text("Defeated enemy-1 for 5 gold.")
+	board_view.set_status_message(BoardMessage.kill_reward("enemy-1", 5))
 	await _settle_frames(2)
 	await _capture_current_review_artifacts(
 		result,
@@ -495,7 +495,7 @@ func _capture_visual_state_artifacts(
 		"Status and hint: reward"
 	)
 
-	board_view.set_status_text("Enemy leaked. Lives: 9")
+	board_view.set_status_message(BoardMessage.enemy_leaked(9))
 	await _settle_frames(2)
 	await _capture_current_review_artifacts(
 		result,

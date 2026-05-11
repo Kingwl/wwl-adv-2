@@ -367,7 +367,7 @@ func test_board_view_compact_square_layout_keeps_messages_above_board() -> void:
 	assert_false(board_rect.intersects(Rect2(hint_label.position, hint_label.size)))
 
 
-func test_board_view_compact_layout_shortens_reward_status_text() -> void:
+func test_board_view_compact_layout_uses_structured_message_text() -> void:
 	var packed_scene: PackedScene = load("res://scenes/main.tscn")
 	var scene: Node = packed_scene.instantiate()
 	add_child_autoqfree(scene)
@@ -375,16 +375,28 @@ func test_board_view_compact_layout_shortens_reward_status_text() -> void:
 
 	var board_view: BoardView = scene.get_node("BoardView") as BoardView
 	var status_label: Label = scene.get_node("Hud/Status") as Label
+	var hint_label: Label = scene.get_node("Hud/Hint") as Label
 	board_view.apply_responsive_layout(Vector2(896, 414))
 
-	board_view.set_status_text("Defeated enemy-1 for 5 gold.")
+	board_view.set_status_message(BoardMessage.kill_reward("enemy-1", 5))
 	assert_eq(status_label.text, "+5 gold")
 
-	board_view.set_status_text("Cleared wave-1 for 20 gold.")
+	board_view.set_status_message(BoardMessage.wave_clear_reward("wave-1", 20))
 	assert_eq(status_label.text, "Wave clear +20")
 
-	board_view.set_status_text("Earned 25 gold.")
+	board_view.set_status_message(BoardMessage.gold_earned(25))
 	assert_eq(status_label.text, "+25 gold")
+
+	board_view.set_status_message(BoardMessage.create(
+		BoardMessage.Code.KILL_REWARD,
+		{"amount": 7},
+		"Reward wording changed.",
+		"+7 gold"
+	))
+	assert_eq(status_label.text, "+7 gold")
+
+	board_view.set_hint_message(BoardMessage.selected_tower_hint("Area", 25))
+	assert_eq(hint_label.text, "Area tower: 25g")
 
 
 func test_board_view_scaled_layout_keeps_grid_coordinate_mapping() -> void:

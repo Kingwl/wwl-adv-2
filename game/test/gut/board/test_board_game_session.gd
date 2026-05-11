@@ -32,6 +32,7 @@ func test_try_place_at_grid_spends_gold_and_syncs_combat_towers() -> void:
 	assert_eq(session.board.get_occupant_id(Vector2i(0, 0)), "tower-1")
 	assert_eq(session.wallet.gold, 75)
 	assert_eq(session.combat_simulation.towers.size(), 1)
+	assert_eq(session.status_message.code, BoardMessage.Code.TOWER_PLACED)
 	assert_eq(session.status_text, "Placed tower-1 at (0, 0) for 25 gold.")
 
 
@@ -48,6 +49,7 @@ func test_try_upgrade_tower_spends_gold_updates_status_and_syncs_combat_towers()
 	assert_eq(tower.tier, 2)
 	assert_eq(session.combat_simulation.towers.size(), 1)
 	assert_eq((session.combat_simulation.towers[0] as GameTower).tier, 2)
+	assert_eq(session.status_message.code, BoardMessage.Code.TOWER_UPGRADED)
 	assert_eq(session.status_text, "Upgraded tower-1 to Single T2 for 40 gold.")
 
 
@@ -65,6 +67,7 @@ func test_try_remove_tower_refunds_gold_updates_status_and_syncs_combat_towers()
 	assert_eq(session.board.get_occupant_id(Vector2i(0, 0)), "")
 	assert_null(session.placement_service.tower_registry.get_tower("tower-1"))
 	assert_eq(session.combat_simulation.towers.size(), 0)
+	assert_eq(session.status_message.code, BoardMessage.Code.TOWER_REMOVED)
 	assert_eq(session.status_text, "Removed tower-1 for 32 gold refund.")
 
 
@@ -99,6 +102,7 @@ func test_apply_tick_rewards_aggregates_multiple_rewards() -> void:
 
 	assert_eq(session.wallet.gold, 112)
 	assert_eq(session.last_reward_transaction_results.size(), 2)
+	assert_eq(session.status_message.code, BoardMessage.Code.GOLD_EARNED)
 	assert_eq(session.status_text, "Earned 12 gold.")
 
 
@@ -123,6 +127,7 @@ func test_apply_tick_outcome_sets_defeat_flow() -> void:
 
 	assert_eq(session.flow_state, BoardGameSession.FlowState.LOST)
 	assert_true(session.gameplay_paused)
+	assert_eq(session.status_message.code, BoardMessage.Code.DEFEAT)
 	assert_eq(session.status_text, "Defeat. Enemies breached the path.")
 
 
@@ -147,6 +152,7 @@ func test_apply_tick_outcome_sets_victory_flow() -> void:
 
 	assert_eq(session.flow_state, BoardGameSession.FlowState.WON)
 	assert_true(session.gameplay_paused)
+	assert_eq(session.status_message.code, BoardMessage.Code.VICTORY)
 	assert_eq(session.status_text, "Victory. All waves cleared.")
 
 

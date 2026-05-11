@@ -11,7 +11,6 @@
 - [ ] 塔成长模型确定后，设计随机召唤塔的概率。
 - [ ] 如果攻击应在造成伤害前有飞行时间，设计真实投射物实体。
 - [ ] 如果保留的敌人影响长期运行性能，添加敌人清理服务。
-- [ ] 将 HUD status/hint 从自由文本解析改为结构化状态码或 presentation model，以稳定紧凑视口文案。
 - [ ] 拆分 `test_main_scene.gd` 的 HUD、输入、布局、overlay 和流程断言，沉淀共享场景 fixture helper。
 - [ ] 收敛 tower schema、`check-assets.py` 和 `TowerConfig.validate_definitions()` 的重复枚举与语义校验规则。
 
@@ -38,6 +37,7 @@
 
 ## 已完成
 
+- [x] 将 HUD status/hint 从自由文本解析改为 `BoardMessage` 结构化状态码/presentation model，以稳定紧凑视口文案。
 - [x] 拆分 `TowerConfig` 的 UI/smoke presentation spec，并清理已被 `effects[]` 取代的 legacy tier/effect fallback。
 - [x] 创建文档目录。
 - [x] 记录 Godot 2D 塔防合成方向。
