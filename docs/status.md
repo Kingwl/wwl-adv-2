@@ -28,11 +28,11 @@ cd game
 
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
-- GUT 套件：204 个测试通过，1404 个断言。
+- GUT 套件：205 个测试通过，1414 个断言。
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
 - Native gameplay smoke：11 个代表性 gameplay scenario 通过，trace、截图、board overlay 和 focus overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
 - Web export smoke：Web 导出页面通过本地 HTTP + headless browser 检查，报告和截图位于 `ci-artifacts/web-smoke/`。
-- Structural lint：Tree-sitter GDScript 解析 99 个文件，0 个 error，0 个 warning。
+- Structural lint：Tree-sitter GDScript 解析 101 个文件，0 个 error，0 个 warning。
 - Agent preflight fast：运行 `check-all.sh`，生成 Godot/GUT 结构化日志报告，不运行 native smoke。
 - Agent preflight full：运行 fast preflight、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
 - 已知警告：GUT 退出时有来自场景/资源清理的 ObjectDB leaked instances 警告，记录为 TD-007。
@@ -70,6 +70,7 @@ cd game
 - `BoardLayoutService`、`BoardHudController`、`BoardInputAdapter`、`BoardVisualState` 和 `BoardRenderer`，分别承接主棋盘响应式布局、HUD/overlay 同步、输入路由、表现层动画状态和绘制 adapter。
 - `BoardView` 不再保留 session、layout、asset 或 visual state 的兼容镜像字段；场景测试和 smoke runner 通过显式 getter 访问拆出的边界。
 - `BoardMapRenderer` 已从 `game/scripts/core/` 迁到 `game/scripts/board/`，core 目录下渲染/资源加载耦合现在由 structural lint 作为 error 阻止。
+- `TowerConfig` 的 JSON 加载/原始解析和语义校验已拆到 `TowerDefinitionParser`、`TowerDefinitionValidator`；`TowerConfig` 保留运行时读取 API 和向后兼容委托入口。
 - 用于本地 agent 迭代反馈的 agent preflight 和 UI smoke 摘要脚本。
 - Godot/GUT 日志结构化报告，输出到 `ci-artifacts/godot-log/report.json` 和 `report.md`。
 - Web export smoke，验证 Godot Web 导出页面 canvas 非空且无关键浏览器错误，并作为 Pages 发布前门禁。
@@ -89,7 +90,7 @@ cd game
 ## 已知风险
 
 - 塔 roster 仍受 `GameTower.Type`、tower schema、工具枚举和若干 tower-type match 绑定，新增塔不是纯数据改动，记录为 TD-011 和 TD-016。
-- `TowerConfig`、`BoardRenderer`、`BoardHudController` 和 `test_main_scene.gd` 是当前体积最大的维护点，记录为 TD-012、TD-015 和 TD-017。
+- `TowerConfig` 已拆出 loader/parser/validator，但仍保留默认值、legacy tier/effect fallback 和 UI spec；`BoardRenderer`、`BoardHudController` 和 `test_main_scene.gd` 仍是体积最大的维护点，记录为 TD-012、TD-015 和 TD-017。
 - 当前敌人和波次已数据化，但只有三类基础敌人和 prototype 三波；MVP 长局仍缺平衡快照。
 - 紧凑视口 status/hint 依赖自由文本解析，文案调整可能破坏 UI 状态同步，记录为 TD-014。
 - 测试质量依赖 GUT 加 checklist，而不是行覆盖率。
@@ -109,6 +110,6 @@ cd game
 
 ## 下一步最值得做的工作
 
-1. 拆分 `TowerConfig` 的加载、解析、语义校验和 UI spec 职责，降低继续扩塔时的修改风险。
+1. 继续收口 `TowerConfig`：移出 UI button/visual test spec，并清理已被 `effects[]` 取代的 legacy tier/effect fallback。
 2. 在雷霆塔前处理塔 roster 的 `GameTower.Type` 绑定，逐步转向 tower id 驱动。
 3. 保持 `game/tools/check-all.sh` 作为默认验证命令。

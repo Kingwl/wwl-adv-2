@@ -51,6 +51,66 @@ func test_default_tower_config_loads_json_tower_definitions() -> void:
 	assert_eq(config.get_impact_texture_paths(GameTower.Type.POISON).size(), 4)
 
 
+func test_tower_definition_parser_normalizes_raw_json_data() -> void:
+	var definitions := TowerDefinitionParser.definitions_from_dictionary({
+		"towers": [
+			{
+				"id": "flame",
+				"type": "FLAME",
+				"display_name": "Flame",
+				"description": "Burn DoT",
+				"build_cost": 33,
+				"weapon_type": "SPELL",
+				"attack_type": "MAGIC",
+				"damage_school": "FIRE",
+				"attack_pattern": "STATUS_DOT",
+				"visual_test_enabled": true,
+				"visuals": {
+					"tower": "res://custom/flame.png",
+					"projectiles": ["res://custom/flame_projectile.png"],
+					"impacts": ["res://custom/flame_impact.png"],
+				},
+				"projectile": {
+					"speed_cells_per_second": 5.5,
+					"hit_radius_cells": 0.2,
+				},
+				"tiers": [
+					{
+						"damage": 4.0,
+						"range_cells": 2.0,
+						"attack_interval": 1.0,
+						"effects": [
+							{
+								"type": "apply_status",
+								"status_type": "BURN",
+								"duration": 3.0,
+								"tick_interval": 1.0,
+								"tick_damage": 2.0,
+								"stack_policy": "REFRESH",
+							},
+						],
+					},
+				],
+			},
+		],
+	})
+
+	var definition := definitions[GameTower.Type.FLAME] as Dictionary
+	var tier := (definition["tiers"] as Array)[0] as Dictionary
+	var effect := (tier["effects"] as Array)[0] as Dictionary
+
+	assert_eq(definition["build_cost"], 33)
+	assert_eq(definition["weapon_type"], DamageTypes.WeaponType.SPELL)
+	assert_eq(definition["attack_type"], DamageTypes.AttackType.MAGIC)
+	assert_eq(definition["damage_school"], DamageTypes.DamageSchool.FIRE)
+	assert_eq(definition["attack_pattern"], DamageTypes.AttackPattern.STATUS_DOT)
+	assert_eq((definition["visuals"] as Dictionary)["tower"], "res://custom/flame.png")
+	assert_eq((definition["projectile"] as Dictionary)["speed_cells_per_second"], 5.5)
+	assert_eq(effect["type"], TowerEffect.EffectType.APPLY_STATUS)
+	assert_eq(effect["status_type"], StatusEvent.StatusType.BURN)
+	assert_eq(effect["status_stack_policy"], StatusEffect.StackPolicy.REFRESH)
+
+
 func test_single_target_upgrade_tiers_focus_damage_and_fire_rate() -> void:
 	var config := TowerConfig.new()
 
