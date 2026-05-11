@@ -42,6 +42,13 @@ func test_default_tower_config_loads_json_tower_definitions() -> void:
 	assert_eq(config.get_tower_button_specs().size(), 5)
 	assert_true(config.is_visual_test_enabled(GameTower.Type.SLOW))
 	assert_eq(config.get_visual_test_tower_specs().size(), 5)
+	assert_eq(config.get_build_cost(GameTower.Type.SINGLE_TARGET), 25)
+	assert_eq(
+		config.get_tower_texture_path(GameTower.Type.SINGLE_TARGET),
+		"res://assets/sprites/towers/round_rotating/single.png"
+	)
+	assert_eq(config.get_projectile_texture_paths(GameTower.Type.POISON).size(), 4)
+	assert_eq(config.get_impact_texture_paths(GameTower.Type.POISON).size(), 4)
 
 
 func test_single_target_upgrade_tiers_focus_damage_and_fire_rate() -> void:
@@ -260,6 +267,12 @@ func test_poison_upgrade_tiers_improve_damage_range_and_dot_numbers() -> void:
 func test_custom_tower_definitions_drive_stats_and_upgrade_cost() -> void:
 	var config := TowerConfig.new({
 		GameTower.Type.SINGLE_TARGET: {
+			"build_cost": 31,
+			"visuals": {
+				"tower": "res://custom/single.png",
+				"projectiles": ["res://custom/projectile.png"],
+				"impacts": ["res://custom/impact.png"],
+			},
 			"tiers": [
 				{
 					"damage": 2.0,
@@ -279,8 +292,12 @@ func test_custom_tower_definitions_drive_stats_and_upgrade_cost() -> void:
 	var stats := config.get_stats(GameTower.Type.SINGLE_TARGET, 2)
 
 	assert_eq(config.get_max_tier(GameTower.Type.SINGLE_TARGET), 2)
+	assert_eq(config.get_build_cost(GameTower.Type.SINGLE_TARGET), 31)
 	assert_eq(config.get_upgrade_cost(GameTower.Type.SINGLE_TARGET, 1), 9)
 	assert_eq(config.get_upgrade_cost(GameTower.Type.SINGLE_TARGET, 2), 0)
+	assert_eq(config.get_tower_texture_path(GameTower.Type.SINGLE_TARGET), "res://custom/single.png")
+	assert_eq(config.get_projectile_texture_paths(GameTower.Type.SINGLE_TARGET), ["res://custom/projectile.png"])
+	assert_eq(config.get_impact_texture_paths(GameTower.Type.SINGLE_TARGET), ["res://custom/impact.png"])
 	assert_eq(stats.damage, 4.0)
 	assert_eq(stats.range_cells, 2.5)
 	assert_eq(stats.attack_interval, 1.5)

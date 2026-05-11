@@ -25,6 +25,8 @@
           "damage_school",
           "attack_pattern",
           "visual_test_enabled",
+          "build_cost",
+          "visuals",
           "projectile",
           "tiers"
         ],
@@ -73,6 +75,37 @@
           },
           "visual_test_enabled": {
             "type": "boolean"
+          },
+          "build_cost": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "visuals": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tower", "projectiles", "impacts"],
+            "properties": {
+              "tower": {
+                "type": "string",
+                "pattern": "^res://.+"
+              },
+              "projectiles": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^res://.+"
+                }
+              },
+              "impacts": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^res://.+"
+                }
+              }
+            }
           },
           "projectile": {
             "type": "object",

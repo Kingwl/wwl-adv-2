@@ -22,6 +22,7 @@ var kill_reward_service: KillRewardService
 var wave_reward_service: WaveRewardService
 var wave_spawner: WaveSpawner
 var path_follower: PathFollower
+var enemy_catalog: EnemyCatalog
 var level_definition: LevelDefinition
 var last_placement_result: PlacementResult
 var last_upgrade_result: TowerUpgradeResult
@@ -55,7 +56,7 @@ func initialize_board() -> void:
 	var path_result := board.validate_path(get_default_path())
 	assert(path_result.succeeded, "Default path must be valid.")
 
-	economy_config = EconomyConfig.new()
+	economy_config = EconomyConfig.load_from_path(EconomyConfig.DEFAULT_ECONOMY_CONFIG_PATH)
 	wallet = Wallet.new(economy_config.initial_gold)
 	placement_service = TowerPlacementService.new(board, wallet, economy_config)
 	selected_tower_type = _default_tower_type()
@@ -72,6 +73,7 @@ func initialize_board() -> void:
 
 func initialize_combat() -> void:
 	path_follower = PathFollower.new(get_default_path())
+	enemy_catalog = EnemyCatalog.new()
 	wave_spawner = WaveSpawner.new(get_default_wave_definitions())
 	combat_simulation = CombatSimulation.new(
 		placement_service.tower_registry.get_all_towers(),
@@ -104,11 +106,15 @@ func get_default_path() -> Array:
 
 
 func get_default_wave_definitions() -> Array:
-	return [
-		WaveDefinition.new("wave-1", 5, 0.8, 20.0, 1.0, 5, 20),
-		WaveDefinition.new("wave-2", 7, 0.7, 24.0, 1.0, 5, 25),
-		WaveDefinition.new("wave-3", 10, 0.6, 30.0, 1.1, 6, 35),
-	]
+	if enemy_catalog == null:
+		enemy_catalog = EnemyCatalog.new()
+
+	var wave_definitions := WaveConfig.load_definitions_from_path(
+		WaveConfig.DEFAULT_WAVE_DEFINITION_PATH,
+		enemy_catalog
+	)
+	assert(not wave_definitions.is_empty(), "Default wave definitions must be configured.")
+	return wave_definitions
 
 
 func advance_combat(delta: float) -> Array:
@@ -133,7 +139,7 @@ func try_place_at_grid(grid_position: Vector2i) -> TowerPlacementResult:
 			result.tower_id,
 			grid_position.x,
 			grid_position.y,
-			economy_config.basic_tower_cost,
+			result.transaction_result.amount,
 		])
 	elif result.placement_result != null:
 		set_status("Cannot place at (%d, %d): %s" % [grid_position.x, grid_position.y, result.placement_result.message])

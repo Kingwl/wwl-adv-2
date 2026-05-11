@@ -421,7 +421,8 @@ func test_board_view_shows_tower_placement_preview_on_hovered_buildable_cell() -
 		board_view.get_session().board,
 		board_view.get_session().placement_service,
 		hover_cell,
-		true
+		true,
+		GameTower.Type.AREA
 	))
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(
 		GameTower.Type.AREA,
@@ -435,7 +436,8 @@ func test_board_view_shows_tower_placement_preview_on_hovered_buildable_cell() -
 		board_view.get_session().board,
 		board_view.get_session().placement_service,
 		path_cell,
-		true
+		true,
+		GameTower.Type.AREA
 	))
 
 	board_view.get_session().wallet.gold = 0
@@ -443,7 +445,8 @@ func test_board_view_shows_tower_placement_preview_on_hovered_buildable_cell() -
 		board_view.get_session().board,
 		board_view.get_session().placement_service,
 		hover_cell,
-		true
+		true,
+		GameTower.Type.AREA
 	))
 
 	board_view.get_session().wallet.gold = 100
@@ -452,13 +455,15 @@ func test_board_view_shows_tower_placement_preview_on_hovered_buildable_cell() -
 		board_view.get_session().board,
 		board_view.get_session().placement_service,
 		hover_cell,
-		true
+		true,
+		GameTower.Type.AREA
 	))
 	assert_false(board_view.get_renderer().should_draw_tower_placement_preview(
 		board_view.get_session().board,
 		board_view.get_session().placement_service,
 		Vector2i(3, 2),
-		false
+		false,
+		GameTower.Type.AREA
 	))
 
 

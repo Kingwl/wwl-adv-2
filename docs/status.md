@@ -28,11 +28,11 @@ cd game
 
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
-- GUT 套件：196 个测试通过，1336 个断言。
+- GUT 套件：204 个测试通过，1404 个断言。
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
 - Native gameplay smoke：11 个代表性 gameplay scenario 通过，trace、截图、board overlay 和 focus overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
 - Web export smoke：Web 导出页面通过本地 HTTP + headless browser 检查，报告和截图位于 `ci-artifacts/web-smoke/`。
-- Structural lint：Tree-sitter GDScript 解析 93 个文件，0 个 error，0 个 warning。
+- Structural lint：Tree-sitter GDScript 解析 99 个文件，0 个 error，0 个 warning。
 - Agent preflight fast：运行 `check-all.sh`，生成 Godot/GUT 结构化日志报告，不运行 native smoke。
 - Agent preflight full：运行 fast preflight、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
 - 已知警告：GUT 退出时有来自场景/资源清理的 ObjectDB leaked instances 警告，记录为 TD-007。
@@ -42,29 +42,30 @@ cd game
 - Godot 4.x 项目骨架和 GUT 配置。
 - 可测试的 `game/scripts/core/` 规则层。
 - 棋盘放置、移除、保留格和路径校验规则。
-- 经济钱包、放置费用、击杀奖励和波次清空奖励。
+- 经济钱包、放置费用、击杀奖励和波次清空奖励；默认经济配置位于 `game/data/economy/economy.json`。
 - 敌人路径移动、生命值、死亡事件和漏怪处理。
 - 固定 tick 战斗模拟。
 - 塔配置数据文件、注册表、目标选择、攻击冷却、投射物生成、投射物移动和命中检测。
 - 波次生成和波次清空事件。
 - 玩家生命、胜利和失败状态。
 - 开始场景、主场景、暂停菜单、重开、返回开始、胜利和失败流程。
-- 五种基础塔：Single、Area、Slow、Flame 和 Poison，定义位于 `game/data/towers/towers.json`，并由 `game/data/schemas/towers.schema.json` 和 `check-assets.sh` 校验。
+- 五种基础塔：Single、Area、Slow、Flame 和 Poison，定义位于 `game/data/towers/towers.json`，包括建造费用、塔/投射物/命中特效资源引用，并由 `game/data/schemas/towers.schema.json` 和 `check-assets.sh` 校验。
 - 点击已放置塔会显示右上角浮动操作菜单，支持直接升级和拆除。
 - 塔选择卡组从塔配置自动生成；支持数字键按配置顺序选择塔，`U` 升级选中塔，`X`/`Delete`/`Backspace` 拆除选中塔，`Esc` 优先关闭塔操作菜单再进入暂停。
 - 塔升级效果按塔类型和 tier 配置化；普通升级只做数值提升，每次升级必须提升伤害和攻击范围；升级不清空攻击冷却，只会按新攻击间隔钳制剩余冷却。
 - 塔操作菜单显示下一次升级预览，包含伤害和范围成长。
-- 攻击、防御、伤害类型和种族抗性第一版已进入核心伤害结算；现有五塔的武器形态、攻击类型、伤害类型、攻击模式和投射物速度从塔数据文件加载。
+- 攻击、防御、伤害类型和种族抗性第一版已进入核心伤害结算；现有五塔的武器形态、攻击类型、伤害类型、攻击模式、投射物速度和视觉资源从塔数据文件加载。
 - 通用状态和 DoT 第一版已进入核心战斗：塔 tier 通过 `effects[]` 表达即时伤害、溅射伤害和附加状态；Slow 会作为状态实际降低敌人移动速度，Flame 会施加 Burn DoT，Poison 会施加 Poison DoT，Burn/Poison 类 DoT 可按完整 tick interval 产生携带攻击/伤害类型的 `DamageEvent` 并继续走伤害克制结算。
 - 拆除塔会返还 50% 建造和升级累计投入。
 - 五种基础塔在棋盘和塔卡中使用生成的圆形塔顶 sprite，运行时按当前目标方向旋转；Flame 塔、Poison 塔和对应命中特效使用本地生成的新素材。
 - 当前地图的数据驱动关卡路径/style 加载。
+- 敌人定义位于 `game/data/enemies/enemies.json`，包含 speed、health、kill reward、armor/race 和伤害类型抗性 override；波次定义位于 `game/data/waves/waves.json`，按 enemy type 引用敌人配置。
 - 生成的城市防御地图、道路 guide 产物、UI frame、塔 sprite、敌人 sprite 和攻击特效。
 - 覆盖 start-to-main 可玩性、响应式视口、单塔放置、塔操作菜单和截图产物的 native UI smoke。
 - 覆盖放塔、升级/拆除返还、Single 击杀奖励、Area 溅射、Slow 状态、Flame 灼烧 DoT、Poison 中毒 DoT、逐塔视觉目录、漏怪、胜利和失败的 native gameplay smoke。
 - 逐塔视觉目录从塔配置自动发现 `visual_test_enabled` 的塔，并为每种塔产出塔本体、投射物飞行中、命中/效果出现后的整屏截图、board crop、focus crop 和辅助线 overlay。
 - Tree-sitter structural lint，覆盖 core/scene/render 边界、BoardView 资产加载边界和结构回膨胀 warning 报告。
-- `BoardAssetCatalog`，集中管理主棋盘场景的关卡、map style、HUD 图标、塔/敌人 sprite 和特效贴图加载。
+- `BoardAssetCatalog`，集中管理主棋盘场景的关卡、map style、HUD 图标、敌人 sprite 和特效贴图加载；塔本体、投射物和命中特效资源从 `TowerConfig` 读取。
 - `BoardGameSession`，集中管理一局游戏的棋盘、钱包、放置服务、战斗模拟、波次、奖励和胜负 flow；场景测试和 smoke runner 通过 `BoardView.get_session()` 明确访问。
 - `BoardLayoutService`、`BoardHudController`、`BoardInputAdapter`、`BoardVisualState` 和 `BoardRenderer`，分别承接主棋盘响应式布局、HUD/overlay 同步、输入路由、表现层动画状态和绘制 adapter。
 - `BoardView` 不再保留 session、layout、asset 或 visual state 的兼容镜像字段；场景测试和 smoke runner 通过显式 getter 访问拆出的边界。
@@ -78,7 +79,7 @@ cd game
 
 ## 开放决策
 
-- 敌人和波次配置的数据形状；塔配置第一版已迁移到 JSON。
+- 敌人、波次和经济配置的数据形状第一版已实现；后续多敌人类型分布和长波次平衡仍待决定。
 - 初期塔类型和实现批次已记录为 accepted design；火焰塔和毒针塔已进入代码和测试，雷霆塔等后续塔仍待实现。
 - 塔机制、效果、状态、DoT 和视觉事件体系已记录为 accepted design；状态/DoT 核心规则、塔 `effects[]` 配置、Flame 灼烧塔和 Poison 毒针塔第一版已实现，雷霆塔和独立视觉事件仍未实现。
 - 塔升级机制第一版已实现；未来是否加入分支进化仍待决定。
@@ -87,11 +88,9 @@ cd game
 
 ## 已知风险
 
-- `BoardGameSession` 仍构造默认经济配置和波次定义，记录为 TD-009。
-- 敌人和波次数值仍有一部分硬编码在 GDScript 中。
-- 塔 roster 仍受 `GameTower.Type`、tower schema、asset catalog 和工具枚举多处绑定，新增塔不是纯数据改动，记录为 TD-011 和 TD-016。
+- 塔 roster 仍受 `GameTower.Type`、tower schema、工具枚举和若干 tower-type match 绑定，新增塔不是纯数据改动，记录为 TD-011 和 TD-016。
 - `TowerConfig`、`BoardRenderer`、`BoardHudController` 和 `test_main_scene.gd` 是当前体积最大的维护点，记录为 TD-012、TD-015 和 TD-017。
-- 建塔费用仍是全局经济配置，无法按塔类型做建造成本平衡，记录为 TD-013。
+- 当前敌人和波次已数据化，但只有三类基础敌人和 prototype 三波；MVP 长局仍缺平衡快照。
 - 紧凑视口 status/hint 依赖自由文本解析，文案调整可能破坏 UI 状态同步，记录为 TD-014。
 - 测试质量依赖 GUT 加 checklist，而不是行覆盖率。
 - 场景测试当前会输出 ObjectDB leak 警告，记录为 TD-007。
@@ -110,6 +109,6 @@ cd game
 
 ## 下一步最值得做的工作
 
-1. 将敌人和波次定义推进到数据文件，并为敌人配置 armor/race。
-2. 在雷霆塔前或同步处理塔 roster、建造费用和视觉资源的数据契约，降低新增塔的跨模块改动面。
+1. 拆分 `TowerConfig` 的加载、解析、语义校验和 UI spec 职责，降低继续扩塔时的修改风险。
+2. 在雷霆塔前处理塔 roster 的 `GameTower.Type` 绑定，逐步转向 tower id 驱动。
 3. 保持 `game/tools/check-all.sh` 作为默认验证命令。

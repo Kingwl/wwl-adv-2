@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WWL Economy Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "initial_gold",
+    "default_tower_build_cost",
+    "default_kill_reward",
+    "wave_clear_reward",
+    "tower_removal_refund_ratio"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "initial_gold": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "default_tower_build_cost": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "default_kill_reward": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "wave_clear_reward": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tower_removal_refund_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  }
+}

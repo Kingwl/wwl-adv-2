@@ -93,7 +93,8 @@ func should_draw_tower_placement_preview(
 	board: Board,
 	placement_service: TowerPlacementService,
 	hover_grid_position: Vector2i,
-	placement_preview_enabled: bool
+	placement_preview_enabled: bool,
+	selected_tower_type: GameTower.Type
 ) -> bool:
 	if not placement_preview_enabled or board == null or placement_service == null:
 		return false
@@ -101,7 +102,7 @@ func should_draw_tower_placement_preview(
 		return false
 	if not board.is_in_bounds(hover_grid_position):
 		return false
-	if not placement_service.wallet.can_spend(placement_service.config.basic_tower_cost):
+	if not placement_service.wallet.can_spend(placement_service.get_build_cost(selected_tower_type)):
 		return false
 
 	return board.can_place_tower(hover_grid_position, "__preview__").succeeded
@@ -292,7 +293,13 @@ func _draw_slot(
 
 	if (
 		grid_position == hover_grid_position
-		and should_draw_tower_placement_preview(board, placement_service, hover_grid_position, placement_preview_enabled)
+		and should_draw_tower_placement_preview(
+			board,
+			placement_service,
+			hover_grid_position,
+			placement_preview_enabled,
+			selected_tower_type
+		)
 	):
 		_draw_tower_placement_preview(canvas, asset_catalog, cell_size, selected_tower_type, inner_rect)
 

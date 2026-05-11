@@ -9,7 +9,12 @@ const ID_KEY := "id"
 const TYPE_KEY := "type"
 const DISPLAY_NAME_KEY := "display_name"
 const DESCRIPTION_KEY := "description"
+const BUILD_COST_KEY := "build_cost"
 const VISUAL_TEST_ENABLED_KEY := "visual_test_enabled"
+const VISUALS_KEY := "visuals"
+const TOWER_TEXTURE_KEY := "tower"
+const PROJECTILE_TEXTURES_KEY := "projectiles"
+const IMPACT_TEXTURES_KEY := "impacts"
 const TIERS_KEY := "tiers"
 const DAMAGE_KEY := "damage"
 const RANGE_KEY := "range_cells"
@@ -42,6 +47,7 @@ const EFFECT_TICK_INTERVAL_KEY := "tick_interval"
 const EFFECT_TICK_DAMAGE_KEY := "tick_damage"
 const STACK_POLICY_KEY := "stack_policy"
 
+const DEFAULT_BUILD_COST := 25
 const DEFAULT_PROJECTILE_SPEED_CELLS_PER_SECOND := 6.0
 const DEFAULT_PROJECTILE_HIT_RADIUS_CELLS := 0.12
 
@@ -114,6 +120,11 @@ func get_upgrade_cost(tower_type: GameTower.Type, tier: int) -> int:
 	return int(_get_tier_definition(tower_type, tier).get(UPGRADE_COST_KEY, 0))
 
 
+func get_build_cost(tower_type: GameTower.Type, fallback_cost: int = DEFAULT_BUILD_COST) -> int:
+	var tower_definition := _get_tower_definition(tower_type)
+	return int(tower_definition.get(BUILD_COST_KEY, fallback_cost))
+
+
 func get_upgrade_preview(tower_type: GameTower.Type, tier: int) -> String:
 	assert(tier >= 1, "Tower tier must be at least 1.")
 	if tier >= get_max_tier(tower_type):
@@ -174,6 +185,18 @@ func get_description(tower_type: GameTower.Type) -> String:
 	return str(tower_definition.get(DESCRIPTION_KEY, ""))
 
 
+func get_tower_texture_path(tower_type: GameTower.Type) -> String:
+	return str(_get_visuals_definition(tower_type).get(TOWER_TEXTURE_KEY, ""))
+
+
+func get_projectile_texture_paths(tower_type: GameTower.Type) -> Array:
+	return (_get_visuals_definition(tower_type).get(PROJECTILE_TEXTURES_KEY, []) as Array).duplicate()
+
+
+func get_impact_texture_paths(tower_type: GameTower.Type) -> Array:
+	return (_get_visuals_definition(tower_type).get(IMPACT_TEXTURES_KEY, []) as Array).duplicate()
+
+
 func get_tower_button_node_name(tower_type: GameTower.Type) -> String:
 	return "%sTowerButton" % _pascal_case_id(get_tower_id(tower_type))
 
@@ -186,6 +209,7 @@ func get_tower_button_specs() -> Array:
 			"tower_type": tower_type,
 			"display_name": get_display_name(tower_type),
 			"description": get_description(tower_type),
+			"build_cost": get_build_cost(tower_type),
 			"node_name": get_tower_button_node_name(tower_type),
 			"node_path": "Hud/%s" % get_tower_button_node_name(tower_type),
 		})
@@ -259,6 +283,7 @@ static func validate_definitions(definitions: Dictionary) -> Array:
 			errors.append("%s definition must be a dictionary." % tower_name)
 			continue
 
+		_validate_tower_definition(errors, tower_name, tower_definition)
 		_validate_projectile_definition(errors, tower_name, tower_definition)
 
 		var tiers := tower_definition.get(TIERS_KEY, []) as Array
@@ -307,8 +332,14 @@ func _get_projectile_definition(tower_type: GameTower.Type) -> Dictionary:
 	return tower_definition.get(PROJECTILE_KEY, {}) as Dictionary
 
 
+func _get_visuals_definition(tower_type: GameTower.Type) -> Dictionary:
+	var tower_definition := _get_tower_definition(tower_type)
+	return tower_definition.get(VISUALS_KEY, {}) as Dictionary
+
+
 static func _tower_definition_from_data(tower_data: Dictionary, tower_type: int) -> Dictionary:
 	var projectile_data := tower_data.get(PROJECTILE_KEY, {}) as Dictionary
+	var visuals_data := tower_data.get(VISUALS_KEY, {}) as Dictionary
 	var tiers := []
 	for candidate in tower_data.get(TIERS_KEY, []):
 		var tier_data := candidate as Dictionary
@@ -319,17 +350,35 @@ static func _tower_definition_from_data(tower_data: Dictionary, tower_type: int)
 		ID_KEY: str(tower_data.get(ID_KEY, _tower_type_id(tower_type))),
 		DISPLAY_NAME_KEY: str(tower_data.get(DISPLAY_NAME_KEY, _tower_type_name(tower_type))),
 		DESCRIPTION_KEY: str(tower_data.get(DESCRIPTION_KEY, "")),
+		BUILD_COST_KEY: int(tower_data.get(BUILD_COST_KEY, DEFAULT_BUILD_COST)),
 		WEAPON_TYPE_KEY: _weapon_type_from_value(tower_data.get(WEAPON_TYPE_KEY, _default_weapon_type(tower_type))),
 		ATTACK_TYPE_KEY: _attack_type_from_value(tower_data.get(ATTACK_TYPE_KEY, -1)),
 		DAMAGE_SCHOOL_KEY: _damage_school_from_value(tower_data.get(DAMAGE_SCHOOL_KEY, _default_damage_school(tower_type))),
 		ATTACK_PATTERN_KEY: _attack_pattern_from_value(tower_data.get(ATTACK_PATTERN_KEY, _default_attack_pattern(tower_type))),
 		VISUAL_TEST_ENABLED_KEY: bool(tower_data.get(VISUAL_TEST_ENABLED_KEY, true)),
+		VISUALS_KEY: {
+			TOWER_TEXTURE_KEY: str(visuals_data.get(TOWER_TEXTURE_KEY, "")),
+			PROJECTILE_TEXTURES_KEY: _string_array_from_value(visuals_data.get(PROJECTILE_TEXTURES_KEY, [])),
+			IMPACT_TEXTURES_KEY: _string_array_from_value(visuals_data.get(IMPACT_TEXTURES_KEY, [])),
+		},
 		PROJECTILE_KEY: {
 			PROJECTILE_SPEED_KEY: float(projectile_data.get(PROJECTILE_SPEED_KEY, DEFAULT_PROJECTILE_SPEED_CELLS_PER_SECOND)),
 			PROJECTILE_HIT_RADIUS_KEY: float(projectile_data.get(PROJECTILE_HIT_RADIUS_KEY, DEFAULT_PROJECTILE_HIT_RADIUS_CELLS)),
 		},
 		TIERS_KEY: tiers,
 	}
+
+
+static func _string_array_from_value(value) -> Array:
+	var result := []
+	var source := value as Array
+	if source == null:
+		return result
+
+	for candidate in source:
+		result.append(str(candidate))
+
+	return result
 
 
 static func _tier_definition_from_data(tier_data: Dictionary) -> Dictionary:
@@ -451,6 +500,24 @@ static func _effect_from_value(value):
 		_attack_type_from_value(definition.get(ATTACK_TYPE_KEY, -1)),
 		_damage_school_from_value(definition.get(DAMAGE_SCHOOL_KEY, -1))
 	)
+
+
+static func _validate_tower_definition(errors: Array, tower_name: String, tower_definition: Dictionary) -> void:
+	if int(tower_definition.get(BUILD_COST_KEY, DEFAULT_BUILD_COST)) <= 0:
+		errors.append("%s build_cost must be positive." % tower_name)
+
+	var visuals := tower_definition.get(VISUALS_KEY, {}) as Dictionary
+	if visuals == null:
+		errors.append("%s visuals must be a dictionary." % tower_name)
+		return
+
+	if tower_definition.has(VISUALS_KEY):
+		if str(visuals.get(TOWER_TEXTURE_KEY, "")).is_empty():
+			errors.append("%s visuals tower texture is required." % tower_name)
+		if not (visuals.get(PROJECTILE_TEXTURES_KEY, []) is Array):
+			errors.append("%s visuals projectiles must be an array." % tower_name)
+		if not (visuals.get(IMPACT_TEXTURES_KEY, []) is Array):
+			errors.append("%s visuals impacts must be an array." % tower_name)
 
 
 static func _validate_projectile_definition(errors: Array, tower_name: String, tower_definition: Dictionary) -> void:

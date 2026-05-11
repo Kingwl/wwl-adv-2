@@ -302,6 +302,8 @@ func update_selected_tower_hint(
 	var cost := 0
 	if economy_config != null:
 		cost = economy_config.basic_tower_cost
+	if tower_config != null and economy_config != null:
+		cost = tower_config.get_build_cost(selected_tower_type, economy_config.basic_tower_cost)
 	return "%s tower: %dg. Enemies follow the paved road." % [
 		tower_type_label(selected_tower_type, tower_config),
 		cost,
@@ -438,6 +440,8 @@ func _set_tower_button_text(
 	var cost := 0
 	if economy_config != null:
 		cost = economy_config.basic_tower_cost
+	if tower_config != null and economy_config != null:
+		cost = tower_config.get_build_cost(tower_type, economy_config.basic_tower_cost)
 
 	var can_afford := wallet != null and wallet.gold >= cost
 	var is_selected := selected_tower_type == tower_type

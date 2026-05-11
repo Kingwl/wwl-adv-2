@@ -13,7 +13,7 @@ Implemented
 | 层级 | 命令 | 目标 |
 | --- | --- | --- |
 | 文档检查 | `./tools/check-docs.sh` | 文档地图、必需文件和设计索引不漂移。 |
-| 资产检查 | `./tools/check-assets.sh` | 关卡、map style 和塔配置 JSON/schema 有效。 |
+| 资产检查 | `./tools/check-assets.sh` | 关卡、map style、经济、敌人、波次和塔配置 JSON/schema 有效，并校验跨文件/资源引用。 |
 | Structural lint | `./tools/check-structure.sh` | core/scene/render 边界和 BoardView 结构约束。 |
 | Godot headless | `./tools/godot-headless.sh` | 项目可被 Godot headless 加载。 |
 | GUT | `./tools/test-gut.sh` | 核心规则和场景集成测试。 |

@@ -16,6 +16,8 @@ func test_session_initializes_board_wallet_and_combat_from_level() -> void:
 	assert_eq(session.board.height, 8)
 	assert_eq(session.wallet.gold, 100)
 	assert_eq(session.combat_simulation.player_life.lives, 10)
+	assert_eq(session.wave_spawner.wave_definitions.size(), 3)
+	assert_eq(session.wave_spawner.wave_definitions[0].enemy_type_id, "grunt")
 	assert_eq(session.flow_state, BoardGameSession.FlowState.PLAYING)
 	assert_false(session.gameplay_paused)
 	assert_eq(session.selected_tower_type, GameTower.Type.SINGLE_TARGET)

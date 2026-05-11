@@ -266,7 +266,8 @@ func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: Bo
 		board_view.get_session().board,
 		board_view.get_session().placement_service,
 		buildable_cell,
-		board_view.get_session().flow_state == BoardGameSession.FlowState.PLAYING and not board_view.get_session().gameplay_paused
+		board_view.get_session().flow_state == BoardGameSession.FlowState.PLAYING and not board_view.get_session().gameplay_paused,
+		board_view.get_session().selected_tower_type
 	), "tower placement preview visible on hovered buildable cell")
 	await _capture_current_review_artifacts(
 		result,
@@ -281,7 +282,9 @@ func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: Bo
 	_click_grid_cell(board_view, buildable_cell)
 	await _settle_frames(2)
 
-	var expected_gold := gold_before - board_view.get_session().economy_config.basic_tower_cost
+	var expected_gold := gold_before - board_view.get_session().placement_service.get_build_cost(
+		board_view.get_session().selected_tower_type
+	)
 	var placed_slot := board_view.get_session().board.get_slot(buildable_cell)
 	_check(result, not placed_slot.occupant_id.is_empty(), "tower placed through board input")
 	_check(result, board_view.get_session().wallet.gold == expected_gold, "gold spent after tower placement")

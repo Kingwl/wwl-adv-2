@@ -60,7 +60,7 @@ Prototype 已经实现点击已放置塔后显示操作菜单，并支持直接�
 refund = floor((build_cost + all_paid_upgrade_costs) * refund_ratio)
 ```
 
-当前返还比例仍为 `50%`。如果后续每种塔有不同建造费用，建造费用也应进入 tower definition，而不是继续只放在全局经济配置里。
+当前返还比例仍为 `50%`。每种塔的建造费用已经进入 tower definition，拆除返还按该塔的建造费用和已支付升级费用累计投入计算。
 
 ### Tier 语义
 

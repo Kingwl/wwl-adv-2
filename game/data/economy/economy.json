@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "initial_gold": 100,
+  "default_tower_build_cost": 25,
+  "default_kill_reward": 5,
+  "wave_clear_reward": 20,
+  "tower_removal_refund_ratio": 0.5
+}

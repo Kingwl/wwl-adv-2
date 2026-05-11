@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WWL Enemy Definitions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enemies"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "enemies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "display_name",
+          "speed_cells_per_second",
+          "max_health",
+          "kill_reward",
+          "armor_type",
+          "race_type",
+          "school_resistance_overrides"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_\\-]+$"
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "speed_cells_per_second": {
+            "type": "number",
+            "minimum": 0
+          },
+          "max_health": {
+            "type": "number",
+            "minimum": 0
+          },
+          "kill_reward": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "armor_type": {
+            "type": "string",
+            "enum": ["UNARMORED", "LIGHT", "MEDIUM", "HEAVY", "FORTIFIED", "HERO"]
+          },
+          "race_type": {
+            "type": "string",
+            "enum": [
+              "BEAST",
+              "HUMANOID",
+              "UNDEAD",
+              "CONSTRUCT",
+              "ELEMENTAL_FIRE",
+              "ELEMENTAL_FROST",
+              "PLANT",
+              "DEMON"
+            ]
+          },
+          "school_resistance_overrides": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

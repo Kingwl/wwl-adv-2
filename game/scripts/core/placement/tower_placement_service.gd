@@ -35,19 +35,20 @@ func _init(
 
 func try_place_basic_tower(position: Vector2i) -> TowerPlacementResult:
 	var tower_id := _next_tower_id()
+	var build_cost := get_build_cost(basic_tower_type)
 	var placement_check := board.can_place_tower(position, tower_id)
 
 	if not placement_check.succeeded:
 		return TowerPlacementResult.placement_failure(placement_check, tower_id, position)
 
-	if not wallet.can_spend(config.basic_tower_cost):
+	if not wallet.can_spend(build_cost):
 		var insufficient_result := TransactionResult.failure(
 			TransactionResult.FailureReason.INSUFFICIENT_FUNDS,
 			TransactionRecord.Reason.PLACE_TOWER,
-			config.basic_tower_cost,
+			build_cost,
 			wallet.gold,
 			tower_id,
-			"Need %d gold." % config.basic_tower_cost
+			"Need %d gold." % build_cost
 		)
 		return TowerPlacementResult.transaction_failure(
 			TowerPlacementResult.FailureReason.INSUFFICIENT_FUNDS,
@@ -56,7 +57,7 @@ func try_place_basic_tower(position: Vector2i) -> TowerPlacementResult:
 			position
 		)
 
-	var spend_result := wallet.spend(config.basic_tower_cost, TransactionRecord.Reason.PLACE_TOWER, tower_id)
+	var spend_result := wallet.spend(build_cost, TransactionRecord.Reason.PLACE_TOWER, tower_id)
 	if not spend_result.succeeded:
 		return TowerPlacementResult.transaction_failure(
 			TowerPlacementResult.FailureReason.TRANSACTION_FAILED,
@@ -67,10 +68,10 @@ func try_place_basic_tower(position: Vector2i) -> TowerPlacementResult:
 
 	var placement_result := board.place_tower(position, tower_id)
 	if not placement_result.succeeded:
-		wallet.earn(config.basic_tower_cost, TransactionRecord.Reason.REFUND, tower_id)
+		wallet.earn(build_cost, TransactionRecord.Reason.REFUND, tower_id)
 		return TowerPlacementResult.placement_failure(placement_result, tower_id, position)
 
-	tower_registry.add_tower(GameTower.new(tower_id, basic_tower_type, 1, position, config.basic_tower_cost))
+	tower_registry.add_tower(GameTower.new(tower_id, basic_tower_type, 1, position, build_cost))
 	_advance_tower_id()
 	return TowerPlacementResult.success(placement_result, spend_result, tower_id, position)
 
@@ -149,6 +150,13 @@ func removal_refund_amount(tower: GameTower) -> int:
 		return 0
 
 	return floori(float(tower.invested_gold) * config.tower_removal_refund_ratio)
+
+
+func get_build_cost(tower_type: GameTower.Type) -> int:
+	if tower_config == null:
+		return config.basic_tower_cost
+
+	return tower_config.get_build_cost(tower_type, config.basic_tower_cost)
 
 
 func _next_tower_id() -> String:

@@ -16,7 +16,21 @@ func test_advance_before_spawn_interval_does_not_spawn_enemy() -> void:
 
 func test_advance_at_spawn_interval_spawns_configured_enemy() -> void:
 	var spawner := WaveSpawner.new([
-		WaveDefinition.new("wave-1", 2, 1.0, 24.0, 1.25, 6, 20),
+		WaveDefinition.new(
+			"wave-1",
+			2,
+			1.0,
+			24.0,
+			1.25,
+			6,
+			20,
+			"armored-undead",
+			DamageTypes.ArmorType.LIGHT,
+			DamageTypes.RaceType.UNDEAD,
+			{
+				DamageTypes.DamageSchool.FIRE: -0.25,
+			}
+		),
 	])
 
 	var result := spawner.advance(1.0, [])
@@ -28,6 +42,9 @@ func test_advance_at_spawn_interval_spawns_configured_enemy() -> void:
 	assert_eq(enemy.health, 24.0)
 	assert_eq(enemy.speed_cells_per_second, 1.25)
 	assert_eq(enemy.kill_reward, 6)
+	assert_eq(enemy.armor_type, DamageTypes.ArmorType.LIGHT)
+	assert_eq(enemy.race_type, DamageTypes.RaceType.UNDEAD)
+	assert_eq(enemy.school_resistance_overrides[DamageTypes.DamageSchool.FIRE], -0.25)
 
 
 func test_large_delta_spawns_multiple_enemies_without_exceeding_wave_count() -> void:

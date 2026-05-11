@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "waves": [
+    {
+      "id": "wave-1",
+      "enemy_type": "grunt",
+      "enemy_count": 5,
+      "spawn_interval_seconds": 0.8,
+      "clear_reward_gold": 20
+    },
+    {
+      "id": "wave-2",
+      "enemy_type": "bruiser",
+      "enemy_count": 7,
+      "spawn_interval_seconds": 0.7,
+      "clear_reward_gold": 25
+    },
+    {
+      "id": "wave-3",
+      "enemy_type": "raider",
+      "enemy_count": 10,
+      "spawn_interval_seconds": 0.6,
+      "clear_reward_gold": 35
+    }
+  ]
+}

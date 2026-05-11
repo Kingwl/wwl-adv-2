@@ -69,12 +69,7 @@ func _spawn_enemies(delta_seconds: float) -> Array:
 
 
 func _create_enemy(wave_definition: WaveDefinition, sequence_number: int) -> Enemy:
-	return Enemy.new(
-		"%s-enemy-%d" % [wave_definition.wave_id, sequence_number],
-		wave_definition.enemy_speed_cells_per_second,
-		wave_definition.enemy_max_health,
-		wave_definition.enemy_kill_reward
-	)
+	return wave_definition.create_enemy(sequence_number)
 
 
 func _advance_to_next_wave() -> void:

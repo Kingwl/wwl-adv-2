@@ -36,6 +36,41 @@ func test_try_place_basic_tower_with_insufficient_gold_does_not_place_or_spend()
 	assert_eq(service.tower_registry.get_all_towers().size(), 0)
 
 
+func test_try_place_basic_tower_uses_tower_type_build_cost() -> void:
+	var board := Board.new(3, 2)
+	var wallet := Wallet.new(100)
+	var tower_config := TowerConfig.new({
+		GameTower.Type.AREA: {
+			"build_cost": 37,
+			"tiers": [
+				{
+					"damage": 6.0,
+					"range_cells": 2.0,
+					"attack_interval": 1.4,
+				},
+			],
+		},
+	})
+	var service := TowerPlacementService.new(
+		board,
+		wallet,
+		EconomyConfig.new(),
+		func() -> String: return "tower-1",
+		null,
+		GameTower.Type.AREA,
+		tower_config
+	)
+
+	var result := service.try_place_basic_tower(Vector2i(1, 1))
+	var tower := service.tower_registry.get_tower("tower-1")
+
+	assert_true(result.succeeded)
+	assert_eq(result.transaction_result.amount, 37)
+	assert_eq(wallet.gold, 63)
+	assert_eq(tower.tower_type, GameTower.Type.AREA)
+	assert_eq(tower.invested_gold, 37)
+
+
 func test_try_upgrade_tower_spends_configured_cost_and_updates_tier_and_investment() -> void:
 	var board := Board.new(3, 2)
 	var wallet := Wallet.new(100)

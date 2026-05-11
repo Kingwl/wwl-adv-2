@@ -49,14 +49,14 @@ https://openai.com/zh-Hans-CN/index/harness-engineering/
   - `agent-preflight.sh` / `agent-preflight-fast.sh` 只运行项目门禁和日志报告，适合开发迭代。
   - `agent-preflight-full.sh` 额外运行 native UI smoke 和 native gameplay smoke，适合交付前视觉/可玩性证据。
 
-- [ ] 将敌人和波次配置迁移到带 schema 检查的数据文件。
-  - `check-assets.sh` 已扩展到塔配置；下一步继续覆盖敌人和波次定义。
-  - 校验数据文件和运行时资产之间的引用。
+- [x] 将敌人和波次配置迁移到带 schema 检查的数据文件。
+  - `check-assets.sh` 已覆盖敌人、波次、经济和塔配置。
+  - 校验 wave enemy reference 和 tower visual resource reference。
 
 - [ ] 将 structural lint 的 warning 分阶段收敛成更严格规则。
   - 已按 `docs/designs/scene-ui-architecture.md` 拆出 `BoardView` 的 layout、HUD、input、visual state 和 renderer。
   - 已将 `BoardMapRenderer` 从 `game/scripts/core/` 迁出到场景/渲染 adapter，并把 core 渲染/资源加载耦合收紧为 error。
-  - 将 `BoardGameSession` 中的默认经济配置和波次定义迁移到数据/配置层。
+  - 后续重点是把当前 warning 阈值收紧，并继续防止 adapter 层体积回膨胀。
 
 - [x] 添加 agent preflight 命令。
   - 运行标准本地门禁。

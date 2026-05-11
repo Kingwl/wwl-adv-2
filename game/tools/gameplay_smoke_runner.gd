@@ -171,7 +171,7 @@ func _scenario_place_single_tower(
 	await _settle_frames(2)
 
 	_check(result, placement.succeeded, "single tower placement succeeds")
-	_check(result, board_view.get_session().wallet.gold == gold_before - board_view.get_session().economy_config.basic_tower_cost, "placement spends gold")
+	_check(result, board_view.get_session().wallet.gold == gold_before - placement.transaction_result.amount, "placement spends gold")
 	_check(result, board_view.get_session().placement_service.tower_registry.get_all_towers().size() == 1, "one tower registered")
 	await _capture_checkpoint(result, viewport_name, scenario_dir, "after-place", board_view)
 

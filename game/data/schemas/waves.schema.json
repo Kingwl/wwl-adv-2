@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WWL Wave Definitions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "waves"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "waves": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "enemy_type",
+          "enemy_count",
+          "spawn_interval_seconds",
+          "clear_reward_gold"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_\\-]+$"
+          },
+          "enemy_type": {
+            "type": "string",
+            "pattern": "^[a-z0-9_\\-]+$"
+          },
+          "enemy_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "spawn_interval_seconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "clear_reward_gold": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

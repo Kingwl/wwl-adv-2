@@ -14,12 +14,26 @@ SCHEMA_DIR = DATA_DIR / "schemas"
 LEVEL_DIR = DATA_DIR / "levels"
 STYLE_DIR = DATA_DIR / "map_styles"
 TOWER_DIR = DATA_DIR / "towers"
+ECONOMY_CONFIG_PATH = DATA_DIR / "economy" / "economy.json"
+ENEMY_CONFIG_PATH = DATA_DIR / "enemies" / "enemies.json"
+WAVE_CONFIG_PATH = DATA_DIR / "waves" / "waves.json"
 TOWER_CONFIG_PATH = TOWER_DIR / "towers.json"
 
 TOWER_TYPES = {"SINGLE_TARGET", "AREA", "SLOW", "FLAME", "POISON"}
 WEAPON_TYPES = {"BOW", "CROSSBOW", "CANNON", "BLADE", "SPELL", "HEROIC", "CHAOS"}
 ATTACK_TYPES = {"NORMAL", "PIERCE", "SIEGE", "MAGIC", "HERO", "CHAOS"}
 DAMAGE_SCHOOLS = {"PHYSICAL", "FROST", "FIRE", "POISON", "LIGHTNING", "ARCANE", "SHADOW"}
+ARMOR_TYPES = {"UNARMORED", "LIGHT", "MEDIUM", "HEAVY", "FORTIFIED", "HERO"}
+RACE_TYPES = {
+    "BEAST",
+    "HUMANOID",
+    "UNDEAD",
+    "CONSTRUCT",
+    "ELEMENTAL_FIRE",
+    "ELEMENTAL_FROST",
+    "PLANT",
+    "DEMON",
+}
 ATTACK_PATTERNS = {
     "SINGLE_PROJECTILE",
     "SPLASH_PROJECTILE",
@@ -203,6 +217,70 @@ def validate_positive_number(value: Any, path: str) -> None:
         raise ValidationError(f"{path}: expected positive number")
 
 
+def validate_economy(path: Path, schema: dict[str, Any]) -> None:
+    economy = load_json(path)
+    validate_schema(economy, schema, path.name)
+
+    if int(economy["initial_gold"]) < int(economy["default_tower_build_cost"]):
+        raise ValidationError(f"{path.name}.initial_gold: must cover at least one default tower build")
+
+
+def validate_enemies(path: Path, schema: dict[str, Any]) -> set[str]:
+    enemy_config = load_json(path)
+    validate_schema(enemy_config, schema, path.name)
+
+    enemy_ids: set[str] = set()
+    for enemy_index, enemy in enumerate(enemy_config["enemies"]):
+        enemy_path = f"{path.name}.enemies[{enemy_index}]"
+        enemy_id = str(enemy["id"])
+        if enemy_id in enemy_ids:
+            raise ValidationError(f"{enemy_path}.id: duplicate enemy id {enemy_id!r}")
+        enemy_ids.add(enemy_id)
+
+        validate_positive_number(enemy["speed_cells_per_second"], f"{enemy_path}.speed_cells_per_second")
+        validate_positive_number(enemy["max_health"], f"{enemy_path}.max_health")
+        if int(enemy["kill_reward"]) < 0:
+            raise ValidationError(f"{enemy_path}.kill_reward: cannot be negative")
+        validate_enum(enemy["armor_type"], ARMOR_TYPES, f"{enemy_path}.armor_type")
+        validate_enum(enemy["race_type"], RACE_TYPES, f"{enemy_path}.race_type")
+
+        overrides = enemy["school_resistance_overrides"]
+        if not isinstance(overrides, dict):
+            raise ValidationError(f"{enemy_path}.school_resistance_overrides: expected object")
+        for damage_school, multiplier in overrides.items():
+            validate_enum(damage_school, DAMAGE_SCHOOLS, f"{enemy_path}.school_resistance_overrides.{damage_school}")
+            if not isinstance(multiplier, (int, float)) or isinstance(multiplier, bool):
+                raise ValidationError(
+                    f"{enemy_path}.school_resistance_overrides.{damage_school}: expected number"
+                )
+
+    return enemy_ids
+
+
+def validate_waves(path: Path, schema: dict[str, Any], enemy_ids: set[str]) -> int:
+    wave_config = load_json(path)
+    validate_schema(wave_config, schema, path.name)
+
+    wave_ids: set[str] = set()
+    for wave_index, wave in enumerate(wave_config["waves"]):
+        wave_path = f"{path.name}.waves[{wave_index}]"
+        wave_id = str(wave["id"])
+        if wave_id in wave_ids:
+            raise ValidationError(f"{wave_path}.id: duplicate wave id {wave_id!r}")
+        wave_ids.add(wave_id)
+
+        enemy_type = str(wave["enemy_type"])
+        if enemy_type not in enemy_ids:
+            raise ValidationError(f"{wave_path}.enemy_type: unknown enemy type {enemy_type!r}")
+        if int(wave["enemy_count"]) <= 0:
+            raise ValidationError(f"{wave_path}.enemy_count: must be positive")
+        validate_positive_number(wave["spawn_interval_seconds"], f"{wave_path}.spawn_interval_seconds")
+        if int(wave["clear_reward_gold"]) < 0:
+            raise ValidationError(f"{wave_path}.clear_reward_gold: cannot be negative")
+
+    return len(wave_config["waves"])
+
+
 def validate_tower_effect(effect: dict[str, Any], path: str) -> str:
     effect_type = str(effect["type"])
     validate_enum(effect_type, EFFECT_TYPES, f"{path}.type")
@@ -266,6 +344,16 @@ def validate_towers(path: Path, schema: dict[str, Any]) -> int:
         validate_enum(tower["damage_school"], DAMAGE_SCHOOLS, f"{tower_path}.damage_school")
         validate_enum(tower["attack_pattern"], ATTACK_PATTERNS, f"{tower_path}.attack_pattern")
 
+        if int(tower["build_cost"]) <= 0:
+            raise ValidationError(f"{tower_path}.build_cost: must be positive")
+
+        visuals = tower["visuals"]
+        ensure_res_path_exists(visuals["tower"], f"{tower_path}.visuals.tower")
+        for texture_index, texture_path in enumerate(visuals["projectiles"]):
+            ensure_res_path_exists(texture_path, f"{tower_path}.visuals.projectiles[{texture_index}]")
+        for texture_index, texture_path in enumerate(visuals["impacts"]):
+            ensure_res_path_exists(texture_path, f"{tower_path}.visuals.impacts[{texture_index}]")
+
         projectile = tower["projectile"]
         validate_positive_number(projectile["speed_cells_per_second"], f"{tower_path}.projectile.speed_cells_per_second")
         if projectile["hit_radius_cells"] < 0:
@@ -323,6 +411,9 @@ def main() -> int:
         level_schema = load_json(SCHEMA_DIR / "level.schema.json")
         style_schema = load_json(SCHEMA_DIR / "map_style.schema.json")
         towers_schema = load_json(SCHEMA_DIR / "towers.schema.json")
+        economy_schema = load_json(SCHEMA_DIR / "economy.schema.json")
+        enemies_schema = load_json(SCHEMA_DIR / "enemies.schema.json")
+        waves_schema = load_json(SCHEMA_DIR / "waves.schema.json")
 
         style_files = sorted(STYLE_DIR.glob("*.json"))
         level_files = sorted(LEVEL_DIR.glob("*.json"))
@@ -345,11 +436,15 @@ def main() -> int:
                 raise ValidationError(f"{path.name}.id: duplicate level id {level_id!r}")
             level_ids.add(level_id)
 
+        validate_economy(ECONOMY_CONFIG_PATH, economy_schema)
+        enemy_ids = validate_enemies(ENEMY_CONFIG_PATH, enemies_schema)
+        wave_count = validate_waves(WAVE_CONFIG_PATH, waves_schema, enemy_ids)
         tower_count = validate_towers(TOWER_CONFIG_PATH, towers_schema)
 
         print(
             "asset check passed: "
-            f"{len(level_files)} level(s), {len(style_files)} map style(s), {tower_count} tower(s)"
+            f"{len(level_files)} level(s), {len(style_files)} map style(s), "
+            f"{len(enemy_ids)} enemy type(s), {wave_count} wave(s), {tower_count} tower(s), 1 economy config"
         )
         return 0
     except ValidationError as exc:

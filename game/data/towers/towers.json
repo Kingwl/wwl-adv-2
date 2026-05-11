@@ -11,6 +11,22 @@
       "damage_school": "PHYSICAL",
       "attack_pattern": "SINGLE_PROJECTILE",
       "visual_test_enabled": true,
+      "build_cost": 25,
+      "visuals": {
+        "tower": "res://assets/sprites/towers/round_rotating/single.png",
+        "projectiles": [
+          "res://assets/sprites/mvp-v1/fx/single_projectile_1.png",
+          "res://assets/sprites/mvp-v1/fx/single_projectile_2.png",
+          "res://assets/sprites/mvp-v1/fx/single_projectile_3.png",
+          "res://assets/sprites/mvp-v1/fx/single_projectile_4.png"
+        ],
+        "impacts": [
+          "res://assets/sprites/mvp-v1/fx/single_projectile_1.png",
+          "res://assets/sprites/mvp-v1/fx/single_projectile_2.png",
+          "res://assets/sprites/mvp-v1/fx/single_projectile_3.png",
+          "res://assets/sprites/mvp-v1/fx/single_projectile_4.png"
+        ]
+      },
       "projectile": {
         "speed_cells_per_second": 6.0,
         "hit_radius_cells": 0.12
@@ -63,6 +79,22 @@
       "damage_school": "PHYSICAL",
       "attack_pattern": "SPLASH_PROJECTILE",
       "visual_test_enabled": true,
+      "build_cost": 25,
+      "visuals": {
+        "tower": "res://assets/sprites/towers/round_rotating/area.png",
+        "projectiles": [
+          "res://assets/sprites/mvp-v1/fx/area_impact_1.png",
+          "res://assets/sprites/mvp-v1/fx/area_impact_2.png",
+          "res://assets/sprites/mvp-v1/fx/area_impact_3.png",
+          "res://assets/sprites/mvp-v1/fx/area_impact_4.png"
+        ],
+        "impacts": [
+          "res://assets/sprites/mvp-v1/fx/area_impact_1.png",
+          "res://assets/sprites/mvp-v1/fx/area_impact_2.png",
+          "res://assets/sprites/mvp-v1/fx/area_impact_3.png",
+          "res://assets/sprites/mvp-v1/fx/area_impact_4.png"
+        ]
+      },
       "projectile": {
         "speed_cells_per_second": 4.5,
         "hit_radius_cells": 0.12
@@ -118,6 +150,22 @@
       "damage_school": "FROST",
       "attack_pattern": "STATUS_PROJECTILE",
       "visual_test_enabled": true,
+      "build_cost": 25,
+      "visuals": {
+        "tower": "res://assets/sprites/towers/round_rotating/slow.png",
+        "projectiles": [
+          "res://assets/sprites/mvp-v1/fx/slow_impact_1.png",
+          "res://assets/sprites/mvp-v1/fx/slow_impact_2.png",
+          "res://assets/sprites/mvp-v1/fx/slow_impact_3.png",
+          "res://assets/sprites/mvp-v1/fx/slow_impact_4.png"
+        ],
+        "impacts": [
+          "res://assets/sprites/mvp-v1/fx/slow_impact_1.png",
+          "res://assets/sprites/mvp-v1/fx/slow_impact_2.png",
+          "res://assets/sprites/mvp-v1/fx/slow_impact_3.png",
+          "res://assets/sprites/mvp-v1/fx/slow_impact_4.png"
+        ]
+      },
       "projectile": {
         "speed_cells_per_second": 5.25,
         "hit_radius_cells": 0.12
@@ -191,6 +239,22 @@
       "damage_school": "FIRE",
       "attack_pattern": "STATUS_DOT",
       "visual_test_enabled": true,
+      "build_cost": 25,
+      "visuals": {
+        "tower": "res://assets/sprites/towers/round_rotating/flame.png",
+        "projectiles": [
+          "res://assets/sprites/mvp-v1/fx/flame_impact_1.png",
+          "res://assets/sprites/mvp-v1/fx/flame_impact_2.png",
+          "res://assets/sprites/mvp-v1/fx/flame_impact_3.png",
+          "res://assets/sprites/mvp-v1/fx/flame_impact_4.png"
+        ],
+        "impacts": [
+          "res://assets/sprites/mvp-v1/fx/flame_impact_1.png",
+          "res://assets/sprites/mvp-v1/fx/flame_impact_2.png",
+          "res://assets/sprites/mvp-v1/fx/flame_impact_3.png",
+          "res://assets/sprites/mvp-v1/fx/flame_impact_4.png"
+        ]
+      },
       "projectile": {
         "speed_cells_per_second": 5.0,
         "hit_radius_cells": 0.12
@@ -267,6 +331,22 @@
       "damage_school": "POISON",
       "attack_pattern": "STATUS_DOT",
       "visual_test_enabled": true,
+      "build_cost": 25,
+      "visuals": {
+        "tower": "res://assets/sprites/towers/round_rotating/poison.png",
+        "projectiles": [
+          "res://assets/sprites/mvp-v1/fx/poison_projectile_1.png",
+          "res://assets/sprites/mvp-v1/fx/poison_projectile_2.png",
+          "res://assets/sprites/mvp-v1/fx/poison_projectile_3.png",
+          "res://assets/sprites/mvp-v1/fx/poison_projectile_4.png"
+        ],
+        "impacts": [
+          "res://assets/sprites/mvp-v1/fx/poison_impact_1.png",
+          "res://assets/sprites/mvp-v1/fx/poison_impact_2.png",
+          "res://assets/sprites/mvp-v1/fx/poison_impact_3.png",
+          "res://assets/sprites/mvp-v1/fx/poison_impact_4.png"
+        ]
+      },
       "projectile": {
         "speed_cells_per_second": 6.4,
         "hit_radius_cells": 0.12

@@ -2,9 +2,8 @@
 
 ## 现在
 
-- [ ] 将敌人和波次定义推进到数据文件，并扩展 schema 检查。
 - [ ] 拆分 `TowerConfig` 的加载、解析、语义校验和 UI spec 职责，并清理已被 `effects[]` 取代的 legacy tier/effect fallback。
-- [ ] 将塔 roster、建造费用和塔/投射物/命中特效资源引用从 enum 与 `BoardAssetCatalog` 硬编码推进到数据契约。
+- [ ] 继续将塔 roster 从 `GameTower.Type` enum 推进到 tower id 数据契约，降低新增塔的跨模块改动面。
 - [ ] 评估确定性 road ribbon 渲染，用于未来可编辑路径地图。
 - [ ] 为塔、敌人、投射物和命中特效 sprite 添加 normal map，并接入 2D lighting。
 
@@ -107,5 +106,7 @@
 - [x] 在 `docs/testing/` 下添加 Prototype 规则覆盖 checklist。
 - [x] 为关卡和 map style 数据添加 JSON/schema 资产检查。
 - [x] 将塔定义推进到 `game/data/towers/towers.json`，并扩展 schema/effects 检查。
+- [x] 将敌人、波次和经济配置推进到 `game/data/`，并扩展 schema/GUT/asset 检查。
+- [x] 将塔建造费用和塔/投射物/命中特效资源引用推进到 `towers.json`，并让 `BoardAssetCatalog` 从塔配置加载。
 - [x] 为 GitHub Pages 可玩构建添加 Godot Web 导出流水线。
 - [x] 决定并实现 Prototype 塔成长模型：点击塔显示操作菜单，支持配置化升级和 50% 拆除返还。

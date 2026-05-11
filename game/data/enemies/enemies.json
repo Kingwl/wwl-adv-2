@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "enemies": [
+    {
+      "id": "grunt",
+      "display_name": "Grunt",
+      "speed_cells_per_second": 1.0,
+      "max_health": 20.0,
+      "kill_reward": 5,
+      "armor_type": "HEAVY",
+      "race_type": "BEAST",
+      "school_resistance_overrides": {}
+    },
+    {
+      "id": "bruiser",
+      "display_name": "Bruiser",
+      "speed_cells_per_second": 1.0,
+      "max_health": 24.0,
+      "kill_reward": 5,
+      "armor_type": "HEAVY",
+      "race_type": "BEAST",
+      "school_resistance_overrides": {}
+    },
+    {
+      "id": "raider",
+      "display_name": "Raider",
+      "speed_cells_per_second": 1.1,
+      "max_health": 30.0,
+      "kill_reward": 6,
+      "armor_type": "HEAVY",
+      "race_type": "BEAST",
+      "school_resistance_overrides": {}
+    }
+  ]
+}

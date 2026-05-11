@@ -266,17 +266,18 @@ final_damage = 10 * 2.0 * 1.25 = 25
 - `DamageTypes` 定义武器形态、攻击类型、防御类型、伤害类型、种族和攻击模式枚举。
 - `DamageAffinityConfig` 实现武器到攻击类型推导、攻击类型对防御类型倍率表、种族对伤害类型的正/负抗性表，以及最终伤害公式。
 - `Enemy` 增加 `armor_type`、`race_type` 和 `school_resistance_overrides`。
+- `EnemyCatalog` 从 `game/data/enemies/enemies.json` 加载敌人 armor/race、生命、速度、击杀奖励和伤害类型抗性 override。
 - `DamageEvent` 携带 `attack_type` 和 `damage_school`。
 - `EnemyDamageService` 在应用伤害前按攻击/防御/伤害/种族公式计算最终伤害。
 - `TowerConfig` 从 `game/data/towers/towers.json` 给现有五塔提供类型元数据：Single = CROSSBOW/PIERCE/PHYSICAL，Area = CANNON/SIEGE/PHYSICAL，Slow = SPELL/MAGIC/FROST，Flame = SPELL/MAGIC/FIRE，Poison = CROSSBOW/PIERCE/POISON。
+- `WaveConfig` 从 `game/data/waves/waves.json` 加载波次，并按 enemy type 引用敌人定义。
 - `TowerAttackService` 和 `ProjectileService` 将塔的攻击类型和伤害类型传递到投射物与伤害事件。
-- `check-assets.sh` 已校验塔配置 schema 中的攻击类型、伤害类型、攻击模式和 effect 字段。
+- `check-assets.sh` 已校验塔配置 schema 中的攻击类型、伤害类型、攻击模式和 effect 字段，也校验敌人 armor/race/resistance、波次 enemy reference。
 
 第一版尚未实现：
 
-- 敌人和波次的数据文件 schema。
-- 多敌人类型和波次配置中的 armor/race 分布。
 - UI 中展示克制关系或敌人抗性。
+- 更丰富的多敌人类型和波次 armor/race 分布。
 
 构装城甲怪被毒针塔攻击：
 
@@ -308,7 +309,7 @@ final_damage = 10 * 0.35 * 0.25 = 0.875
 - `test_enemy_damage_service.gd` 覆盖最终伤害公式。
 - `test_tower_config.gd` 覆盖现有五塔的武器形态、攻击类型和伤害类型。
 - `test_projectile_service.gd` 覆盖 projectile 携带并传递攻击/伤害类型。
-- 数据化后 `check-assets.sh` 必须继续校验 tower/enemy/race resistance 的枚举值和必填字段；当前已覆盖 tower。
+- `check-assets.sh` 必须继续校验 tower/enemy/race resistance 的枚举值、必填字段和 wave enemy reference；当前已覆盖 tower、enemy 和 wave。
 - Gameplay smoke 后续增加一个克制场景，例如火焰打亡灵、毒素打构装的伤害摘要。
 
 ## 替代方案
