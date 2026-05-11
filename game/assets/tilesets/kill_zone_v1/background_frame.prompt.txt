@@ -1,0 +1,6 @@
+Generated 2026-05-11 with image_gen.
+
+Pipeline: baked_raster, runtime_object_model none, collision_model project-native path_cells, engine_target project-native.
+
+Prompt summary:
+Clean HD hand-painted top-down 2D fantasy tower defense fortress courtyard, 10 by 8 readable board composition at 1280x1024. Short compact enemy road through a guarded kill-zone arena, stone walls, barracks props, target dummies, many clear tower pads and firing platforms around the path, no UI, no text, no grid overlay.

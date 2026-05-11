@@ -4,6 +4,7 @@ extends Node2D
 const INVALID_GRID_POSITION := Vector2i(-1, -1)
 const START_SCENE_PATH := "res://scenes/start.tscn"
 
+@export var level_definition_path: String = ""
 @export var status_label_path: NodePath = NodePath("../Hud/Status")
 @export var hint_label_path: NodePath = NodePath("../Hud/Hint")
 @export var gold_label_path: NodePath = NodePath("../Hud/Gold")
@@ -167,8 +168,8 @@ func clear_tower_action_menu() -> void:
 	if _hud_controller != null:
 		_hud_controller.hide_tower_action_menu()
 	if _game_session != null and _game_session.economy_config != null and _hud_controller != null:
-		_game_session.set_hint_message(_hud_controller.selected_tower_hint_message(
-			_game_session.selected_tower_type,
+		_game_session.set_hint_message(_hud_controller.selected_tower_hint_message_for_id(
+			_game_session.selected_tower_definition_id,
 			_game_session.economy_config,
 			_game_session.placement_service.tower_config
 		))
@@ -268,7 +269,7 @@ func show_defeat_screen() -> void:
 	_refresh_hud()
 
 
-func select_tower_type(tower_type: GameTower.Type) -> void:
+func select_tower_type(tower_type: int) -> void:
 	_ensure_dependencies()
 	_game_session.select_tower_type(tower_type)
 	_update_selected_tower_hint()
@@ -349,6 +350,7 @@ func _draw() -> void:
 		metrics.cell_size,
 		hover_grid_position,
 		_game_session.selected_tower_type,
+		_game_session.selected_tower_definition_id,
 		_should_draw_tower_placement_preview(),
 		selected_tower_grid_position,
 		_game_session.last_placement_result
@@ -376,7 +378,7 @@ func _ensure_dependencies() -> void:
 
 
 func _load_assets() -> void:
-	_asset_catalog.load_all()
+	_asset_catalog.load_all(level_definition_path)
 
 
 func _initialize_board() -> void:
@@ -491,7 +493,7 @@ func _grid_space_to_local(grid_space_position: Vector2) -> Vector2:
 	return _board_renderer.grid_space_to_local(metrics.board_origin, metrics.cell_size, grid_space_position)
 
 
-func _get_tower_sprite_texture(tower_type: GameTower.Type, tower_id: String = "") -> Texture2D:
+func _get_tower_sprite_texture(tower_type: int, tower_id: String = "") -> Texture2D:
 	return _board_renderer.get_tower_sprite_texture(tower_type, tower_id, _visual_state, _asset_catalog)
 
 
@@ -530,20 +532,17 @@ func _sync_message_labels() -> void:
 
 
 func _update_selected_tower_hint() -> void:
-	_set_hint_message(_hud_controller.selected_tower_hint_message(
-		_game_session.selected_tower_type,
+	_set_hint_message(_hud_controller.selected_tower_hint_message_for_id(
+		_game_session.selected_tower_definition_id,
 		_game_session.economy_config,
 		_game_session.placement_service.tower_config
 	))
 
 
 func _sync_tower_button_state() -> void:
-	var selected_config_tower_id := ""
-	if _game_session.placement_service != null and _game_session.placement_service.tower_config != null:
-		selected_config_tower_id = _game_session.placement_service.tower_config.get_tower_id(_game_session.selected_tower_type)
 	_hud_controller.sync_tower_button_state(
 		_game_session.flow_state,
-		selected_config_tower_id,
+		_game_session.selected_tower_definition_id,
 		_game_session.wallet,
 		_game_session.economy_config,
 		_game_session.placement_service.tower_config,
@@ -622,8 +621,9 @@ func _select_tower_if_occupied(grid_position: Vector2i) -> bool:
 
 	selected_tower_grid_position = grid_position
 	selected_tower_id = tower_id
+	var tower_definition_id := _game_session.placement_service.tower_config.get_tower_id_for_runtime_tower(tower)
 	_game_session.set_status_message(BoardMessage.tower_selected(
-		_hud_controller.tower_type_label(tower.tower_type, _game_session.placement_service.tower_config),
+		_hud_controller.tower_id_label(tower_definition_id, _game_session.placement_service.tower_config),
 		tower.tier
 	))
 	_game_session.set_hint_message(BoardMessage.tower_action_hint())

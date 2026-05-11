@@ -201,3 +201,46 @@ func test_poison_tower_emits_pierce_projectile_with_poison_status() -> void:
 	assert_eq(result.projectile.effects.size(), 2)
 	assert_eq(result.projectile.effects[1].status_type, StatusEvent.StatusType.POISON)
 	assert_eq(tower.cooldown_remaining, 1.1)
+
+
+func test_non_enum_tower_reads_attack_stats_from_definition_id() -> void:
+	var tower_config := TowerConfig.new({
+		"storm": {
+			"id": "storm",
+			"type": "LIGHTNING",
+			"display_name": "Storm",
+			"description": "Chain lightning",
+			"build_cost": 44,
+			"weapon_type": DamageTypes.WeaponType.SPELL,
+			"attack_type": DamageTypes.AttackType.MAGIC,
+			"damage_school": DamageTypes.DamageSchool.LIGHTNING,
+			"attack_pattern": DamageTypes.AttackPattern.CHAIN,
+			"tiers": [
+				{
+					"damage": 9.0,
+					"range_cells": 2.8,
+					"attack_interval": 1.3,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.DAMAGE_PRIMARY,
+						},
+					],
+				},
+			],
+		},
+	})
+	var tower := GameTower.new("tower-a", -1, 1, Vector2i(0, 0), 0, "storm")
+	var enemy := Enemy.new("enemy-1", 1.0)
+	var follower := PathFollower.new([Vector2i(0, 0), Vector2i(1, 0)])
+	var service := TowerAttackService.new(tower_config)
+
+	var result := service.tick_tower(tower, 0.1, [enemy], follower)
+
+	assert_true(result.succeeded)
+	assert_not_null(result.projectile)
+	assert_eq(result.projectile.tower_definition_id, "storm")
+	assert_eq(result.projectile.tower_type, -1)
+	assert_eq(result.projectile.damage, 9.0)
+	assert_eq(result.projectile.attack_type, DamageTypes.AttackType.MAGIC)
+	assert_eq(result.projectile.damage_school, DamageTypes.DamageSchool.LIGHTNING)
+	assert_eq(tower.cooldown_remaining, 1.3)

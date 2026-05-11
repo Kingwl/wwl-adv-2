@@ -1,5 +1,8 @@
 extends GutTest
 
+const SAFE_BUILDABLE_CELL := Vector2i(1, 1)
+const SAFE_COMBAT_CELL := Vector2i(1, 2)
+
 
 func test_project_entry_scene_is_start_scene() -> void:
 	assert_eq(ProjectSettings.get_setting("application/run/main_scene"), "res://scenes/start.tscn")
@@ -217,7 +220,7 @@ func test_board_view_spawns_and_advances_wave_enemy() -> void:
 	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
 	board_view.get_session().wave_spawner.current_wave_state.spawn_elapsed_seconds = 0.0
 
-	board_view._process(0.8)
+	board_view._process(0.95)
 
 	assert_eq(board_view.get_session().combat_simulation.enemies.size(), 1)
 	assert_eq(board_view.get_session().get_visible_enemies().size(), 1)
@@ -227,7 +230,7 @@ func test_board_view_spawns_and_advances_wave_enemy() -> void:
 		CombatSimulation.DEFAULT_FIXED_STEP_SECONDS,
 		0.00001
 	)
-	assert_eq(wave_label.text, "Wave: 1/3")
+	assert_eq(wave_label.text, "Wave: 1/8")
 
 
 func test_board_view_layout_fits_mobile_landscape_viewport() -> void:
@@ -434,11 +437,11 @@ func test_board_view_shows_tower_placement_preview_on_hovered_buildable_cell() -
 		board_view.get_session().placement_service,
 		hover_cell,
 		true,
-		GameTower.Type.AREA
+		"area"
 	))
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(
 		GameTower.Type.AREA,
-		"",
+		"area",
 		board_view.get_visual_state(),
 		board_view.get_asset_catalog()
 	))
@@ -449,7 +452,7 @@ func test_board_view_shows_tower_placement_preview_on_hovered_buildable_cell() -
 		board_view.get_session().placement_service,
 		path_cell,
 		true,
-		GameTower.Type.AREA
+		"area"
 	))
 
 	board_view.get_session().wallet.gold = 0
@@ -458,7 +461,7 @@ func test_board_view_shows_tower_placement_preview_on_hovered_buildable_cell() -
 		board_view.get_session().placement_service,
 		hover_cell,
 		true,
-		GameTower.Type.AREA
+		"area"
 	))
 
 	board_view.get_session().wallet.gold = 100
@@ -468,14 +471,14 @@ func test_board_view_shows_tower_placement_preview_on_hovered_buildable_cell() -
 		board_view.get_session().placement_service,
 		hover_cell,
 		true,
-		GameTower.Type.AREA
+		"area"
 	))
 	assert_false(board_view.get_renderer().should_draw_tower_placement_preview(
 		board_view.get_session().board,
 		board_view.get_session().placement_service,
 		Vector2i(3, 2),
 		false,
-		GameTower.Type.AREA
+		"area"
 	))
 
 
@@ -493,7 +496,7 @@ func test_board_view_pause_menu_pauses_and_resumes_game() -> void:
 	board_view.start_game()
 	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
 	board_view.get_session().wave_spawner.current_wave_state.spawn_elapsed_seconds = 0.0
-	board_view._process(0.8)
+	board_view._process(0.95)
 	var enemy: Enemy = board_view.get_session().combat_simulation.enemies[0]
 	var paused_distance := enemy.path_distance
 
@@ -527,7 +530,7 @@ func test_board_view_restart_resets_game_and_starts_playing() -> void:
 	var overlay: Control = scene.get_node("Overlay/Screen") as Control
 	board_view.start_game()
 	board_view.select_tower_type(GameTower.Type.AREA)
-	assert_true(board_view.try_place_at_grid(Vector2i(0, 0)).succeeded)
+	assert_true(board_view.try_place_at_grid(SAFE_BUILDABLE_CELL).succeeded)
 	assert_eq(board_view.get_session().wallet.gold, 75)
 
 	board_view.restart_game()
@@ -536,7 +539,7 @@ func test_board_view_restart_resets_game_and_starts_playing() -> void:
 	assert_false(board_view.get_session().gameplay_paused)
 	assert_false(overlay.visible)
 	assert_eq(board_view.get_session().wallet.gold, 100)
-	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(0, 0)), "")
+	assert_eq(board_view.get_session().board.get_occupant_id(SAFE_BUILDABLE_CELL), "")
 	assert_eq(board_view.get_session().combat_simulation.enemies.size(), 0)
 	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.SINGLE_TARGET)
 
@@ -549,14 +552,14 @@ func test_board_view_places_tower_on_buildable_grid_position() -> void:
 
 	var board_view: BoardView = scene.get_node("BoardView") as BoardView
 	board_view.start_game()
-	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
+	var result: TowerPlacementResult = board_view.try_place_at_grid(SAFE_BUILDABLE_CELL)
 	var status_label: Label = scene.get_node("Hud/Status") as Label
 	var gold_label: Label = scene.get_node("Hud/Gold") as Label
 
 	assert_true(result.succeeded)
-	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(0, 0)), "tower-1")
+	assert_eq(board_view.get_session().board.get_occupant_id(SAFE_BUILDABLE_CELL), "tower-1")
 	assert_eq(board_view.get_session().wallet.gold, 75)
-	assert_eq(status_label.text, "Placed tower-1 at (0, 0) for 25 gold.")
+	assert_eq(status_label.text, "Placed tower-1 at (1, 1) for 25 gold.")
 	assert_eq(gold_label.text, "Gold: 75")
 	assert_eq(board_view.get_session().combat_simulation.towers.size(), 1)
 	assert_eq(board_view.get_session().placement_service.tower_registry.get_tower("tower-1").tower_type, GameTower.Type.SINGLE_TARGET)
@@ -575,7 +578,7 @@ func test_board_view_selects_area_tower_for_next_placement() -> void:
 	board_view.start_game()
 
 	area_button.pressed.emit()
-	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
+	var result: TowerPlacementResult = board_view.try_place_at_grid(SAFE_BUILDABLE_CELL)
 
 	assert_true(result.succeeded)
 	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.AREA)
@@ -599,7 +602,7 @@ func test_board_view_selects_slow_tower_for_next_placement() -> void:
 	board_view.start_game()
 
 	slow_button.pressed.emit()
-	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
+	var result: TowerPlacementResult = board_view.try_place_at_grid(SAFE_BUILDABLE_CELL)
 
 	assert_true(result.succeeded)
 	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.SLOW)
@@ -620,7 +623,7 @@ func test_board_view_selects_flame_tower_for_next_placement() -> void:
 	board_view.start_game()
 
 	flame_button.pressed.emit()
-	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
+	var result: TowerPlacementResult = board_view.try_place_at_grid(SAFE_BUILDABLE_CELL)
 
 	assert_true(result.succeeded)
 	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.FLAME)
@@ -645,7 +648,7 @@ func test_board_view_selects_poison_tower_for_next_placement() -> void:
 	board_view.start_game()
 
 	poison_button.pressed.emit()
-	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
+	var result: TowerPlacementResult = board_view.try_place_at_grid(SAFE_BUILDABLE_CELL)
 
 	assert_true(result.succeeded)
 	assert_eq(board_view.get_session().selected_tower_type, GameTower.Type.POISON)
@@ -721,8 +724,8 @@ func test_board_view_rejects_path_and_occupied_grid_positions() -> void:
 	assert_eq(path_result.failure_reason, TowerPlacementResult.FailureReason.PLACEMENT_FAILED)
 	assert_eq(path_result.placement_result.failure_reason, PlacementResult.FailureReason.NOT_BUILDABLE)
 
-	var first_result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
-	var second_result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 0))
+	var first_result: TowerPlacementResult = board_view.try_place_at_grid(SAFE_BUILDABLE_CELL)
+	var second_result: TowerPlacementResult = board_view.try_place_at_grid(SAFE_BUILDABLE_CELL)
 
 	assert_true(first_result.succeeded)
 	assert_false(second_result.succeeded)
@@ -746,19 +749,19 @@ func test_board_view_rejects_placement_when_gold_is_insufficient() -> void:
 	var poison_button: Button = scene.get_node("Hud/PoisonTowerButton") as Button
 	board_view.start_game()
 
-	assert_true(board_view.try_place_at_grid(Vector2i(0, 0)).succeeded)
-	assert_true(board_view.try_place_at_grid(Vector2i(1, 0)).succeeded)
-	assert_true(board_view.try_place_at_grid(Vector2i(2, 0)).succeeded)
-	assert_true(board_view.try_place_at_grid(Vector2i(3, 0)).succeeded)
+	assert_true(board_view.try_place_at_grid(Vector2i(1, 1)).succeeded)
+	assert_true(board_view.try_place_at_grid(Vector2i(2, 1)).succeeded)
+	assert_true(board_view.try_place_at_grid(Vector2i(3, 1)).succeeded)
+	assert_true(board_view.try_place_at_grid(Vector2i(4, 1)).succeeded)
 
-	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(4, 0))
+	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(5, 1))
 
 	assert_false(result.succeeded)
 	assert_eq(result.failure_reason, TowerPlacementResult.FailureReason.INSUFFICIENT_FUNDS)
 	assert_eq(board_view.get_session().wallet.gold, 0)
-	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(4, 0)), "")
+	assert_eq(board_view.get_session().board.get_occupant_id(Vector2i(5, 1)), "")
 	assert_eq(gold_label.text, "Gold: 0")
-	assert_eq(status_label.text, "Cannot place at (4, 0): Need 25 gold.")
+	assert_eq(status_label.text, "Cannot place at (5, 1): Need 25 gold.")
 	assert_true(single_button.disabled)
 	assert_true(area_button.disabled)
 	assert_true(slow_button.disabled)
@@ -971,7 +974,7 @@ func test_board_view_combat_simulation_rewards_gold_when_enemy_is_defeated() -> 
 	var gold_label: Label = scene.get_node("Hud/Gold") as Label
 	var status_label: Label = scene.get_node("Hud/Status") as Label
 	board_view.start_game()
-	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 2))
+	var result: TowerPlacementResult = board_view.try_place_at_grid(SAFE_COMBAT_CELL)
 	assert_true(result.succeeded)
 
 	board_view.get_session().combat_simulation.wave_spawner = null
@@ -997,7 +1000,7 @@ func test_board_view_spawns_attack_feedback_when_tower_attacks() -> void:
 
 	var board_view: BoardView = scene.get_node("BoardView") as BoardView
 	board_view.start_game()
-	var result: TowerPlacementResult = board_view.try_place_at_grid(Vector2i(0, 2))
+	var result: TowerPlacementResult = board_view.try_place_at_grid(SAFE_COMBAT_CELL)
 	assert_true(result.succeeded)
 
 	board_view.get_session().combat_simulation.wave_spawner = null
@@ -1015,8 +1018,8 @@ func test_board_view_spawns_attack_feedback_when_tower_attacks() -> void:
 		board_view.get_session().combat_simulation,
 		board_view.get_session().path_follower
 	)
-	assert_true(tower_rotation > 1.0)
-	assert_true(tower_rotation < 2.0)
+	assert_true(tower_rotation > 2.0)
+	assert_true(tower_rotation < 2.5)
 	assert_not_null(board_view.get_renderer().get_tower_sprite_texture(GameTower.Type.SINGLE_TARGET, result.tower_id, board_view.get_visual_state(), board_view.get_asset_catalog()))
 
 	board_view._process(0.2)

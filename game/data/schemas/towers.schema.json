@@ -37,7 +37,7 @@
           },
           "type": {
             "type": "string",
-            "enum": ["SINGLE_TARGET", "AREA", "SLOW", "FLAME", "POISON"]
+            "pattern": "^[A-Z0-9_]+$"
           },
           "display_name": {
             "type": "string",

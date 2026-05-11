@@ -80,6 +80,7 @@ func spawn_attack_feedback(tick_results: Array, grid_space_to_local: Callable, i
 				"duration": ATTACK_FEEDBACK_DURATION_SECONDS,
 				"color": impact_color.call(impact_event.tower_type),
 				"tower_type": impact_event.tower_type,
+				"tower_definition_id": impact_event.tower_definition_id,
 			})
 
 

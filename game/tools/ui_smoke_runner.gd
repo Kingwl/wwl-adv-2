@@ -16,6 +16,7 @@ const OVERLAY_CENTER_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 enum ReviewSpecKind {
 	MAIN,
 	START,
+	START_FULL,
 	TOWER_DECK,
 	BOARD_PREVIEW,
 	TOWER_ACTION,
@@ -114,6 +115,15 @@ func _run_viewport(viewport: Dictionary) -> Dictionary:
 		_check(result, start_button.size.x >= 120.0 and start_button.size.y >= 36.0, "start button clickable size")
 		_check_control_rect(result, start_button, viewport_size, "start button in viewport")
 		await _capture_current_review_artifacts(result, viewport_name, start_scene, "start screen", ReviewSpecKind.START)
+		await _capture_current_review_artifacts(
+			result,
+			viewport_name,
+			start_scene,
+			"start screen full viewport",
+			ReviewSpecKind.START_FULL,
+			"start-screen-full",
+			"Start screen full viewport"
+		)
 		start_button.emit_signal("pressed")
 
 	var main_loaded := await _wait_for_scene(MAIN_SCENE_PATH, 30)
@@ -267,7 +277,7 @@ func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: Bo
 		board_view.get_session().placement_service,
 		buildable_cell,
 		board_view.get_session().flow_state == BoardGameSession.FlowState.PLAYING and not board_view.get_session().gameplay_paused,
-		board_view.get_session().selected_tower_type
+		board_view.get_session().selected_tower_definition_id
 	), "tower placement preview visible on hovered buildable cell")
 	await _capture_current_review_artifacts(
 		result,
@@ -282,8 +292,8 @@ func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: Bo
 	_click_grid_cell(board_view, buildable_cell)
 	await _settle_frames(2)
 
-	var expected_gold := gold_before - board_view.get_session().placement_service.get_build_cost(
-		board_view.get_session().selected_tower_type
+	var expected_gold := gold_before - board_view.get_session().placement_service.get_build_cost_for_id(
+		board_view.get_session().selected_tower_definition_id
 	)
 	var placed_slot := board_view.get_session().board.get_slot(buildable_cell)
 	_check(result, not placed_slot.occupant_id.is_empty(), "tower placed through board input")
@@ -320,11 +330,11 @@ func _exercise_minimum_play(result: Dictionary, main_scene: Node, board_view: Bo
 
 	board_view.get_session().combat_simulation.accumulator_seconds = 0.0
 	board_view.get_session().wave_spawner.current_wave_state.spawn_elapsed_seconds = 0.0
-	board_view._process(0.8)
+	board_view._process(0.95)
 	await _settle_frames(2)
 	_check(result, board_view.get_session().combat_simulation.enemies.size() >= 1, "simulation spawns an enemy")
 	if wave_label != null:
-		_check(result, wave_label.text == "Wave: 1/3", "wave label remains readable")
+		_check(result, wave_label.text == "Wave: 1/8", "wave label remains readable")
 
 
 func _find_buildable_cell(board_view: BoardView) -> Vector2i:
@@ -573,6 +583,8 @@ func _review_specs_for_kind(
 	match spec_kind:
 		ReviewSpecKind.START:
 			return [_start_screen_review_spec(scene, image_size, spec_name, spec_title)]
+		ReviewSpecKind.START_FULL:
+			return [_start_screen_full_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.TOWER_DECK:
 			return [_tower_deck_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.BOARD_PREVIEW:
@@ -752,6 +764,31 @@ func _start_screen_review_spec(
 	}
 
 
+func _start_screen_full_review_spec(
+	start_scene: Node,
+	image_size: Vector2i,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> Dictionary:
+	return {
+		"name": spec_name if not spec_name.is_empty() else "start-screen-full",
+		"title": spec_title if not spec_title.is_empty() else "Start screen full viewport",
+		"rect": Rect2(Vector2.ZERO, Vector2(image_size)),
+		"scale": 1,
+		"controls": [
+			{"path": "MenuFrame", "kind": "frame"},
+			{"path": "CrestIcon", "kind": "icon"},
+			{"path": "Title", "kind": "control"},
+			{"path": "StartButton", "kind": "control"},
+		],
+		"groups": [
+			["MenuFrame", "CrestIcon", "Title", "StartButton"],
+			["Title"],
+			["StartButton"],
+		],
+	}
+
+
 func _overlay_review_spec(
 	main_scene: Node,
 	image_size: Vector2i,
@@ -795,8 +832,9 @@ func _write_review_crop(result: Dictionary, image: Image, viewport_name: String,
 	overlay.convert(Image.FORMAT_RGBA8)
 	_draw_review_overlay(overlay, Vector2(crop_rect.position), main_scene, spec)
 
-	var crop_scaled := _scaled_review_image(crop)
-	var overlay_scaled := _scaled_review_image(overlay)
+	var scale := int(spec.get("scale", REVIEW_CROP_SCALE))
+	var crop_scaled := _scaled_review_image(crop, scale)
+	var overlay_scaled := _scaled_review_image(overlay, scale)
 	var crop_path := _artifact_dir.path_join("%s-%s.png" % [viewport_name, spec["name"]])
 	var overlay_path := _artifact_dir.path_join("%s-%s-overlay.png" % [viewport_name, spec["name"]])
 	var crop_error := crop_scaled.save_png(crop_path)
@@ -932,11 +970,11 @@ func _image_crop_rect(rect: Rect2, image_size: Vector2i) -> Rect2i:
 	return Rect2i(Vector2i(x0, y0), Vector2i(x1 - x0, y1 - y0))
 
 
-func _scaled_review_image(image: Image) -> Image:
+func _scaled_review_image(image: Image, scale: int = REVIEW_CROP_SCALE) -> Image:
 	var scaled := image.duplicate()
 	scaled.resize(
-		maxi(1, scaled.get_width() * REVIEW_CROP_SCALE),
-		maxi(1, scaled.get_height() * REVIEW_CROP_SCALE),
+		maxi(1, scaled.get_width() * scale),
+		maxi(1, scaled.get_height() * scale),
 		Image.INTERPOLATE_NEAREST
 	)
 	return scaled

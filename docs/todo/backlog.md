@@ -2,12 +2,14 @@
 
 ## 现在
 
-- [ ] 继续将核心塔 roster、schema 和 asset check 从 `GameTower.Type` enum 推进到 tower id 数据契约，降低新增塔的跨模块改动面。
-- [ ] 评估确定性 road ribbon 渲染，用于未来可编辑路径地图。
+- [ ] 继续清理剩余 `GameTower.Type` 兼容边界，重点是场景/渲染 fallback、颜色和旧合成测试中的 tower-type match。
+- [ ] 评估是否将 Level 1 也切到 clean background + deterministic grid layer，和 Level 2-5 保持同一分层视觉语言。
 - [ ] 为塔、敌人、投射物和命中特效 sprite 添加 normal map，并接入 2D lighting。
 
 ## 下一步
 
+- [ ] 为 MVP Showcase 增加长局 gameplay smoke 或 headless balance summary，覆盖金币、生命、漏怪、胜负和最终波次。
+- [ ] 为 Level 2-5 增加可进入的关卡选择或 smoke 参数化入口，让新地图能被玩家路径和截图证据覆盖。
 - [ ] 塔成长模型确定后，设计随机召唤塔的概率。
 - [ ] 如果攻击应在造成伤害前有飞行时间，设计真实投射物实体。
 - [ ] 如果保留的敌人影响长期运行性能，添加敌人清理服务。
@@ -16,6 +18,28 @@
 
 ## UI 问题
 
+- [x] Level 1 grid audit 中部分可建造格视觉上落在水面、城墙边缘或装饰区域；已补 authored blocked cells，并通过逐格审计确认。
+- [x] Level 2 grid audit 中部分可建造格视觉上落在河道、屋顶、树丛或市场装饰区域；已补 authored blocked cells，并通过逐格审计确认。
+- [x] Level 3 grid audit 中部分可建造格视觉上落在城墙、攻城器械、围栏或训练场装饰区域；已补 authored blocked cells，并通过逐格审计确认。
+- [x] Level 4 grid audit 中部分可建造格视觉上落在城墙、屋顶、兵营物件或防御工事区域；已补 authored blocked cells，并通过逐格审计确认。
+- [x] Level 5 grid audit 中部分可建造格视觉上落在水渠、城堡入口、雕像或外墙装饰区域；已补 authored blocked cells，并通过逐格审计确认。
+- [x] Level 5 新生成背景首次接入后，旧 authored path/buildable cells 与图中 S 形道路和塔台错位；已按新背景重对齐 `level_005` 的路径、出口和 blocked cells。
+- [x] Level 5 deterministic grid layer 首版叠在旧 baked 道路背景上，且左侧可建造格与护城河/城墙视觉冲突；已改用 clean background-only 底图、左右出入口背景和重排后的 15 个可建造塔台。
+- [x] Level grid audit board crop 顶部仍露出一条被裁切的 HUD/status 文案，影响地图截图审查；已去掉 board crop 的顶部 HUD 外扩，只保留左右和底部审查余量。
+- [x] Level 2 composed grid layer preview 直接叠在 baked 城市背景上，半透明矩形塔台覆盖原有道路、水渠、花坛和建筑边缘，不能作为运行时 grid layer 直接接入；已生成 clean playfield 背景并接入 deterministic grid layer。
+- [x] Level 2 runtime buildable cells 缺少统一的塔台视觉标记，塔放在普通广场、花坛边和桥头铺装上时，玩家很难在放塔前判断哪些格子可建造；已用统一 buildable pad 层表达可建造区。
+- [x] Level 3 composed grid layer preview 直接叠在已有军营道具和围栏背景上，矩形塔台覆盖器械、木架和防御平台，视觉语义混杂；已生成 clean playfield 背景并接入 deterministic grid layer。
+- [x] Level 3 runtime buildable cells 和场景里的防御平台/器械道具距离过近，部分塔基看起来像压在装饰物或障碍物上；已将中场玩法区清空为确定性地面，由 blocker/pad 层表达规则。
+- [x] Level 4 composed grid layer preview 与 baked 背景中已有的方形塔台重复表达，形成两套不同透明度和材质的可建造语言；已生成 clean playfield 背景并接入 deterministic grid layer。
+- [x] Level 4 runtime buildable cells 一部分有明确石质塔台，一部分只是普通泥地或兵营空地，建造 affordance 不一致；已用统一 buildable pad 层表达可建造区。
+- [x] Level 5 右下大块空石板区域没有塔台但视觉上仍像可建造地面，需要为非可建造空地增加明确的景观/障碍/材质差异；已让 deterministic grid layer 为内部 blocked cells 画 blocker 标记。
+- [ ] Level 5 deterministic road 在左入口和右出口处仍像半透明铺色块直接切出画面，没有和城门、桥或边界景观自然衔接。
+- [x] Level 5 buildable pads 仍偏 UI overlay 感，尤其与同材质石板底面叠加时不够像地图原生平台；已改为更低饱和石质 tint 和更弱描边。
+- [x] Level 2 clean background 第一版重复铺出绿色斑块，4x4 采样下像规律污渍；已改为低对比、低频石板地面。
+- [x] Level 2-4 clean background 第二版逐格亮度变化形成规则棋盘感，容易被误读为玩法格；已改为连续小尺度石板纹理，不按玩法格对齐。
+- [x] 移动横屏顶部 status/hint 两行文字虽然未裁切，但在 4x4 审查和原图 crop 中都显得贴近上下装饰边框，整体过于拥挤；已为 compact inline 消息使用更矮行高、更小字号和更轻描边。
+- [x] 桌面和移动横屏右侧塔卡的中心装饰线、宝石和边框穿过或贴近塔名/描述/价格文字，4x4 审查下文字层级和卡框装饰混在一起；已将右侧竖排塔卡改为无内部装饰线的深色卡面，保留图标、选中态和外层 HUD 框。
+- [x] UI smoke 的 start-screen crop 在 desktop、mobile-landscape 和 square 下尺寸和内容一致，无法作为开始页响应式视觉证据；已补 `*-start-screen-full.png` 全视口 crop，并纳入 4x4 visual-review。
 - [x] 移动横屏五塔侧栏中，选中态塔卡的九宫格上下装饰压到 Poison 标题文字；已减小塔卡贴图上下边距，并让紧凑塔卡用普通框加金色文字表达选中。
 - [x] 移动横屏的塔放置预览 smoke crop 被裁成 2x2 像素，无法人工审查；已改用 canvas transform 计算棋盘局部 crop。
 - [x] 塔放置 hover 预览消失，棋盘上只剩 hover 边框；已恢复当前选中塔的半透明预览并加入 UI smoke crop 覆盖。
@@ -38,7 +62,13 @@
 ## 已完成
 
 - [x] 将 HUD status/hint 从自由文本解析改为 `BoardMessage` 结构化状态码/presentation model，以稳定紧凑视口文案。
+- [x] 实现 MVP 五关 wave set 数据契约和第一版 8 波节奏。
+- [x] 为 Level 2-5 生成并接入 Long Road、Kill Zone、Armored Column 和 MVP Showcase 四张 baked map style 与差异化路径。
+- [x] 添加地图 layout guide 生成工具，用关卡 JSON 先生成图像模型参考图，固定外圈不可建造区、内部可建造区和路径。
+- [x] 地图生成流水线改为支持分层输入：background reference 只约束固定一格外圈景观和中间矩形空地，grid-layer reference 约束格子、路径和内部阻挡，runtime map style 支持可选 `grid_layer` 和逐 slot overlay。
+- [x] 添加 deterministic grid layer compositor，并将 Level 5 接入 clean background-only 底图加关卡 JSON 合成 road/pad 覆盖层。
 - [x] 拆分 `TowerConfig` 的 UI/smoke presentation spec，并清理已被 `effects[]` 取代的 legacy tier/effect fallback。
+- [x] 将塔 roster 主键推进到 tower id：schema 和 `check-assets.py` 不再枚举固定五塔 type，核心配置、放置、攻击、投射物事件、HUD 塔卡和资产 catalog 支持按 tower id 读取非 `GameTower.Type` 塔定义。
 - [x] 创建文档目录。
 - [x] 记录 Godot 2D 塔防合成方向。
 - [x] 记录 TDD 和覆盖策略。

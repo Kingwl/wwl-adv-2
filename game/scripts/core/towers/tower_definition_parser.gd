@@ -28,12 +28,13 @@ static func definitions_from_dictionary(data: Dictionary) -> Dictionary:
 			continue
 
 		var tower_type := TowerConfig._tower_type_from_value(tower_data.get(TowerConfig.TYPE_KEY, ""))
-		definitions[tower_type] = tower_definition_from_data(tower_data, tower_type)
+		var tower_id := str(tower_data.get(TowerConfig.ID_KEY, TowerConfig._tower_type_id(tower_type)))
+		definitions[tower_id] = tower_definition_from_data(tower_data, tower_type, tower_id)
 
 	return definitions
 
 
-static func tower_definition_from_data(tower_data: Dictionary, tower_type: int) -> Dictionary:
+static func tower_definition_from_data(tower_data: Dictionary, tower_type: int, tower_id: String = "") -> Dictionary:
 	var projectile_data := tower_data.get(TowerConfig.PROJECTILE_KEY, {}) as Dictionary
 	var visuals_data := tower_data.get(TowerConfig.VISUALS_KEY, {}) as Dictionary
 	var tiers := []
@@ -43,7 +44,8 @@ static func tower_definition_from_data(tower_data: Dictionary, tower_type: int) 
 			tiers.append(tier_definition_from_data(tier_data))
 
 	return {
-		TowerConfig.ID_KEY: str(tower_data.get(TowerConfig.ID_KEY, TowerConfig._tower_type_id(tower_type))),
+		TowerConfig.ID_KEY: tower_id if not tower_id.is_empty() else str(tower_data.get(TowerConfig.ID_KEY, TowerConfig._tower_type_id(tower_type))),
+		TowerConfig.TYPE_KEY: tower_type,
 		TowerConfig.DISPLAY_NAME_KEY: str(tower_data.get(TowerConfig.DISPLAY_NAME_KEY, TowerConfig._tower_type_name(tower_type))),
 		TowerConfig.DESCRIPTION_KEY: str(tower_data.get(TowerConfig.DESCRIPTION_KEY, "")),
 		TowerConfig.BUILD_COST_KEY: int(tower_data.get(TowerConfig.BUILD_COST_KEY, TowerConfig.DEFAULT_BUILD_COST)),

@@ -6,7 +6,8 @@ const DEFAULT_MAX_LIFETIME_SECONDS := 3.0
 var id: String
 var tower_id: String
 var target_enemy_id: String
-var tower_type: GameTower.Type
+var tower_type: int
+var tower_definition_id: String
 var position: Vector2
 var speed_cells_per_second: float
 var hit_radius_cells: float
@@ -32,7 +33,7 @@ func _init(
 	new_id: String,
 	new_tower_id: String,
 	new_target_enemy_id: String,
-	new_tower_type: GameTower.Type,
+	new_tower_type: int,
 	new_position: Vector2,
 	new_speed_cells_per_second: float,
 	new_hit_radius_cells: float,
@@ -49,7 +50,8 @@ func _init(
 	new_status_tick_interval: float = 0.0,
 	new_status_tick_damage: float = 0.0,
 	new_status_stack_policy: int = -1,
-	new_effects: Array = []
+	new_effects: Array = [],
+	new_tower_definition_id: String = ""
 ) -> void:
 	assert(not new_id.is_empty(), "Projectile id is required.")
 	assert(not new_tower_id.is_empty(), "Tower id is required.")
@@ -70,6 +72,7 @@ func _init(
 	tower_id = new_tower_id
 	target_enemy_id = new_target_enemy_id
 	tower_type = new_tower_type
+	tower_definition_id = new_tower_definition_id if not new_tower_definition_id.is_empty() else TowerConfig._tower_type_id(new_tower_type)
 	position = new_position
 	speed_cells_per_second = new_speed_cells_per_second
 	hit_radius_cells = new_hit_radius_cells
@@ -97,7 +100,7 @@ func _init(
 	active = true
 
 
-static func _default_attack_type(projectile_tower_type: GameTower.Type) -> int:
+static func _default_attack_type(projectile_tower_type: int) -> int:
 	match projectile_tower_type:
 		GameTower.Type.AREA:
 			return DamageTypes.AttackType.SIEGE
@@ -109,7 +112,7 @@ static func _default_attack_type(projectile_tower_type: GameTower.Type) -> int:
 	return DamageTypes.AttackType.PIERCE
 
 
-static func _default_damage_school(projectile_tower_type: GameTower.Type) -> int:
+static func _default_damage_school(projectile_tower_type: int) -> int:
 	match projectile_tower_type:
 		GameTower.Type.SLOW:
 			return DamageTypes.DamageSchool.FROST
@@ -121,7 +124,7 @@ static func _default_damage_school(projectile_tower_type: GameTower.Type) -> int
 	return DamageTypes.DamageSchool.PHYSICAL
 
 
-static func _default_status_type(projectile_tower_type: GameTower.Type, projectile_slow_duration: float) -> int:
+static func _default_status_type(projectile_tower_type: int, projectile_slow_duration: float) -> int:
 	if projectile_tower_type == GameTower.Type.SLOW and projectile_slow_duration > 0.0:
 		return StatusEvent.StatusType.SLOW
 	return -1

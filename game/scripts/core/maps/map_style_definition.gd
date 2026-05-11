@@ -6,11 +6,14 @@ var display_name: String
 var tile_size: int
 var background_tile_path: String
 var background_normal_tile_path: String
+var grid_layer_path: String
 var normal_light_enabled: bool
 var normal_light_energy: float
 var normal_light_height: float
 var normal_light_rotation_degrees: float
 var normal_light_color: Color
+var buildable_tile_path: String
+var path_tile_path: String
 var blocked_tile_path: String
 var locked_tile_path: String
 
@@ -39,6 +42,7 @@ static func from_dictionary(data: Dictionary) -> MapStyleDefinition:
 	style.tile_size = int(data.get("tile_size", 128))
 	style.background_tile_path = data.get("background", "")
 	style.background_normal_tile_path = data.get("background_normal", "")
+	style.grid_layer_path = data.get("grid_layer", "")
 	style.normal_light_enabled = bool(lighting.get("normal_light_enabled", false))
 	style.normal_light_energy = maxf(0.0, float(lighting.get("normal_light_energy", 0.8)))
 	style.normal_light_height = maxf(0.0, float(lighting.get("normal_light_height", 0.35)))
@@ -46,6 +50,8 @@ static func from_dictionary(data: Dictionary) -> MapStyleDefinition:
 	style.normal_light_color = MapStyleDefinition._color_from_value(
 		lighting.get("normal_light_color", [1.0, 0.96, 0.88, 1.0])
 	)
+	style.buildable_tile_path = tiles.get("buildable", "")
+	style.path_tile_path = tiles.get("path", "")
 	style.blocked_tile_path = tiles.get("blocked", "")
 	style.locked_tile_path = tiles.get("locked", "")
 
@@ -58,6 +64,10 @@ func is_valid() -> bool:
 
 func get_slot_tile_path(slot_type: BoardSlot.Type) -> String:
 	match slot_type:
+		BoardSlot.Type.BUILDABLE:
+			return buildable_tile_path
+		BoardSlot.Type.PATH:
+			return path_tile_path
 		BoardSlot.Type.BLOCKED:
 			return blocked_tile_path
 		BoardSlot.Type.LOCKED:
@@ -72,7 +82,13 @@ func get_all_tile_paths() -> Array:
 		paths.append(background_tile_path)
 	if not background_normal_tile_path.is_empty():
 		paths.append(background_normal_tile_path)
+	if not grid_layer_path.is_empty():
+		paths.append(grid_layer_path)
 
+	if not buildable_tile_path.is_empty():
+		paths.append(buildable_tile_path)
+	if not path_tile_path.is_empty():
+		paths.append(path_tile_path)
 	if not blocked_tile_path.is_empty():
 		paths.append(blocked_tile_path)
 	if not locked_tile_path.is_empty():

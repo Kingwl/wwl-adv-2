@@ -8,12 +8,14 @@ static func validate_definitions(definitions: Dictionary) -> Array:
 		errors.append("At least one tower definition is required.")
 		return errors
 
-	for tower_type in definitions.keys():
-		var tower_name := TowerConfig._tower_type_name(tower_type)
-		var tower_definition := definitions[tower_type] as Dictionary
+	for tower_id in definitions.keys():
+		var tower_definition := definitions[tower_id] as Dictionary
+		var tower_name := str(tower_id)
 		if tower_definition == null:
 			errors.append("%s definition must be a dictionary." % tower_name)
 			continue
+		var tower_type := int(tower_definition.get(TowerConfig.TYPE_KEY, -1))
+		tower_name = TowerConfig._tower_type_name(tower_type) if tower_type >= 0 else str(tower_definition.get(TowerConfig.ID_KEY, tower_id))
 
 		_validate_tower_definition(errors, tower_name, tower_definition)
 		_validate_projectile_definition(errors, tower_name, tower_definition)

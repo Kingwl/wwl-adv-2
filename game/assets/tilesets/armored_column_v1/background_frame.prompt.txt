@@ -1,0 +1,6 @@
+Generated 2026-05-11 with image_gen.
+
+Pipeline: baked_raster, runtime_object_model none, collision_model project-native path_cells, engine_target project-native.
+
+Prompt summary:
+Clean HD hand-painted top-down 2D fantasy tower defense military district, 10 by 8 readable board composition at 1280x1024. Reinforced straight marching road with one strong bend for armored columns, blue-roofed barracks, parade grounds, supply carts, shield racks, clear rectangular build pads beside the road, no UI, no text, no grid overlay.

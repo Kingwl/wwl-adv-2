@@ -15,6 +15,12 @@
 - 修改合成、战斗、波次、经济、放置或目标选择规则前，先新增或更新 GUT 测试。
 - 场景测试只用于集成边界：节点、资源、UI 状态同步、场景流程和 Godot 特有连接。
 
+## 协作简称
+
+- “砍柴”：推进游戏开发进度。
+- “磨刀”：改进基础设施或重构，不包含 harness 部分。
+- “磨磨刀石”：改进 harness 部分。
+
 ## 文档路线
 
 | 需求 | 阅读或更新 |
@@ -48,9 +54,17 @@
 
 - 处理 `game/scripts/core/` 下的确定性玩法规则时，使用 `wwl-godot-core-rules`。
 - 处理场景、UI、布局、输入、截图或可玩性验证时，使用 `wwl-godot-scene-harness`。
+- 处理截图、smoke 截图、地图视觉审查、thumbnail、4x4/2x2 降采样 contact sheet、局部 crop 或 overlay 展开时，使用 `thumbnail-visual-review`。
 - 处理 CI、GitHub Pages、验证脚本、资产检查、文档门禁或项目 skill 维护时，使用 `wwl-godot-harness-maintainer`。
 
 如果当前 Codex runtime 不会自动加载仓库内 skills，把这些文件视为权威工作流参考，并可按需链接到 `$CODEX_HOME/skills` 供本机使用。
+
+## 截图和视觉审查
+
+- agent 生成新的截图、smoke 截图、地图截图或视觉审查图后，先生成或查看 4x4 像素合 1 的降采样图，用它判断整体构图、路径/格子语义、遮挡、错位和视觉层级。
+- 只有需要判断边缘、贴合、文字、sprite、碰撞对齐或局部美术细节时，再截取原图中对应位置的局部 crop 查看。
+- 地图审查优先使用 `game/tools/generate-map-visual-review.py --block-size 4` 生成 4x4 采样图；需要更细的整体采样时再补 `--block-size 2`。
+- 最终向用户展示截图时，优先给 4x4 采样图说明整体问题；如果讨论的是局部细节，再同时给原图对应 crop。
 
 ## 项目布局
 

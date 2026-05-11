@@ -7,6 +7,7 @@
     "id",
     "display_name",
     "style_id",
+    "wave_set_id",
     "grid",
     "path_cells",
     "blocked_cells",
@@ -24,6 +25,10 @@
       "minLength": 1
     },
     "style_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_\\-]+$"
+    },
+    "wave_set_id": {
       "type": "string",
       "pattern": "^[a-z0-9_\\-]+$"
     },

@@ -33,6 +33,7 @@ var tower_buttons := {}
 var tower_button_tower_types := {}
 var tower_button_order := []
 var compact_messages := false
+var tower_deck_is_bottom := false
 
 
 func bind(
@@ -186,6 +187,7 @@ func connect_signals(
 
 func apply_layout(metrics: BoardLayoutMetrics) -> void:
 	compact_messages = metrics.compact_messages
+	tower_deck_is_bottom = metrics.tower_deck_is_bottom
 	_set_control_rect(hud_frame_panel, metrics.hud_frame_rect)
 	_set_control_rect(tower_deck_panel, metrics.tower_deck_rect)
 	_set_control_rect(gold_icon_rect, metrics.gold_icon_rect)
@@ -203,10 +205,13 @@ func apply_layout(metrics: BoardLayoutMetrics) -> void:
 			button_rect = metrics.tower_button_rects[index] as Rect2
 		_set_control_rect(button, button_rect)
 		if button != null:
-			FrostRtsTheme.apply_tower_button(button, button_rect.size.y < BoardLayoutService.TOWER_CARD_HEIGHT)
+			if metrics.tower_deck_is_bottom:
+				FrostRtsTheme.apply_tower_button(button, button_rect.size.y < BoardLayoutService.TOWER_CARD_HEIGHT)
+			else:
+				FrostRtsTheme.apply_side_tower_button(button, button_rect.size.y < BoardLayoutService.TOWER_CARD_HEIGHT)
 	_set_control_rect(status_label, metrics.status_label_rect)
 	_set_control_rect(hint_label, metrics.hint_label_rect)
-	_set_message_label_alignment(HORIZONTAL_ALIGNMENT_CENTER)
+	_apply_message_label_layout(metrics)
 	_apply_overlay_layout(metrics)
 
 
@@ -262,14 +267,15 @@ func show_tower_action_menu(
 	_set_control_rect(tower_action_panel, menu_rect)
 	_layout_tower_action_menu(menu_rect.size)
 
+	var tower_definition_id := tower_config.get_tower_id_for_runtime_tower(tower)
 	var can_upgrade := tower_config.can_upgrade(tower)
-	var upgrade_cost := tower_config.get_upgrade_cost(tower.tower_type, tower.tier) if can_upgrade else 0
+	var upgrade_cost := tower_config.get_upgrade_cost_for_id(tower_definition_id, tower.tier) if can_upgrade else 0
 	var can_afford := wallet != null and wallet.gold >= upgrade_cost
 	var actions_enabled := flow_state == BoardGameSession.FlowState.PLAYING
 	if tower_action_title != null:
-		tower_action_title.text = "%s T%d" % [tower_type_label(tower.tower_type, tower_config), tower.tier]
+		tower_action_title.text = "%s T%d" % [tower_id_label(tower_definition_id, tower_config), tower.tier]
 	if tower_action_preview_label != null:
-		tower_action_preview_label.text = tower_config.get_upgrade_preview(tower.tower_type, tower.tier)
+		tower_action_preview_label.text = tower_config.get_upgrade_preview_for_id(tower_definition_id, tower.tier)
 	if tower_action_upgrade_button != null:
 		tower_action_upgrade_button.text = "Upgrade %dg" % upgrade_cost if can_upgrade else "Max tier"
 		tower_action_upgrade_button.disabled = not actions_enabled or not can_upgrade or not can_afford
@@ -298,7 +304,7 @@ func sync_message_labels(status_message: BoardMessage, hint_message: BoardMessag
 
 
 func selected_tower_hint_message(
-	selected_tower_type: GameTower.Type,
+	selected_tower_type: int,
 	economy_config: EconomyConfig,
 	tower_config: TowerConfig = null
 ) -> BoardMessage:
@@ -308,6 +314,19 @@ func selected_tower_hint_message(
 	if tower_config != null and economy_config != null:
 		cost = tower_config.get_build_cost(selected_tower_type, economy_config.basic_tower_cost)
 	return BoardMessage.selected_tower_hint(tower_type_label(selected_tower_type, tower_config), cost)
+
+
+func selected_tower_hint_message_for_id(
+	selected_tower_id: String,
+	economy_config: EconomyConfig,
+	tower_config: TowerConfig = null
+) -> BoardMessage:
+	var cost := 0
+	if economy_config != null:
+		cost = economy_config.basic_tower_cost
+	if tower_config != null and economy_config != null and tower_config.has_tower_id(selected_tower_id):
+		cost = tower_config.get_build_cost_for_id(selected_tower_id, economy_config.basic_tower_cost)
+	return BoardMessage.selected_tower_hint(tower_id_label(selected_tower_id, tower_config), cost)
 
 
 func sync_tower_button_state(
@@ -323,7 +342,7 @@ func sync_tower_button_state(
 		_set_tower_button_text(
 			tower_buttons.get(tower_id, null) as Button,
 			String(tower_id),
-			tower_type as GameTower.Type,
+			tower_type,
 			flow_state,
 			selected_tower_id,
 			wallet,
@@ -363,7 +382,7 @@ func _message_text(message: BoardMessage) -> String:
 	return message.display_text(compact_messages)
 
 
-func tower_type_label(tower_type: GameTower.Type, tower_config: TowerConfig = null) -> String:
+func tower_type_label(tower_type: int, tower_config: TowerConfig = null) -> String:
 	if tower_config != null:
 		return tower_config.get_display_name(tower_type)
 
@@ -380,7 +399,13 @@ func tower_type_label(tower_type: GameTower.Type, tower_config: TowerConfig = nu
 	return "Single"
 
 
-func tower_type_description(tower_type: GameTower.Type, tower_config: TowerConfig = null) -> String:
+func tower_id_label(tower_id: String, tower_config: TowerConfig = null) -> String:
+	if tower_config != null and tower_config.has_tower_id(tower_id):
+		return tower_config.get_display_name_for_id(tower_id)
+	return TowerConfig._tower_id_label(tower_id)
+
+
+func tower_type_description(tower_type: int, tower_config: TowerConfig = null) -> String:
 	if tower_config != null:
 		return tower_config.get_description(tower_type)
 
@@ -400,7 +425,7 @@ func tower_type_description(tower_type: GameTower.Type, tower_config: TowerConfi
 func _set_tower_button_text(
 	button: Button,
 	tower_id: String,
-	tower_type: GameTower.Type,
+	tower_type: int,
 	flow_state: int,
 	selected_tower_id: String,
 	wallet: Wallet,
@@ -414,13 +439,13 @@ func _set_tower_button_text(
 	var cost := 0
 	if economy_config != null:
 		cost = economy_config.basic_tower_cost
-	if tower_config != null and economy_config != null:
-		cost = tower_config.get_build_cost(tower_type, economy_config.basic_tower_cost)
+	if tower_config != null and economy_config != null and tower_config.has_tower_id(tower_id):
+		cost = tower_config.get_build_cost_for_id(tower_id, economy_config.basic_tower_cost)
 
 	var can_afford := wallet != null and wallet.gold >= cost
 	var is_selected := selected_tower_id == tower_id
-	var label := tower_type_label(tower_type, tower_config)
-	var description := tower_type_description(tower_type, tower_config)
+	var label := tower_id_label(tower_id, tower_config)
+	var description := tower_config.get_description_for_id(tower_id) if tower_config != null and tower_config.has_tower_id(tower_id) else tower_type_description(tower_type, tower_config)
 	button.disabled = flow_state != BoardGameSession.FlowState.PLAYING or not can_afford
 	button.tooltip_text = "%s tower: %s, %d gold" % [label, description, cost]
 	button.button_pressed = is_selected
@@ -446,10 +471,17 @@ func _connect_button(button: Button, callback: Callable) -> void:
 		button.pressed.connect(callback)
 
 
-func _set_message_label_alignment(alignment: HorizontalAlignment) -> void:
+func _apply_message_label_layout(metrics: BoardLayoutMetrics) -> void:
+	var font_size := 12 if metrics.compact_messages else 14
+	var outline_size := 2 if metrics.compact_messages else 3
 	for label in [status_label, hint_label]:
-		if label != null:
-			label.horizontal_alignment = alignment
+		if label == null:
+			continue
+
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", font_size)
+		label.add_theme_constant_override("outline_size", outline_size)
 
 
 func _ensure_hud_panel(parent: Node, node_name: String) -> Panel:

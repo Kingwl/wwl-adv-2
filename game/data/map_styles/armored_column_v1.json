@@ -1,0 +1,20 @@
+{
+  "id": "armored_column_v1",
+  "display_name": "Armored Column V1",
+  "tile_size": 128,
+  "theme_notes": "Generated military district exterior for level_004 with deterministic clean playfield and composed grid layer. The background supplies the outer parade-ground frame; grid_layer_composed.png supplies gameplay-critical road, buildable pads, and blocker geometry from level JSON.",
+  "background": "res://assets/tilesets/armored_column_v1/background_frame_clean.png",
+  "background_normal": "",
+  "grid_layer": "res://assets/tilesets/armored_column_v1/grid_layer_composed.png",
+  "lighting": {
+    "normal_light_enabled": false,
+    "normal_light_energy": 0.0,
+    "normal_light_height": 0.0,
+    "normal_light_rotation_degrees": -42.0,
+    "normal_light_color": [1.0, 0.96, 0.88, 1.0]
+  },
+  "tiles": {
+    "blocked": "",
+    "locked": ""
+  }
+}

@@ -2,6 +2,7 @@ class_name WaveConfig
 extends RefCounted
 
 const DEFAULT_WAVE_DEFINITION_PATH := "res://data/waves/waves.json"
+const WAVE_DEFINITION_PATH_TEMPLATE := "res://data/waves/%s.json"
 
 const WAVES_KEY := "waves"
 const ID_KEY := "id"
@@ -9,6 +10,22 @@ const ENEMY_TYPE_KEY := "enemy_type"
 const ENEMY_COUNT_KEY := "enemy_count"
 const SPAWN_INTERVAL_SECONDS_KEY := "spawn_interval_seconds"
 const CLEAR_REWARD_GOLD_KEY := "clear_reward_gold"
+
+
+static func wave_set_path(wave_set_id: String) -> String:
+	if wave_set_id.is_empty():
+		return DEFAULT_WAVE_DEFINITION_PATH
+	return WAVE_DEFINITION_PATH_TEMPLATE % wave_set_id
+
+
+static func load_definitions_for_wave_set_id(wave_set_id: String, enemy_catalog: EnemyCatalog = null) -> Array:
+	return load_definitions_from_path(wave_set_path(wave_set_id), enemy_catalog)
+
+
+static func load_definitions_for_level(level_definition: LevelDefinition, enemy_catalog: EnemyCatalog = null) -> Array:
+	if level_definition == null:
+		return load_definitions_from_path(DEFAULT_WAVE_DEFINITION_PATH, enemy_catalog)
+	return load_definitions_for_wave_set_id(level_definition.wave_set_id, enemy_catalog)
 
 
 static func load_definitions_from_path(resource_path: String, enemy_catalog: EnemyCatalog = null) -> Array:

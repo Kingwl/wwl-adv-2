@@ -1,0 +1,12 @@
+Generated 2026-05-11 with image_gen.
+
+Pipeline: baked_raster preview from the layered-map direction; runtime_object_model none; collision_model project-native path_cells; engine_target project-native.
+
+Source image:
+/Users/bytedance/.codex/generated_images/019e1512-294c-75d0-8d34-ddbf0db93b47/ig_08c13c7eda0e4aed016a01aa0ca9a4819199e2ef0803a8969b.png
+
+Processing:
+Resized to 1280x1024 to match the 10x8 board at 128px cells. Original generated image was left intact.
+
+Prompt summary:
+Clean hand-painted HD top-down fantasy tower-defense map preview for Level 005 / MVP Showcase. One-cell outer non-buildable fortified city scenery ring with canals, walls, towers, rooftops, shrubs, and border dressing. Middle gameplay plaza with a continuous pale stone S-curve enemy road and clear mossy stone tower pads. No UI, no text, no labels, no characters, no towers, no enemies, no extra roads.

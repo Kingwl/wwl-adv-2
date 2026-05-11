@@ -27,7 +27,8 @@ func draw(
 	board_origin: Vector2,
 	cell_size: float,
 	hover_grid_position: Vector2i,
-	selected_tower_type: GameTower.Type,
+	selected_tower_type: int,
+	selected_tower_definition_id: String,
 	placement_preview_enabled: bool,
 	selected_tower_grid_position: Vector2i,
 	last_placement_result: PlacementResult
@@ -57,6 +58,7 @@ func draw(
 				slot,
 				hover_grid_position,
 				selected_tower_type,
+				selected_tower_definition_id,
 				placement_preview_enabled,
 				selected_tower_grid_position,
 				last_placement_result
@@ -78,13 +80,15 @@ func enemy_local_position(path_follower: PathFollower, board_origin: Vector2, ce
 
 
 func get_tower_sprite_texture(
-	tower_type: GameTower.Type,
-	_tower_id: String,
+	tower_type: int,
+	tower_id: String,
 	_visual_state: BoardVisualState,
 	asset_catalog: BoardAssetCatalog
 ) -> Texture2D:
 	if asset_catalog == null:
 		return null
+	if not tower_id.is_empty() and asset_catalog.tower_config != null and asset_catalog.tower_config.has_tower_id(tower_id):
+		return asset_catalog.get_tower_texture_for_id(tower_id)
 
 	return asset_catalog.get_tower_texture(tower_type)
 
@@ -94,7 +98,7 @@ func should_draw_tower_placement_preview(
 	placement_service: TowerPlacementService,
 	hover_grid_position: Vector2i,
 	placement_preview_enabled: bool,
-	selected_tower_type: GameTower.Type
+	selected_tower_definition_id: String
 ) -> bool:
 	if not placement_preview_enabled or board == null or placement_service == null:
 		return false
@@ -102,7 +106,7 @@ func should_draw_tower_placement_preview(
 		return false
 	if not board.is_in_bounds(hover_grid_position):
 		return false
-	if not placement_service.wallet.can_spend(placement_service.get_build_cost(selected_tower_type)):
+	if not placement_service.wallet.can_spend(placement_service.get_build_cost_for_id(selected_tower_definition_id)):
 		return false
 
 	return board.can_place_tower(hover_grid_position, "__preview__").succeeded
@@ -124,9 +128,11 @@ func get_enemy_sprite_texture(enemy: Enemy, visual_state: BoardVisualState, asse
 	return asset_catalog.basic_enemy_texture
 
 
-func get_attack_feedback_texture(tower_type: GameTower.Type, progress: float, asset_catalog: BoardAssetCatalog) -> Texture2D:
+func get_attack_feedback_texture(tower_type: int, progress: float, asset_catalog: BoardAssetCatalog, tower_definition_id: String = "") -> Texture2D:
 	if asset_catalog == null:
 		return null
+	if not tower_definition_id.is_empty():
+		return _texture_for_progress(asset_catalog.get_impact_textures_for_id(tower_definition_id), progress)
 
 	return _texture_for_progress(asset_catalog.get_impact_textures(tower_type), progress)
 
@@ -136,7 +142,7 @@ func get_projectile_texture(projectile: CombatProjectile, asset_catalog: BoardAs
 		return null
 
 	var progress := fmod(projectile.elapsed_seconds / 0.24, 1.0)
-	return _texture_for_progress(asset_catalog.get_projectile_textures(projectile.tower_type), progress)
+	return _texture_for_progress(asset_catalog.get_projectile_textures_for_id(projectile.tower_definition_id), progress)
 
 
 func projectile_draw_rotation(projectile: CombatProjectile, path_follower: PathFollower, combat_simulation: CombatSimulation) -> float:
@@ -191,7 +197,7 @@ func enemy_radius(cell_size: float) -> float:
 	return cell_size * ENEMY_RADIUS_FACTOR
 
 
-func impact_feedback_color(tower_type: GameTower.Type) -> Color:
+func impact_feedback_color(tower_type: int) -> Color:
 	match tower_type:
 		GameTower.Type.AREA:
 			return Color(1.0, 0.48, 0.18, 1.0)
@@ -277,7 +283,8 @@ func _draw_slot(
 	grid_position: Vector2i,
 	slot: BoardSlot,
 	hover_grid_position: Vector2i,
-	selected_tower_type: GameTower.Type,
+	selected_tower_type: int,
+	selected_tower_definition_id: String,
 	placement_preview_enabled: bool,
 	selected_tower_grid_position: Vector2i,
 	last_placement_result: PlacementResult
@@ -298,10 +305,10 @@ func _draw_slot(
 			placement_service,
 			hover_grid_position,
 			placement_preview_enabled,
-			selected_tower_type
+			selected_tower_definition_id
 		)
 	):
-		_draw_tower_placement_preview(canvas, asset_catalog, cell_size, selected_tower_type, inner_rect)
+		_draw_tower_placement_preview(canvas, asset_catalog, cell_size, selected_tower_type, selected_tower_definition_id, inner_rect)
 
 	if grid_position == selected_tower_grid_position:
 		canvas.draw_rect(inner_rect.grow(-2), Color(1.0, 0.78, 0.22, 1.0), false, 4.0)
@@ -328,11 +335,14 @@ func _draw_tower_sprite(
 	slot_rect: Rect2
 ) -> void:
 	var tower := get_tower_by_id(placement_service, combat_simulation, tower_id)
-	var tower_type := GameTower.Type.SINGLE_TARGET
+	var tower_type: int = GameTower.Type.SINGLE_TARGET
+	var tower_definition_id := ""
 	if tower != null:
 		tower_type = tower.tower_type
+		if placement_service != null and placement_service.tower_config != null:
+			tower_definition_id = placement_service.tower_config.get_tower_id_for_runtime_tower(tower)
 
-	var texture := get_tower_sprite_texture(tower_type, tower_id, visual_state, asset_catalog)
+	var texture := get_tower_sprite_texture(tower_type, tower_definition_id, visual_state, asset_catalog)
 	if texture != null:
 		canvas.draw_circle(slot_rect.get_center() + Vector2(0.0, cell_size * 0.16), cell_size * 0.25, Color(0.04, 0.035, 0.03, 0.45))
 		_draw_oriented_sprite_texture(
@@ -354,12 +364,13 @@ func _draw_tower_placement_preview(
 	canvas: CanvasItem,
 	asset_catalog: BoardAssetCatalog,
 	cell_size: float,
-	tower_type: GameTower.Type,
+	tower_type: int,
+	tower_definition_id: String,
 	slot_rect: Rect2
 ) -> void:
 	var center := slot_rect.get_center()
 	var preview_color := Color(1.0, 1.0, 1.0, TOWER_PLACEMENT_PREVIEW_ALPHA)
-	var texture := get_tower_sprite_texture(tower_type, "", null, asset_catalog)
+	var texture := get_tower_sprite_texture(tower_type, tower_definition_id, null, asset_catalog)
 	canvas.draw_circle(center + Vector2(0.0, cell_size * 0.16), cell_size * 0.25, Color(0.04, 0.035, 0.03, 0.28))
 	if texture != null:
 		_draw_oriented_sprite_texture(
@@ -506,8 +517,9 @@ func _draw_attack_feedbacks(canvas: CanvasItem, visual_state: BoardVisualState, 
 		var duration: float = feedback.get("duration", BoardVisualState.ATTACK_FEEDBACK_DURATION_SECONDS)
 		var progress := clampf(elapsed / duration, 0.0, 0.9999)
 		var center: Vector2 = feedback.get("position", Vector2.ZERO)
-		var tower_type: GameTower.Type = feedback.get("tower_type", GameTower.Type.SINGLE_TARGET)
-		var texture := get_attack_feedback_texture(tower_type, progress, asset_catalog)
+		var tower_type: int = feedback.get("tower_type", GameTower.Type.SINGLE_TARGET)
+		var tower_definition_id := String(feedback.get("tower_definition_id", ""))
+		var texture := get_attack_feedback_texture(tower_type, progress, asset_catalog, tower_definition_id)
 		var alpha := 1.0 - clampf(progress, 0.0, 1.0)
 		if texture != null:
 			_draw_sprite_texture(canvas, texture, center, cell_size * IMPACT_SPRITE_SIZE_FACTOR, Color(1.0, 1.0, 1.0, alpha))
@@ -548,7 +560,7 @@ func _select_current_target(tower: GameTower, combat_simulation: CombatSimulatio
 	if tower_config == null or targeting_service == null:
 		return null
 
-	var stats := tower_config.get_stats(tower.tower_type, tower.tier)
+	var stats := tower_config.get_stats_for_id(tower_config.get_tower_id_for_runtime_tower(tower), tower.tier)
 	return targeting_service.select_target(tower, stats, combat_simulation.enemies, path_follower)
 
 
@@ -620,7 +632,7 @@ func _tower_fill_color(placement_service: TowerPlacementService, combat_simulati
 	return _tower_type_fill_color(tower.tower_type)
 
 
-func _tower_type_fill_color(tower_type: GameTower.Type) -> Color:
+func _tower_type_fill_color(tower_type: int) -> Color:
 	match tower_type:
 		GameTower.Type.AREA:
 			return Color(1.0, 0.52, 0.24, 1.0)

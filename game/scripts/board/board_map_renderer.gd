@@ -38,6 +38,7 @@ func draw_board(
 		Vector2(float(board.width) * cell_size, float(board.height) * cell_size)
 	)
 	_draw_tile(canvas, board_rect, _background_texture_for_style(style))
+	_draw_tile(canvas, board_rect, _texture_for_path(style.grid_layer_path))
 
 	for y in range(board.height):
 		for x in range(board.width):

@@ -24,7 +24,8 @@ func tick_tower(tower: GameTower, delta_seconds: float, enemies: Array, path_fol
 			"Tower is cooling down."
 		)
 
-	var stats := tower_config.get_stats(tower.tower_type, tower.tier)
+	var tower_definition_id := tower_config.get_tower_id_for_runtime_tower(tower)
+	var stats := tower_config.get_stats_for_id(tower_definition_id, tower.tier)
 	var target := targeting_service.select_target(tower, stats, enemies, path_follower)
 	if target == null:
 		return AttackResult.failure(
@@ -33,13 +34,13 @@ func tick_tower(tower: GameTower, delta_seconds: float, enemies: Array, path_fol
 			"No target in range."
 		)
 
-	var projectile := _build_projectile(tower, stats, target)
+	var projectile := _build_projectile(tower, stats, target, tower_definition_id)
 	tower.cooldown_remaining = stats.attack_interval
 
 	return AttackResult.success(tower.id, target.id, projectile)
 
 
-func _build_projectile(tower: GameTower, stats: TowerStats, target: Enemy) -> CombatProjectile:
+func _build_projectile(tower: GameTower, stats: TowerStats, target: Enemy, tower_definition_id: String) -> CombatProjectile:
 	var projectile_id := "%s-projectile-%d" % [tower.id, _next_projectile_sequence]
 	_next_projectile_sequence += 1
 
@@ -64,5 +65,6 @@ func _build_projectile(tower: GameTower, stats: TowerStats, target: Enemy) -> Co
 		stats.status_tick_interval,
 		stats.status_tick_damage,
 		stats.status_stack_policy,
-		stats.effects
+		stats.effects,
+		tower_definition_id
 	)

@@ -47,21 +47,27 @@ var slow_impact_textures: Array = []
 var flame_impact_textures: Array = []
 var poison_projectile_textures: Array = []
 var poison_impact_textures: Array = []
+var tower_textures_by_id := {}
+var projectile_textures_by_id := {}
+var impact_textures_by_id := {}
 var tower_textures_by_type := {}
 var projectile_textures_by_type := {}
 var impact_textures_by_type := {}
 
 
-func load_all() -> void:
+func load_all(level_definition_path: String = "") -> void:
 	if level_definition == null:
-		load_level_definition()
+		load_level_definition(level_definition_path)
 
 	load_map_style_assets()
 	load_sprite_assets()
 
 
-func load_level_definition() -> void:
-	level_definition = LevelDefinition.load_from_path(DEFAULT_LEVEL_DEFINITION_PATH)
+func load_level_definition(level_definition_path: String = "") -> void:
+	var resolved_path := level_definition_path
+	if resolved_path.is_empty():
+		resolved_path = DEFAULT_LEVEL_DEFINITION_PATH
+	level_definition = LevelDefinition.load_from_path(resolved_path)
 
 
 func load_map_style_assets() -> void:
@@ -95,6 +101,10 @@ func get_tower_texture(tower_type: int) -> Texture2D:
 	return tower_textures_by_type.get(tower_type, single_tower_texture) as Texture2D
 
 
+func get_tower_texture_for_id(tower_id: String) -> Texture2D:
+	return tower_textures_by_id.get(tower_id, single_tower_texture) as Texture2D
+
+
 func get_projectile_textures(tower_type: int) -> Array:
 	var textures := projectile_textures_by_type.get(tower_type, []) as Array
 	if textures != null and not textures.is_empty():
@@ -102,8 +112,22 @@ func get_projectile_textures(tower_type: int) -> Array:
 	return get_impact_textures(tower_type)
 
 
+func get_projectile_textures_for_id(tower_id: String) -> Array:
+	var textures := projectile_textures_by_id.get(tower_id, []) as Array
+	if textures != null and not textures.is_empty():
+		return textures
+	return get_impact_textures_for_id(tower_id)
+
+
 func get_impact_textures(tower_type: int) -> Array:
 	var textures := impact_textures_by_type.get(tower_type, []) as Array
+	if textures != null:
+		return textures
+	return []
+
+
+func get_impact_textures_for_id(tower_id: String) -> Array:
+	var textures := impact_textures_by_id.get(tower_id, []) as Array
 	if textures != null:
 		return textures
 	return []
@@ -133,18 +157,29 @@ func _load_tower_visual_assets() -> void:
 	tower_textures_by_type = {}
 	projectile_textures_by_type = {}
 	impact_textures_by_type = {}
-	for tower_type in tower_config.get_tower_types():
-		var tower_texture := _load_texture(tower_config.get_tower_texture_path(tower_type))
+	tower_textures_by_id = {}
+	projectile_textures_by_id = {}
+	impact_textures_by_id = {}
+	for candidate_id in tower_config.get_tower_ids():
+		var tower_id := String(candidate_id)
+		var tower_type := tower_config.get_tower_type_for_id(tower_id)
+		var tower_texture := _load_texture(tower_config.get_tower_texture_path_for_id(tower_id))
 		if tower_texture != null:
-			tower_textures_by_type[tower_type] = tower_texture
+			tower_textures_by_id[tower_id] = tower_texture
+			if tower_type >= 0:
+				tower_textures_by_type[tower_type] = tower_texture
 
-		var projectile_textures := _load_texture_sequence(tower_config.get_projectile_texture_paths(tower_type))
+		var projectile_textures := _load_texture_sequence(tower_config.get_projectile_texture_paths_for_id(tower_id))
 		if not projectile_textures.is_empty():
-			projectile_textures_by_type[tower_type] = projectile_textures
+			projectile_textures_by_id[tower_id] = projectile_textures
+			if tower_type >= 0:
+				projectile_textures_by_type[tower_type] = projectile_textures
 
-		var impact_textures := _load_texture_sequence(tower_config.get_impact_texture_paths(tower_type))
+		var impact_textures := _load_texture_sequence(tower_config.get_impact_texture_paths_for_id(tower_id))
 		if not impact_textures.is_empty():
-			impact_textures_by_type[tower_type] = impact_textures
+			impact_textures_by_id[tower_id] = impact_textures
+			if tower_type >= 0:
+				impact_textures_by_type[tower_type] = impact_textures
 
 	_sync_compatibility_texture_fields()
 

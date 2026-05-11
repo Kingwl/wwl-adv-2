@@ -6,7 +6,8 @@ var wallet: Wallet
 var config: EconomyConfig
 var tower_config: TowerConfig
 var tower_registry: TowerRegistry
-var basic_tower_type := GameTower.Type.SINGLE_TARGET
+var basic_tower_type: int = GameTower.Type.SINGLE_TARGET
+var basic_tower_id := ""
 
 var _id_factory: Callable
 var _next_tower_index := 1
@@ -30,12 +31,14 @@ func _init(
 	tower_config = new_tower_config if new_tower_config != null else TowerConfig.new()
 	tower_registry = new_tower_registry if new_tower_registry != null else TowerRegistry.new()
 	basic_tower_type = new_basic_tower_type
+	basic_tower_id = _tower_id_for_type(basic_tower_type)
 	_id_factory = id_factory
 
 
 func try_place_basic_tower(position: Vector2i) -> TowerPlacementResult:
 	var tower_id := _next_tower_id()
-	var build_cost := get_build_cost(basic_tower_type)
+	var tower_definition_id := _selected_tower_definition_id()
+	var build_cost := get_build_cost_for_id(tower_definition_id)
 	var placement_check := board.can_place_tower(position, tower_id)
 
 	if not placement_check.succeeded:
@@ -71,7 +74,14 @@ func try_place_basic_tower(position: Vector2i) -> TowerPlacementResult:
 		wallet.earn(build_cost, TransactionRecord.Reason.REFUND, tower_id)
 		return TowerPlacementResult.placement_failure(placement_result, tower_id, position)
 
-	tower_registry.add_tower(GameTower.new(tower_id, basic_tower_type, 1, position, build_cost))
+	tower_registry.add_tower(GameTower.new(
+		tower_id,
+		tower_config.get_tower_type_for_id(tower_definition_id),
+		1,
+		position,
+		build_cost,
+		tower_definition_id
+	))
 	_advance_tower_id()
 	return TowerPlacementResult.success(placement_result, spend_result, tower_id, position)
 
@@ -84,7 +94,8 @@ func try_upgrade_tower(tower_id: String) -> TowerUpgradeResult:
 	if not tower_config.can_upgrade(tower):
 		return TowerUpgradeResult.max_tier(tower)
 
-	var upgrade_cost := tower_config.get_upgrade_cost(tower.tower_type, tower.tier)
+	var tower_definition_id := tower_config.get_tower_id_for_runtime_tower(tower)
+	var upgrade_cost := tower_config.get_upgrade_cost_for_id(tower_definition_id, tower.tier)
 	var next_tier := tower.tier + 1
 	if not wallet.can_spend(upgrade_cost):
 		var insufficient_result := TransactionResult.failure(
@@ -116,7 +127,7 @@ func try_upgrade_tower(tower_id: String) -> TowerUpgradeResult:
 	var previous_tier := tower.tier
 	tower.tier = next_tier
 	tower.invested_gold += upgrade_cost
-	var next_stats := tower_config.get_stats(tower.tower_type, tower.tier)
+	var next_stats := tower_config.get_stats_for_id(tower_definition_id, tower.tier)
 	tower.cooldown_remaining = minf(tower.cooldown_remaining, next_stats.attack_interval)
 	return TowerUpgradeResult.success(tower, previous_tier, spend_result)
 
@@ -152,11 +163,27 @@ func removal_refund_amount(tower: GameTower) -> int:
 	return floori(float(tower.invested_gold) * config.tower_removal_refund_ratio)
 
 
-func get_build_cost(tower_type: GameTower.Type) -> int:
+func get_build_cost(tower_type: int) -> int:
 	if tower_config == null:
 		return config.basic_tower_cost
 
 	return tower_config.get_build_cost(tower_type, config.basic_tower_cost)
+
+
+func get_build_cost_for_id(tower_id: String) -> int:
+	if tower_config == null or tower_id.is_empty():
+		return config.basic_tower_cost
+
+	return tower_config.get_build_cost_for_id(tower_id, config.basic_tower_cost)
+
+
+func select_basic_tower_id(tower_id: String) -> bool:
+	if tower_config == null or not tower_config.has_tower_id(tower_id):
+		return false
+
+	basic_tower_id = tower_id
+	basic_tower_type = tower_config.get_tower_type_for_id(tower_id)
+	return true
 
 
 func _next_tower_id() -> String:
@@ -188,3 +215,19 @@ func _check_remove_tower_at(position: Vector2i) -> RemovalResult:
 		)
 
 	return RemovalResult.success(position, occupant_id)
+
+
+func _selected_tower_definition_id() -> String:
+	if tower_config != null and not basic_tower_id.is_empty() and tower_config.has_tower_id(basic_tower_id):
+		return basic_tower_id
+
+	basic_tower_id = _tower_id_for_type(basic_tower_type)
+	return basic_tower_id
+
+
+func _tower_id_for_type(tower_type: int) -> String:
+	if tower_config != null:
+		var tower_id := tower_config.get_tower_id(tower_type)
+		if tower_config.has_tower_id(tower_id):
+			return tower_id
+	return TowerConfig._tower_type_id(tower_type)

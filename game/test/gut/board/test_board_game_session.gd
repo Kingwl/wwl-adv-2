@@ -1,5 +1,7 @@
 extends GutTest
 
+const SAFE_BUILDABLE_CELL := Vector2i(1, 1)
+
 
 func test_session_initializes_board_wallet_and_combat_from_level() -> void:
 	var session := _new_initialized_session()
@@ -16,29 +18,34 @@ func test_session_initializes_board_wallet_and_combat_from_level() -> void:
 	assert_eq(session.board.height, 8)
 	assert_eq(session.wallet.gold, 100)
 	assert_eq(session.combat_simulation.player_life.lives, 10)
-	assert_eq(session.wave_spawner.wave_definitions.size(), 3)
+	assert_eq(session.wave_spawner.wave_definitions.size(), 8)
 	assert_eq(session.wave_spawner.wave_definitions[0].enemy_type_id, "grunt")
+	assert_eq(session.wave_spawner.wave_definitions[0].enemy_count, 4)
+	assert_eq(session.wave_spawner.wave_definitions[7].enemy_type_id, "raider")
+	assert_eq(session.wave_spawner.wave_definitions[7].enemy_count, 7)
 	assert_eq(session.flow_state, BoardGameSession.FlowState.PLAYING)
 	assert_false(session.gameplay_paused)
 	assert_eq(session.selected_tower_type, GameTower.Type.SINGLE_TARGET)
+	assert_eq(session.selected_tower_definition_id, "single")
+	assert_eq(session.placement_service.basic_tower_id, "single")
 
 
 func test_try_place_at_grid_spends_gold_and_syncs_combat_towers() -> void:
 	var session := _new_initialized_session()
 
-	var result: TowerPlacementResult = session.try_place_at_grid(Vector2i(0, 0))
+	var result: TowerPlacementResult = session.try_place_at_grid(SAFE_BUILDABLE_CELL)
 
 	assert_true(result.succeeded)
-	assert_eq(session.board.get_occupant_id(Vector2i(0, 0)), "tower-1")
+	assert_eq(session.board.get_occupant_id(SAFE_BUILDABLE_CELL), "tower-1")
 	assert_eq(session.wallet.gold, 75)
 	assert_eq(session.combat_simulation.towers.size(), 1)
 	assert_eq(session.status_message.code, BoardMessage.Code.TOWER_PLACED)
-	assert_eq(session.status_text, "Placed tower-1 at (0, 0) for 25 gold.")
+	assert_eq(session.status_text, "Placed tower-1 at (1, 1) for 25 gold.")
 
 
 func test_try_upgrade_tower_spends_gold_updates_status_and_syncs_combat_towers() -> void:
 	var session := _new_initialized_session()
-	assert_true(session.try_place_at_grid(Vector2i(0, 0)).succeeded)
+	assert_true(session.try_place_at_grid(SAFE_BUILDABLE_CELL).succeeded)
 
 	var result := session.try_upgrade_tower("tower-1")
 	var tower := session.placement_service.tower_registry.get_tower("tower-1")
@@ -55,16 +62,16 @@ func test_try_upgrade_tower_spends_gold_updates_status_and_syncs_combat_towers()
 
 func test_try_remove_tower_refunds_gold_updates_status_and_syncs_combat_towers() -> void:
 	var session := _new_initialized_session()
-	assert_true(session.try_place_at_grid(Vector2i(0, 0)).succeeded)
+	assert_true(session.try_place_at_grid(SAFE_BUILDABLE_CELL).succeeded)
 	assert_true(session.try_upgrade_tower("tower-1").succeeded)
 
-	var result := session.try_remove_tower_at(Vector2i(0, 0))
+	var result := session.try_remove_tower_at(SAFE_BUILDABLE_CELL)
 
 	assert_true(result.succeeded)
 	assert_eq(session.last_removal_result, result)
 	assert_eq(result.refund_amount, 32)
 	assert_eq(session.wallet.gold, 67)
-	assert_eq(session.board.get_occupant_id(Vector2i(0, 0)), "")
+	assert_eq(session.board.get_occupant_id(SAFE_BUILDABLE_CELL), "")
 	assert_null(session.placement_service.tower_registry.get_tower("tower-1"))
 	assert_eq(session.combat_simulation.towers.size(), 0)
 	assert_eq(session.status_message.code, BoardMessage.Code.TOWER_REMOVED)
@@ -76,9 +83,12 @@ func test_select_tower_id_maps_config_id_to_placement_type() -> void:
 
 	assert_true(session.select_tower_id("poison"))
 	assert_eq(session.selected_tower_type, GameTower.Type.POISON)
+	assert_eq(session.selected_tower_definition_id, "poison")
 	assert_eq(session.placement_service.basic_tower_type, GameTower.Type.POISON)
+	assert_eq(session.placement_service.basic_tower_id, "poison")
 	assert_false(session.select_tower_id("missing"))
 	assert_eq(session.selected_tower_type, GameTower.Type.POISON)
+	assert_eq(session.selected_tower_definition_id, "poison")
 
 
 func test_apply_tick_rewards_aggregates_multiple_rewards() -> void:

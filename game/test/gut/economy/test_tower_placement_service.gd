@@ -77,6 +77,57 @@ func test_try_place_basic_tower_uses_tower_type_build_cost() -> void:
 	assert_eq(tower.invested_gold, 37)
 
 
+func test_try_place_basic_tower_uses_selected_tower_id_contract() -> void:
+	var board := Board.new(3, 2)
+	var wallet := Wallet.new(100)
+	var tower_config := TowerConfig.new({
+		"storm": {
+			"id": "storm",
+			"type": "LIGHTNING",
+			"display_name": "Storm",
+			"description": "Chain lightning",
+			"build_cost": 44,
+			"weapon_type": DamageTypes.WeaponType.SPELL,
+			"attack_type": DamageTypes.AttackType.MAGIC,
+			"damage_school": DamageTypes.DamageSchool.LIGHTNING,
+			"attack_pattern": DamageTypes.AttackPattern.CHAIN,
+			"tiers": [
+				{
+					"damage": 9.0,
+					"range_cells": 2.8,
+					"attack_interval": 1.3,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.DAMAGE_PRIMARY,
+						},
+					],
+				},
+			],
+		},
+	})
+	var service := TowerPlacementService.new(
+		board,
+		wallet,
+		EconomyConfig.new(),
+		func() -> String: return "tower-1",
+		null,
+		GameTower.Type.SINGLE_TARGET,
+		tower_config
+	)
+
+	assert_true(service.select_basic_tower_id("storm"))
+	var result := service.try_place_basic_tower(Vector2i(1, 1))
+	var tower := service.tower_registry.get_tower("tower-1")
+
+	assert_true(result.succeeded)
+	assert_eq(result.transaction_result.amount, 44)
+	assert_eq(wallet.gold, 56)
+	assert_eq(service.basic_tower_id, "storm")
+	assert_eq(tower.definition_id, "storm")
+	assert_eq(tower.tower_type, -1)
+	assert_eq(tower.invested_gold, 44)
+
+
 func test_try_upgrade_tower_spends_configured_cost_and_updates_tier_and_investment() -> void:
 	var board := Board.new(3, 2)
 	var wallet := Wallet.new(100)

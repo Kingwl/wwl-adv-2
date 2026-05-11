@@ -36,6 +36,9 @@
     "background_normal": {
       "type": "string"
     },
+    "grid_layer": {
+      "type": "string"
+    },
     "lighting": {
       "type": "object",
       "additionalProperties": false,
@@ -78,6 +81,12 @@
       "additionalProperties": false,
       "required": ["blocked", "locked"],
       "properties": {
+        "buildable": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
         "blocked": {
           "type": "string"
         },

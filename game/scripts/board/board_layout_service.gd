@@ -16,6 +16,9 @@ const HUD_ROW_HEIGHT := 32.0
 const HUD_ROW_GAP := 10.0
 const HUD_MESSAGE_ROW_HEIGHT := 24.0
 const HUD_MESSAGE_ROW_GAP := 2.0
+const HUD_COMPACT_INLINE_MESSAGE_ROW_TOP := 14.0
+const HUD_COMPACT_INLINE_MESSAGE_ROW_HEIGHT := 20.0
+const HUD_COMPACT_INLINE_MESSAGE_ROW_GAP := 2.0
 const HUD_INLINE_MESSAGE_MIN_WIDTH := 420.0
 const TOWER_CARD_WIDTH := 184.0
 const TOWER_CARD_HEIGHT := 68.0
@@ -131,19 +134,32 @@ func _calculate_hud(metrics: BoardLayoutMetrics) -> void:
 	if message_width >= HUD_INLINE_MESSAGE_MIN_WIDTH:
 		metrics.status_label_rect = Rect2(message_left, message_top, message_width, HUD_MESSAGE_ROW_HEIGHT)
 		metrics.hint_label_rect = Rect2(message_left, message_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, message_width, HUD_MESSAGE_ROW_HEIGHT)
+		return
 	elif metrics.tower_deck_is_bottom:
 		var compact_message_width := viewport_size.x - SCREEN_PADDING * 2.0
 		var compact_status_top := message_top + HUD_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP
 		metrics.status_label_rect = Rect2(left, compact_status_top, compact_message_width, HUD_MESSAGE_ROW_HEIGHT)
 		metrics.hint_label_rect = Rect2(left, compact_status_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, compact_message_width, HUD_MESSAGE_ROW_HEIGHT)
+		return
 	else:
 		var side_left := viewport_size.x - SCREEN_PADDING - TOWER_CARD_WIDTH
 		var tower_buttons_bottom := HUD_RESERVED_HEIGHT + metrics.tower_card_height * metrics.tower_card_count + TOWER_CARD_GAP * (metrics.tower_card_count - 1)
 		var side_message_height := HUD_MESSAGE_ROW_HEIGHT * 2.0 + HUD_MESSAGE_ROW_GAP
 		var side_messages_fit_below := tower_buttons_bottom + HUD_CHROME_MARGIN + 4.0 + side_message_height <= viewport_size.y - SCREEN_PADDING
 		if not side_messages_fit_below:
-			metrics.status_label_rect = Rect2(message_left, message_top, message_width, HUD_MESSAGE_ROW_HEIGHT)
-			metrics.hint_label_rect = Rect2(message_left, message_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, message_width, HUD_MESSAGE_ROW_HEIGHT)
+			var compact_inline_message_top := HUD_COMPACT_INLINE_MESSAGE_ROW_TOP
+			metrics.status_label_rect = Rect2(
+				message_left,
+				compact_inline_message_top,
+				message_width,
+				HUD_COMPACT_INLINE_MESSAGE_ROW_HEIGHT
+			)
+			metrics.hint_label_rect = Rect2(
+				message_left,
+				compact_inline_message_top + HUD_COMPACT_INLINE_MESSAGE_ROW_HEIGHT + HUD_COMPACT_INLINE_MESSAGE_ROW_GAP,
+				message_width,
+				HUD_COMPACT_INLINE_MESSAGE_ROW_HEIGHT
+			)
 			return
 
 		var side_message_top := minf(
@@ -152,6 +168,7 @@ func _calculate_hud(metrics: BoardLayoutMetrics) -> void:
 		)
 		metrics.status_label_rect = Rect2(side_left, side_message_top, TOWER_CARD_WIDTH, HUD_MESSAGE_ROW_HEIGHT)
 		metrics.hint_label_rect = Rect2(side_left, side_message_top + HUD_MESSAGE_ROW_HEIGHT + HUD_MESSAGE_ROW_GAP, TOWER_CARD_WIDTH, HUD_MESSAGE_ROW_HEIGHT)
+		return
 
 
 func _calculate_tower_deck(metrics: BoardLayoutMetrics) -> void:

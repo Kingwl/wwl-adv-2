@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thumbnail Visual Review"
+  short_description: "4x4 screenshot and crop review workflow"
+  default_prompt: "Use $thumbnail-visual-review to review screenshots with 4x4 thumbnails and focused detail crops."

@@ -14,12 +14,12 @@ SCHEMA_DIR = DATA_DIR / "schemas"
 LEVEL_DIR = DATA_DIR / "levels"
 STYLE_DIR = DATA_DIR / "map_styles"
 TOWER_DIR = DATA_DIR / "towers"
+WAVE_DIR = DATA_DIR / "waves"
 ECONOMY_CONFIG_PATH = DATA_DIR / "economy" / "economy.json"
 ENEMY_CONFIG_PATH = DATA_DIR / "enemies" / "enemies.json"
-WAVE_CONFIG_PATH = DATA_DIR / "waves" / "waves.json"
 TOWER_CONFIG_PATH = TOWER_DIR / "towers.json"
+MVP_WAVE_COUNT = 8
 
-TOWER_TYPES = {"SINGLE_TARGET", "AREA", "SLOW", "FLAME", "POISON"}
 WEAPON_TYPES = {"BOW", "CROSSBOW", "CANNON", "BLADE", "SPELL", "HEROIC", "CHAOS"}
 ATTACK_TYPES = {"NORMAL", "PIERCE", "SIEGE", "MAGIC", "HERO", "CHAOS"}
 DAMAGE_SCHOOLS = {"PHYSICAL", "FROST", "FIRE", "POISON", "LIGHTNING", "ARCANE", "SHADOW"}
@@ -151,7 +151,7 @@ def ensure_res_path_exists(resource_path: str, path: str, allow_empty: bool = Fa
         raise ValidationError(f"{path}: missing resource {resource_path}")
 
 
-def validate_level(path: Path, schema: dict[str, Any], style_ids: set[str]) -> str:
+def validate_level(path: Path, schema: dict[str, Any], style_ids: set[str]) -> tuple[str, str]:
     level = load_json(path)
     validate_schema(level, schema, path.name)
 
@@ -162,6 +162,7 @@ def validate_level(path: Path, schema: dict[str, Any], style_ids: set[str]) -> s
     height = int(level["grid"]["height"])
     if level["style_id"] not in style_ids:
         raise ValidationError(f"{path.name}.style_id: unknown map style {level['style_id']!r}")
+    wave_set_id = str(level["wave_set_id"])
 
     path_cells = [as_cell(cell, f"{path.name}.path_cells[{index}]") for index, cell in enumerate(level["path_cells"])]
     if len(set(path_cells)) != len(path_cells):
@@ -191,7 +192,7 @@ def validate_level(path: Path, schema: dict[str, Any], style_ids: set[str]) -> s
     if exit_cell != path_cells[-1]:
         raise ValidationError(f"{path.name}.exit_cell: must match last path cell")
 
-    return str(level["id"])
+    return str(level["id"]), wave_set_id
 
 
 def validate_style(path: Path, schema: dict[str, Any]) -> str:
@@ -202,8 +203,11 @@ def validate_style(path: Path, schema: dict[str, Any]) -> str:
 
     ensure_res_path_exists(style["background"], f"{path.name}.background")
     ensure_res_path_exists(style["background_normal"], f"{path.name}.background_normal", allow_empty=True)
-    for key in ("blocked", "locked"):
-        ensure_res_path_exists(style["tiles"][key], f"{path.name}.tiles.{key}", allow_empty=True)
+    if "grid_layer" in style:
+        ensure_res_path_exists(style["grid_layer"], f"{path.name}.grid_layer", allow_empty=True)
+    for key in ("buildable", "path", "blocked", "locked"):
+        if key in style["tiles"]:
+            ensure_res_path_exists(style["tiles"][key], f"{path.name}.tiles.{key}", allow_empty=True)
     return str(style["id"])
 
 
@@ -281,6 +285,33 @@ def validate_waves(path: Path, schema: dict[str, Any], enemy_ids: set[str]) -> i
     return len(wave_config["waves"])
 
 
+def validate_wave_sets(
+    wave_files: list[Path],
+    schema: dict[str, Any],
+    enemy_ids: set[str],
+) -> dict[str, int]:
+    if not wave_files:
+        raise ValidationError("No wave JSON files found")
+
+    wave_counts: dict[str, int] = {}
+    for path in wave_files:
+        if path.stem in wave_counts:
+            raise ValidationError(f"{path.name}: duplicate wave set id {path.stem!r}")
+        wave_counts[path.stem] = validate_waves(path, schema, enemy_ids)
+
+    return wave_counts
+
+
+def validate_level_wave_sets(level_wave_sets: dict[str, str], wave_counts: dict[str, int]) -> None:
+    for level_id, wave_set_id in sorted(level_wave_sets.items()):
+        if wave_set_id not in wave_counts:
+            raise ValidationError(f"{level_id}.wave_set_id: unknown wave set {wave_set_id!r}")
+        if wave_counts[wave_set_id] != MVP_WAVE_COUNT:
+            raise ValidationError(
+                f"{level_id}.wave_set_id: MVP wave set {wave_set_id!r} must contain {MVP_WAVE_COUNT} waves"
+            )
+
+
 def validate_tower_effect(effect: dict[str, Any], path: str) -> str:
     effect_type = str(effect["type"])
     validate_enum(effect_type, EFFECT_TYPES, f"{path}.type")
@@ -326,19 +357,16 @@ def validate_towers(path: Path, schema: dict[str, Any]) -> int:
     validate_schema(tower_config, schema, path.name)
 
     tower_ids: set[str] = set()
-    tower_types: set[str] = set()
     for tower_index, tower in enumerate(tower_config["towers"]):
         tower_path = f"{path.name}.towers[{tower_index}]"
         tower_id = str(tower["id"])
         tower_type = str(tower["type"])
         if tower_id in tower_ids:
             raise ValidationError(f"{tower_path}.id: duplicate tower id {tower_id!r}")
-        if tower_type in tower_types:
-            raise ValidationError(f"{tower_path}.type: duplicate tower type {tower_type!r}")
         tower_ids.add(tower_id)
-        tower_types.add(tower_type)
 
-        validate_enum(tower_type, TOWER_TYPES, f"{tower_path}.type")
+        if not re.fullmatch(r"[A-Z0-9_]+", tower_type):
+            raise ValidationError(f"{tower_path}.type: expected uppercase id-like label, got {tower_type!r}")
         validate_enum(tower["weapon_type"], WEAPON_TYPES, f"{tower_path}.weapon_type")
         validate_enum(tower["attack_type"], ATTACK_TYPES, f"{tower_path}.attack_type")
         validate_enum(tower["damage_school"], DAMAGE_SCHOOLS, f"{tower_path}.damage_school")
@@ -417,6 +445,7 @@ def main() -> int:
 
         style_files = sorted(STYLE_DIR.glob("*.json"))
         level_files = sorted(LEVEL_DIR.glob("*.json"))
+        wave_files = sorted(WAVE_DIR.glob("*.json"))
         if not style_files:
             raise ValidationError("No map style JSON files found")
         if not level_files:
@@ -430,21 +459,25 @@ def main() -> int:
             style_ids.add(style_id)
 
         level_ids: set[str] = set()
+        level_wave_sets: dict[str, str] = {}
         for path in level_files:
-            level_id = validate_level(path, level_schema, style_ids)
+            level_id, wave_set_id = validate_level(path, level_schema, style_ids)
             if level_id in level_ids:
                 raise ValidationError(f"{path.name}.id: duplicate level id {level_id!r}")
             level_ids.add(level_id)
+            level_wave_sets[level_id] = wave_set_id
 
         validate_economy(ECONOMY_CONFIG_PATH, economy_schema)
         enemy_ids = validate_enemies(ENEMY_CONFIG_PATH, enemies_schema)
-        wave_count = validate_waves(WAVE_CONFIG_PATH, waves_schema, enemy_ids)
+        wave_counts = validate_wave_sets(wave_files, waves_schema, enemy_ids)
+        validate_level_wave_sets(level_wave_sets, wave_counts)
         tower_count = validate_towers(TOWER_CONFIG_PATH, towers_schema)
 
         print(
             "asset check passed: "
             f"{len(level_files)} level(s), {len(style_files)} map style(s), "
-            f"{len(enemy_ids)} enemy type(s), {wave_count} wave(s), {tower_count} tower(s), 1 economy config"
+            f"{len(enemy_ids)} enemy type(s), {len(wave_counts)} wave set(s), "
+            f"{sum(wave_counts.values())} wave(s), {tower_count} tower(s), 1 economy config"
         )
         return 0
     except ValidationError as exc:

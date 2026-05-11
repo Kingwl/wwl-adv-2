@@ -1,0 +1,6 @@
+Generated 2026-05-11 with image_gen.
+
+Pipeline: baked_raster, runtime_object_model none, collision_model project-native path_cells, engine_target project-native.
+
+Prompt summary:
+Clean HD hand-painted top-down 2D fantasy tower defense citadel approach, 10 by 8 readable board composition at 1280x1024. Grand blue-and-gold castle garden with canals, fountains, crystals, a long showcase S-curve road, multiple side plazas for tower placement, clear spawn and exit edges, no UI, no text, no grid overlay.

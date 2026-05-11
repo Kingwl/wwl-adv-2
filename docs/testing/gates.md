@@ -64,9 +64,18 @@ cd game
 ./tools/check-ui-smoke.sh
 ```
 
-这个命令不做 Web 导出，直接运行 Godot desktop/native runtime；它会在桌面、移动横屏和方形视口验证 start-to-main 场景流程，通过场景输入路径放置一座塔，并把截图、局部放大 crop、overlay 辅助线图、人工 UI 检查清单和 `report.json` 写入 `ci-artifacts/ui-smoke/native/`。
+这个命令不做 Web 导出，直接运行 Godot desktop/native runtime；它会在桌面、移动横屏和方形视口验证 start-to-main 场景流程，通过场景输入路径放置一座塔，并把截图、局部放大 crop、overlay 辅助线图、人工 UI 检查清单和 `report.json` 写入 `ci-artifacts/ui-smoke/native/`。命令结束时还会自动运行 `generate-ui-visual-review.py`，把整屏截图和关键 crop 生成 4x4 合 1 的 visual-review contact sheet。
 
 使用 `./tools/summarize-ui-smoke.py` 可以在不重新运行 Godot 的情况下重新打印最近一次 smoke 报告。
+
+只重新生成 UI 4x4 visual-review 时：
+
+```bash
+cd game
+./tools/generate-ui-visual-review.py --artifact-dir ../ci-artifacts/ui-smoke/native --block-size 4
+```
+
+优先检查 `ci-artifacts/ui-smoke/native/visual-review/ui-fullscreens-mean4x4-contact.png` 和 `ui-key-crops-mean4x4-contact.png`，再按可疑区域回看原始 crop 或 overlay。
 
 native gameplay smoke 检查：
 
@@ -76,6 +85,46 @@ cd game
 ```
 
 这个命令按确定性 gameplay scenario 运行 Godot native runtime。它不替代核心 GUT；它把放塔、升级/拆除返还、Single 击杀奖励、Area 溅射、Slow 状态、漏怪扣生命、清波胜利和生命归零失败这些代表路径连到机器可读 trace，并为每个 checkpoint 输出整屏截图、board crop 和状态 overlay。产物位于 `ci-artifacts/gameplay-smoke/native/`。
+
+逐关格子和路径视觉审查：
+
+```bash
+cd game
+./tools/check-level-grid-audit.sh
+```
+
+这个命令逐个加载 `game/data/levels/*.json`，对每个格子断言放塔成功/失败是否匹配关卡 slot 类型，并在 native runtime 中输出两类截图：全可建造格放塔后的 `buildable-grid`，以及路径上逐格摆放敌人的 `path-enemies`。产物位于 `ci-artifacts/level-grid-audit/native/`，用于审查地图视觉、可建造格语义和路径表现是否一致。
+
+地图生成前 layout guide：
+
+```bash
+cd game
+./tools/generate-map-layout-guide.py
+```
+
+这个命令从关卡 JSON 生成图像模型参考图、annotated 图、语义 mask、contract 和技术 prompt fragment。它用于新地图或重生成背景前固定“外圈景观不可建造、内部可建造、路径格明确”的空间契约；产物位于 `game/tools/out/map_layout_guides/`，不会进入版本库。
+
+分层地图生成时重点检查每关目录里的 `background_reference.png`、`grid_layer_reference.png`、`background_prompt_fragment.txt` 和 `grid_layer_prompt_fragment.txt`。background reference 应只约束固定一格外圈景观和中间矩形空地；grid layer reference 应保留透明外圈，并只表达 buildable、path、interior blocked 和 locked cells。
+
+确定性 grid layer 合成：
+
+```bash
+cd game
+./tools/compose-map-grid-layer.py --level res://data/levels/level_002.json --level res://data/levels/level_003.json --level res://data/levels/level_004.json --write-clean-background --write-style-assets
+./tools/compose-map-grid-layer.py --level res://data/levels/level_005.json --write-style-assets
+```
+
+这个命令从关卡 JSON 合成运行时透明 grid layer，并把 flattened preview 写到 `game/tools/out/composed_map_layers/`。如果已有背景仍包含 baked road、塔台、装饰物或其它玩法语义，用 `--write-clean-background` 保留外圈场景并生成中场 clean playfield，再写入 `background_frame_clean.png`。接入或重生成某个 map style 的 `background` / `grid_layer` 后，继续运行 `./tools/check-assets.sh`、`./tools/test-gut.sh` 和 `./tools/check-level-grid-audit.sh`，再人工检查对应 `preview.png` 与 level grid audit 的 `buildable-grid`/`path-enemies` 截图。
+
+地图视觉采样审查：
+
+```bash
+cd game
+./tools/generate-map-visual-review.py --level res://data/levels/level_005.json --block-size 4
+./tools/generate-map-visual-review.py --level res://data/levels/level_005.json --block-size 2
+```
+
+这个命令把背景、grid layer、composed preview、可建造格放塔截图和路径敌人截图放到同一组审查图里，并输出固定语义区域 crop。采样对比会生成 `nearestNxN`、Pillow `boxNxN`、自实现 `meanNxN` 和自实现 `medianNxN` 四种降采样结果；`--block-size` 控制每个输出像素合并的原图像素块大小。
 
 仅文档改动：
 

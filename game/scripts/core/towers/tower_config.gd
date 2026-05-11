@@ -48,11 +48,12 @@ var damage_affinity_config := DamageAffinityConfig.new()
 
 
 func _init(new_tower_definitions: Dictionary = {}) -> void:
-	var definitions := (
+	var raw_definitions := (
 		load_definitions_from_path(DEFAULT_TOWER_DEFINITION_PATH)
 		if new_tower_definitions.is_empty()
 		else new_tower_definitions.duplicate(true)
 	)
+	var definitions := normalize_definitions(raw_definitions)
 	var validation_errors := validate_definitions(definitions)
 	assert(
 		validation_errors.is_empty(),
@@ -61,11 +62,15 @@ func _init(new_tower_definitions: Dictionary = {}) -> void:
 	tower_definitions = definitions
 
 
-func get_stats(tower_type: GameTower.Type, tier: int) -> TowerStats:
-	var tier_definition := _get_tier_definition(tower_type, tier)
-	var weapon_type := get_weapon_type(tower_type)
-	var attack_type := get_attack_type(tower_type)
-	var damage_school := get_damage_school(tower_type)
+func get_stats(tower_type: int, tier: int) -> TowerStats:
+	return get_stats_for_id(get_tower_id(tower_type), tier)
+
+
+func get_stats_for_id(tower_id: String, tier: int) -> TowerStats:
+	var tier_definition := _get_tier_definition_for_id(tower_id, tier)
+	var weapon_type := get_weapon_type_for_id(tower_id)
+	var attack_type := get_attack_type_for_id(tower_id)
+	var damage_school := get_damage_school_for_id(tower_id)
 	var effects := _get_effects(tier_definition)
 	var status_effect = _first_status_effect(effects)
 	var status_type := _status_type_from_effect(status_effect)
@@ -74,7 +79,7 @@ func get_stats(tower_type: GameTower.Type, tier: int) -> TowerStats:
 	var status_tick_interval := _status_tick_interval_from_effect(status_effect)
 	var status_tick_damage := _status_tick_damage_from_effect(status_effect)
 	var status_stack_policy := _status_stack_policy_from_effect(status_effect)
-	var projectile_definition := _get_projectile_definition(tower_type)
+	var projectile_definition := _get_projectile_definition_for_id(tower_id)
 
 	return TowerStats.new(
 		float(tier_definition.get(DAMAGE_KEY, 0.0)),
@@ -83,7 +88,7 @@ func get_stats(tower_type: GameTower.Type, tier: int) -> TowerStats:
 		weapon_type,
 		attack_type,
 		damage_school,
-		get_attack_pattern(tower_type),
+		get_attack_pattern_for_id(tower_id),
 		_get_splash_radius_cells(effects),
 		_slow_multiplier_from_status(status_type, status_move_speed_multiplier),
 		_slow_duration_from_status(status_type, status_duration),
@@ -100,64 +105,103 @@ func get_stats(tower_type: GameTower.Type, tier: int) -> TowerStats:
 	)
 
 
-func get_max_tier(tower_type: GameTower.Type) -> int:
-	return _get_tiers(tower_type).size()
+func get_max_tier(tower_type: int) -> int:
+	return get_max_tier_for_id(get_tower_id(tower_type))
 
 
-func get_upgrade_cost(tower_type: GameTower.Type, tier: int) -> int:
+func get_max_tier_for_id(tower_id: String) -> int:
+	return _get_tiers_for_id(tower_id).size()
+
+
+func get_upgrade_cost(tower_type: int, tier: int) -> int:
+	return get_upgrade_cost_for_id(get_tower_id(tower_type), tier)
+
+
+func get_upgrade_cost_for_id(tower_id: String, tier: int) -> int:
 	assert(tier >= 1, "Tower tier must be at least 1.")
-	if tier >= get_max_tier(tower_type):
+	if tier >= get_max_tier_for_id(tower_id):
 		return 0
 
-	return int(_get_tier_definition(tower_type, tier).get(UPGRADE_COST_KEY, 0))
+	return int(_get_tier_definition_for_id(tower_id, tier).get(UPGRADE_COST_KEY, 0))
 
 
-func get_build_cost(tower_type: GameTower.Type, fallback_cost: int = DEFAULT_BUILD_COST) -> int:
-	var tower_definition := _get_tower_definition(tower_type)
+func get_build_cost(tower_type: int, fallback_cost: int = DEFAULT_BUILD_COST) -> int:
+	return get_build_cost_for_id(get_tower_id(tower_type), fallback_cost)
+
+
+func get_build_cost_for_id(tower_id: String, fallback_cost: int = DEFAULT_BUILD_COST) -> int:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
 	return int(tower_definition.get(BUILD_COST_KEY, fallback_cost))
 
 
-func get_upgrade_preview(tower_type: GameTower.Type, tier: int) -> String:
+func get_upgrade_preview(tower_type: int, tier: int) -> String:
+	return get_upgrade_preview_for_id(get_tower_id(tower_type), tier)
+
+
+func get_upgrade_preview_for_id(tower_id: String, tier: int) -> String:
 	assert(tier >= 1, "Tower tier must be at least 1.")
-	if tier >= get_max_tier(tower_type):
+	if tier >= get_max_tier_for_id(tower_id):
 		return "Max tier reached"
 
-	var tier_definition := _get_tier_definition(tower_type, tier)
+	var tier_definition := _get_tier_definition_for_id(tower_id, tier)
 	if tier_definition.has(UPGRADE_PREVIEW_KEY):
 		return str(tier_definition[UPGRADE_PREVIEW_KEY])
 
-	var current := get_stats(tower_type, tier)
-	var next := get_stats(tower_type, tier + 1)
+	var current := get_stats_for_id(tower_id, tier)
+	var next := get_stats_for_id(tower_id, tier + 1)
 	return "Damage %s / Range %s" % [
 		_format_positive_delta(next.damage - current.damage),
 		_format_positive_delta(next.range_cells - current.range_cells),
 	]
 
 
-func get_weapon_type(tower_type: GameTower.Type) -> int:
-	var tower_definition := _get_tower_definition(tower_type)
-	return int(tower_definition.get(WEAPON_TYPE_KEY, _default_weapon_type(tower_type)))
+func get_weapon_type(tower_type: int) -> int:
+	return get_weapon_type_for_id(get_tower_id(tower_type))
 
 
-func get_attack_type(tower_type: GameTower.Type) -> int:
-	var tower_definition := _get_tower_definition(tower_type)
+func get_weapon_type_for_id(tower_id: String) -> int:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
+	return int(tower_definition.get(WEAPON_TYPE_KEY, _default_weapon_type(get_tower_type_for_id(tower_id))))
+
+
+func get_attack_type(tower_type: int) -> int:
+	return get_attack_type_for_id(get_tower_id(tower_type))
+
+
+func get_attack_type_for_id(tower_id: String) -> int:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
 	if tower_definition.has(ATTACK_TYPE_KEY):
 		return int(tower_definition[ATTACK_TYPE_KEY])
-	return damage_affinity_config.get_attack_type_for_weapon(get_weapon_type(tower_type))
+	return damage_affinity_config.get_attack_type_for_weapon(get_weapon_type_for_id(tower_id))
 
 
-func get_damage_school(tower_type: GameTower.Type) -> int:
-	var tower_definition := _get_tower_definition(tower_type)
-	return int(tower_definition.get(DAMAGE_SCHOOL_KEY, _default_damage_school(tower_type)))
+func get_damage_school(tower_type: int) -> int:
+	return get_damage_school_for_id(get_tower_id(tower_type))
 
 
-func get_attack_pattern(tower_type: GameTower.Type) -> int:
-	var tower_definition := _get_tower_definition(tower_type)
-	return int(tower_definition.get(ATTACK_PATTERN_KEY, _default_attack_pattern(tower_type)))
+func get_damage_school_for_id(tower_id: String) -> int:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
+	return int(tower_definition.get(DAMAGE_SCHOOL_KEY, _default_damage_school(get_tower_type_for_id(tower_id))))
+
+
+func get_attack_pattern(tower_type: int) -> int:
+	return get_attack_pattern_for_id(get_tower_id(tower_type))
+
+
+func get_attack_pattern_for_id(tower_id: String) -> int:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
+	return int(tower_definition.get(ATTACK_PATTERN_KEY, _default_attack_pattern(get_tower_type_for_id(tower_id))))
 
 
 func get_tower_types() -> Array:
-	var tower_types := tower_definitions.keys()
+	var tower_types := []
+	for tower_id in tower_definitions.keys():
+		var tower_definition := tower_definitions[tower_id] as Dictionary
+		if tower_definition == null:
+			continue
+		var tower_type := int(tower_definition.get(TYPE_KEY, -1))
+		if tower_type >= 0:
+			tower_types.append(tower_type)
 	tower_types.sort()
 	return tower_types
 
@@ -166,54 +210,100 @@ func get_tower_ids() -> Array:
 	var tower_ids := []
 	for tower_type in get_tower_types():
 		tower_ids.append(get_tower_id(tower_type))
+	var extra_ids := []
+	for tower_id in tower_definitions.keys():
+		var definition_id := String(tower_id)
+		if not tower_ids.has(definition_id):
+			extra_ids.append(definition_id)
+	extra_ids.sort()
+	tower_ids.append_array(extra_ids)
 	return tower_ids
 
 
-func get_tower_id(tower_type: GameTower.Type) -> String:
-	var tower_definition := _get_tower_definition(tower_type)
-	return str(tower_definition.get(ID_KEY, _tower_type_id(tower_type)))
+func get_tower_id(tower_type: int) -> String:
+	for tower_id in tower_definitions.keys():
+		var tower_definition := tower_definitions[tower_id] as Dictionary
+		if tower_definition != null and int(tower_definition.get(TYPE_KEY, -1)) == int(tower_type):
+			return str(tower_definition.get(ID_KEY, tower_id))
+	return _tower_type_id(tower_type)
 
 
 func get_tower_type_for_id(tower_id: String) -> int:
-	for tower_type in get_tower_types():
-		if get_tower_id(tower_type) == tower_id:
-			return tower_type
+	if tower_definitions.has(tower_id):
+		var tower_definition := tower_definitions[tower_id] as Dictionary
+		if tower_definition != null:
+			return int(tower_definition.get(TYPE_KEY, -1))
 	return -1
 
 
 func has_tower_id(tower_id: String) -> bool:
-	return get_tower_type_for_id(tower_id) >= 0
+	return tower_definitions.has(tower_id)
 
 
-func get_display_name(tower_type: GameTower.Type) -> String:
-	var tower_definition := _get_tower_definition(tower_type)
-	return str(tower_definition.get(DISPLAY_NAME_KEY, _tower_type_name(tower_type)))
+func get_display_name(tower_type: int) -> String:
+	return get_display_name_for_id(get_tower_id(tower_type))
 
 
-func get_description(tower_type: GameTower.Type) -> String:
-	var tower_definition := _get_tower_definition(tower_type)
+func get_display_name_for_id(tower_id: String) -> String:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
+	return str(tower_definition.get(DISPLAY_NAME_KEY, _tower_id_label(tower_id)))
+
+
+func get_description(tower_type: int) -> String:
+	return get_description_for_id(get_tower_id(tower_type))
+
+
+func get_description_for_id(tower_id: String) -> String:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
 	return str(tower_definition.get(DESCRIPTION_KEY, ""))
 
 
-func get_tower_texture_path(tower_type: GameTower.Type) -> String:
-	return str(_get_visuals_definition(tower_type).get(TOWER_TEXTURE_KEY, ""))
+func get_tower_texture_path(tower_type: int) -> String:
+	return get_tower_texture_path_for_id(get_tower_id(tower_type))
 
 
-func get_projectile_texture_paths(tower_type: GameTower.Type) -> Array:
-	return (_get_visuals_definition(tower_type).get(PROJECTILE_TEXTURES_KEY, []) as Array).duplicate()
+func get_tower_texture_path_for_id(tower_id: String) -> String:
+	return str(_get_visuals_definition_for_id(tower_id).get(TOWER_TEXTURE_KEY, ""))
 
 
-func get_impact_texture_paths(tower_type: GameTower.Type) -> Array:
-	return (_get_visuals_definition(tower_type).get(IMPACT_TEXTURES_KEY, []) as Array).duplicate()
+func get_projectile_texture_paths(tower_type: int) -> Array:
+	return get_projectile_texture_paths_for_id(get_tower_id(tower_type))
 
 
-func is_visual_test_enabled(tower_type: GameTower.Type) -> bool:
-	var tower_definition := _get_tower_definition(tower_type)
+func get_projectile_texture_paths_for_id(tower_id: String) -> Array:
+	return (_get_visuals_definition_for_id(tower_id).get(PROJECTILE_TEXTURES_KEY, []) as Array).duplicate()
+
+
+func get_impact_texture_paths(tower_type: int) -> Array:
+	return get_impact_texture_paths_for_id(get_tower_id(tower_type))
+
+
+func get_impact_texture_paths_for_id(tower_id: String) -> Array:
+	return (_get_visuals_definition_for_id(tower_id).get(IMPACT_TEXTURES_KEY, []) as Array).duplicate()
+
+
+func is_visual_test_enabled(tower_type: int) -> bool:
+	return is_visual_test_enabled_for_id(get_tower_id(tower_type))
+
+
+func is_visual_test_enabled_for_id(tower_id: String) -> bool:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
 	return bool(tower_definition.get(VISUAL_TEST_ENABLED_KEY, true))
 
 
 func can_upgrade(tower: GameTower) -> bool:
-	return tower != null and tower.tier < get_max_tier(tower.tower_type)
+	return tower != null and tower.tier < get_max_tier_for_id(get_tower_id_for_runtime_tower(tower))
+
+
+func get_tower_id_for_runtime_tower(tower: GameTower) -> String:
+	if tower == null:
+		return ""
+	if not tower.definition_id.is_empty() and has_tower_id(tower.definition_id):
+		return tower.definition_id
+	var tower_id := get_tower_id(tower.tower_type)
+	if has_tower_id(tower_id):
+		return tower_id
+	return tower.definition_id
 
 
 static func load_definitions_from_path(resource_path: String) -> Dictionary:
@@ -225,35 +315,76 @@ static func definitions_from_dictionary(data: Dictionary) -> Dictionary:
 
 
 static func validate_definitions(definitions: Dictionary) -> Array:
-	return TowerDefinitionValidator.validate_definitions(definitions)
+	return TowerDefinitionValidator.validate_definitions(normalize_definitions(definitions))
 
 
-func _get_tier_definition(tower_type: GameTower.Type, tier: int) -> Dictionary:
+static func normalize_definitions(definitions: Dictionary) -> Dictionary:
+	var normalized := {}
+	for key in definitions.keys():
+		var tower_definition := definitions[key] as Dictionary
+		if tower_definition == null:
+			normalized[key] = definitions[key]
+			continue
+
+		var tower_type := _tower_type_from_definition_key(key, tower_definition)
+		var tower_id := str(tower_definition.get(ID_KEY, _tower_type_id(tower_type)))
+		if tower_id.is_empty() or tower_id == "-1":
+			tower_id = str(key)
+
+		var normalized_definition := tower_definition.duplicate(true)
+		normalized_definition[ID_KEY] = tower_id
+		normalized_definition[TYPE_KEY] = tower_type
+		normalized[tower_id] = normalized_definition
+
+	return normalized
+
+
+func _get_tier_definition(tower_type: int, tier: int) -> Dictionary:
+	return _get_tier_definition_for_id(get_tower_id(tower_type), tier)
+
+
+func _get_tier_definition_for_id(tower_id: String, tier: int) -> Dictionary:
 	assert(tier >= 1, "Tower tier must be at least 1.")
-	var tiers := _get_tiers(tower_type)
+	var tiers := _get_tiers_for_id(tower_id)
 	assert(tier <= tiers.size(), "Tower tier is not configured.")
 	return tiers[tier - 1] as Dictionary
 
 
-func _get_tiers(tower_type: GameTower.Type) -> Array:
-	var tower_definition := _get_tower_definition(tower_type)
+func _get_tiers(tower_type: int) -> Array:
+	return _get_tiers_for_id(get_tower_id(tower_type))
+
+
+func _get_tiers_for_id(tower_id: String) -> Array:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
 	var tiers := tower_definition.get(TIERS_KEY, []) as Array
 	assert(not tiers.is_empty(), "Tower tiers are required.")
 	return tiers
 
 
-func _get_tower_definition(tower_type: GameTower.Type) -> Dictionary:
-	assert(tower_definitions.has(tower_type), "Tower type is not configured.")
-	return tower_definitions[tower_type] as Dictionary
+func _get_tower_definition(tower_type: int) -> Dictionary:
+	return _get_tower_definition_for_id(get_tower_id(tower_type))
 
 
-func _get_projectile_definition(tower_type: GameTower.Type) -> Dictionary:
-	var tower_definition := _get_tower_definition(tower_type)
+func _get_tower_definition_for_id(tower_id: String) -> Dictionary:
+	assert(tower_definitions.has(tower_id), "Tower id is not configured.")
+	return tower_definitions[tower_id] as Dictionary
+
+
+func _get_projectile_definition(tower_type: int) -> Dictionary:
+	return _get_projectile_definition_for_id(get_tower_id(tower_type))
+
+
+func _get_projectile_definition_for_id(tower_id: String) -> Dictionary:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
 	return tower_definition.get(PROJECTILE_KEY, {}) as Dictionary
 
 
-func _get_visuals_definition(tower_type: GameTower.Type) -> Dictionary:
-	var tower_definition := _get_tower_definition(tower_type)
+func _get_visuals_definition(tower_type: int) -> Dictionary:
+	return _get_visuals_definition_for_id(get_tower_id(tower_type))
+
+
+func _get_visuals_definition_for_id(tower_id: String) -> Dictionary:
+	var tower_definition := _get_tower_definition_for_id(tower_id)
 	return tower_definition.get(VISUALS_KEY, {}) as Dictionary
 
 
@@ -484,6 +615,14 @@ static func _tower_type_from_value(value) -> int:
 	return -1
 
 
+static func _tower_type_from_definition_key(key, tower_definition: Dictionary) -> int:
+	if tower_definition.has(TYPE_KEY):
+		return _tower_type_from_value(tower_definition[TYPE_KEY])
+	if key is int:
+		return int(key)
+	return _tower_type_from_value(key)
+
+
 static func _weapon_type_from_value(value) -> int:
 	if value is int:
 		return int(value)
@@ -659,7 +798,20 @@ static func _tower_type_id(tower_type) -> String:
 	return str(tower_type)
 
 
-static func _default_weapon_type(tower_type: GameTower.Type) -> int:
+static func _tower_id_label(tower_id: String) -> String:
+	if tower_id.is_empty():
+		return "Tower"
+
+	var words := []
+	for part in tower_id.split("_", false):
+		for subpart in part.split("-", false):
+			if subpart.is_empty():
+				continue
+			words.append(subpart.substr(0, 1).to_upper() + subpart.substr(1).to_lower())
+	return " ".join(words)
+
+
+static func _default_weapon_type(tower_type: int) -> int:
 	match tower_type:
 		GameTower.Type.AREA:
 			return DamageTypes.WeaponType.CANNON
@@ -671,7 +823,7 @@ static func _default_weapon_type(tower_type: GameTower.Type) -> int:
 	return DamageTypes.WeaponType.CROSSBOW
 
 
-static func _default_damage_school(tower_type: GameTower.Type) -> int:
+static func _default_damage_school(tower_type: int) -> int:
 	match tower_type:
 		GameTower.Type.SLOW:
 			return DamageTypes.DamageSchool.FROST
@@ -683,7 +835,7 @@ static func _default_damage_school(tower_type: GameTower.Type) -> int:
 	return DamageTypes.DamageSchool.PHYSICAL
 
 
-static func _default_attack_pattern(tower_type: GameTower.Type) -> int:
+static func _default_attack_pattern(tower_type: int) -> int:
 	match tower_type:
 		GameTower.Type.AREA:
 			return DamageTypes.AttackPattern.SPLASH_PROJECTILE

@@ -109,6 +109,35 @@ static func apply_tower_button(button: Button, compact_pressed_style: bool = fal
 	button.add_theme_constant_override("outline_size", 1)
 
 
+static func apply_side_tower_button(button: Button, compact_height: bool = false) -> void:
+	apply_button(button, 10 if compact_height else 11)
+	if button == null:
+		return
+
+	button.add_theme_stylebox_override(
+		"normal",
+		tower_card_plain_style(Color(0.035, 0.045, 0.056, 0.94), Color(0.17, 0.35, 0.48, 0.95))
+	)
+	button.add_theme_stylebox_override(
+		"hover",
+		tower_card_plain_style(Color(0.055, 0.072, 0.088, 0.96), Color(0.30, 0.58, 0.78, 1.0))
+	)
+	button.add_theme_stylebox_override(
+		"pressed",
+		tower_card_plain_style(Color(0.045, 0.061, 0.076, 1.0), Color(0.92, 0.66, 0.22, 1.0), 2)
+	)
+	button.add_theme_stylebox_override(
+		"disabled",
+		tower_card_plain_style(Color(0.032, 0.038, 0.045, 0.88), Color(0.16, 0.20, 0.24, 0.90), 1)
+	)
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.expand_icon = true
+	button.add_theme_constant_override("icon_max_width", 32 if compact_height else 36)
+	button.add_theme_constant_override("h_separation", 8)
+	button.add_theme_constant_override("outline_size", 1)
+
+
 static func apply_panel(panel: Panel) -> void:
 	if panel == null:
 		return
@@ -195,4 +224,20 @@ static func panel_style(fill: Color, border: Color, border_width: int = 2) -> St
 	style.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
 	style.shadow_size = 8
 	style.shadow_offset = Vector2(0, 4)
+	return style
+
+
+static func tower_card_plain_style(fill: Color, border: Color, border_width: int = 2) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = border
+	style.set_border_width_all(border_width)
+	style.set_corner_radius_all(5)
+	style.content_margin_left = 10.0
+	style.content_margin_right = 10.0
+	style.content_margin_top = 6.0
+	style.content_margin_bottom = 6.0
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+	style.shadow_size = 4
+	style.shadow_offset = Vector2(0, 2)
 	return style

@@ -52,10 +52,8 @@ jobs:
       - name: Install UI smoke dependencies
         run: |
           set -euo pipefail
-          if ! command -v xvfb-run >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y xvfb
-          fi
+          sudo apt-get update
+          sudo apt-get install -y xvfb python3-pil
 
       - name: Run project checks
         working-directory: game

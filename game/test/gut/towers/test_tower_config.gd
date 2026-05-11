@@ -96,10 +96,12 @@ func test_tower_definition_parser_normalizes_raw_json_data() -> void:
 		],
 	})
 
-	var definition := definitions[GameTower.Type.FLAME] as Dictionary
+	var definition := definitions["flame"] as Dictionary
 	var tier := (definition["tiers"] as Array)[0] as Dictionary
 	var effect := (tier["effects"] as Array)[0] as Dictionary
 
+	assert_eq(definition["id"], "flame")
+	assert_eq(definition["type"], GameTower.Type.FLAME)
 	assert_eq(definition["build_cost"], 33)
 	assert_eq(definition["weapon_type"], DamageTypes.WeaponType.SPELL)
 	assert_eq(definition["attack_type"], DamageTypes.AttackType.MAGIC)
@@ -379,6 +381,47 @@ func test_custom_tower_definitions_drive_stats_and_upgrade_cost() -> void:
 	assert_eq(stats.effects[0].effect_type, TowerEffect.EffectType.DAMAGE_PRIMARY)
 
 
+func test_id_keyed_non_enum_tower_definition_drives_stats() -> void:
+	var config := TowerConfig.new({
+		"storm": {
+			"id": "storm",
+			"type": "LIGHTNING",
+			"display_name": "Storm",
+			"description": "Chain lightning",
+			"build_cost": 44,
+			"weapon_type": DamageTypes.WeaponType.SPELL,
+			"attack_type": DamageTypes.AttackType.MAGIC,
+			"damage_school": DamageTypes.DamageSchool.LIGHTNING,
+			"attack_pattern": DamageTypes.AttackPattern.CHAIN,
+			"tiers": [
+				{
+					"damage": 9.0,
+					"range_cells": 2.8,
+					"attack_interval": 1.3,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.DAMAGE_PRIMARY,
+						},
+					],
+				},
+			],
+		},
+	})
+
+	var stats := config.get_stats_for_id("storm", 1)
+
+	assert_eq(config.get_tower_ids(), ["storm"])
+	assert_eq(config.get_tower_type_for_id("storm"), -1)
+	assert_true(config.has_tower_id("storm"))
+	assert_eq(config.get_display_name_for_id("storm"), "Storm")
+	assert_eq(config.get_build_cost_for_id("storm"), 44)
+	assert_eq(stats.damage, 9.0)
+	assert_eq(stats.range_cells, 2.8)
+	assert_eq(stats.attack_type, DamageTypes.AttackType.MAGIC)
+	assert_eq(stats.damage_school, DamageTypes.DamageSchool.LIGHTNING)
+	assert_eq(stats.attack_pattern, DamageTypes.AttackPattern.CHAIN)
+
+
 func test_validate_definitions_rejects_damage_or_range_not_increasing() -> void:
 	var errors := TowerConfig.validate_definitions({
 		GameTower.Type.SINGLE_TARGET: {
@@ -518,6 +561,7 @@ func test_game_tower_has_runtime_position_and_cooldown_defaults() -> void:
 	assert_eq(tower.grid_position, Vector2i.ZERO)
 	assert_eq(tower.cooldown_remaining, 0.0)
 	assert_eq(tower.invested_gold, 0)
+	assert_eq(tower.get_definition_id(), "single")
 
 
 func test_game_tower_tracks_total_gold_invested() -> void:
@@ -525,3 +569,4 @@ func test_game_tower_tracks_total_gold_invested() -> void:
 
 	assert_eq(tower.grid_position, Vector2i(1, 2))
 	assert_eq(tower.invested_gold, 25)
+	assert_eq(tower.get_definition_id(), "single")

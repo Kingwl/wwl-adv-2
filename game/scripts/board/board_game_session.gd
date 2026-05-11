@@ -32,7 +32,8 @@ var last_reward_transaction_results: Array
 var last_wave_reward_transaction_results: Array
 var flow_state: int = FlowState.PLAYING
 var gameplay_paused := false
-var selected_tower_type: GameTower.Type = GameTower.Type.SINGLE_TARGET
+var selected_tower_type: int = GameTower.Type.SINGLE_TARGET
+var selected_tower_definition_id := "single"
 var status_message: BoardMessage
 var hint_message: BoardMessage
 var status_text := ""
@@ -63,8 +64,9 @@ func initialize_board() -> void:
 	economy_config = EconomyConfig.load_from_path(EconomyConfig.DEFAULT_ECONOMY_CONFIG_PATH)
 	wallet = Wallet.new(economy_config.initial_gold)
 	placement_service = TowerPlacementService.new(board, wallet, economy_config)
-	selected_tower_type = _default_tower_type()
-	placement_service.basic_tower_type = selected_tower_type
+	selected_tower_definition_id = _default_tower_definition_id()
+	placement_service.select_basic_tower_id(selected_tower_definition_id)
+	selected_tower_type = placement_service.basic_tower_type
 	kill_reward_service = KillRewardService.new(wallet)
 	wave_reward_service = WaveRewardService.new(wallet)
 	last_placement_result = null
@@ -113,10 +115,7 @@ func get_default_wave_definitions() -> Array:
 	if enemy_catalog == null:
 		enemy_catalog = EnemyCatalog.new()
 
-	var wave_definitions := WaveConfig.load_definitions_from_path(
-		WaveConfig.DEFAULT_WAVE_DEFINITION_PATH,
-		enemy_catalog
-	)
+	var wave_definitions := WaveConfig.load_definitions_for_level(level_definition, enemy_catalog)
 	assert(not wave_definitions.is_empty(), "Default wave definitions must be configured.")
 	return wave_definitions
 
@@ -133,7 +132,7 @@ func advance_combat(delta: float) -> Array:
 
 
 func try_place_at_grid(grid_position: Vector2i) -> TowerPlacementResult:
-	placement_service.basic_tower_type = selected_tower_type
+	placement_service.select_basic_tower_id(selected_tower_definition_id)
 	var result := placement_service.try_place_basic_tower(grid_position)
 	last_placement_result = result.placement_result
 
@@ -169,7 +168,7 @@ func try_upgrade_tower(tower_id: String) -> TowerUpgradeResult:
 		var tower := get_tower_by_id(tower_id)
 		set_status_message(BoardMessage.tower_upgraded(
 			tower_id,
-			_tower_type_label(tower.tower_type),
+			_tower_label(tower),
 			result.new_tier,
 			result.cost
 		))
@@ -246,21 +245,22 @@ func show_defeat_screen() -> void:
 	gameplay_paused = true
 
 
-func select_tower_type(tower_type: GameTower.Type) -> void:
+func select_tower_type(tower_type: int) -> void:
 	selected_tower_type = tower_type
 	if placement_service != null:
-		placement_service.basic_tower_type = selected_tower_type
+		selected_tower_definition_id = placement_service.tower_config.get_tower_id(tower_type)
+		placement_service.select_basic_tower_id(selected_tower_definition_id)
 
 
 func select_tower_id(tower_id: String) -> bool:
 	if placement_service == null or placement_service.tower_config == null:
 		return false
 
-	var tower_type := placement_service.tower_config.get_tower_type_for_id(tower_id)
-	if tower_type < 0:
+	if not placement_service.select_basic_tower_id(tower_id):
 		return false
 
-	select_tower_type(tower_type as GameTower.Type)
+	selected_tower_definition_id = tower_id
+	selected_tower_type = placement_service.basic_tower_type
 	return true
 
 
@@ -441,22 +441,21 @@ func _removal_failure_compact_text(result: RemovalResult) -> String:
 	return "Cannot remove."
 
 
-func _tower_type_label(tower_type: GameTower.Type) -> String:
+func _tower_label(tower: GameTower) -> String:
 	if placement_service != null and placement_service.tower_config != null:
-		return placement_service.tower_config.get_display_name(tower_type)
+		return placement_service.tower_config.get_display_name_for_id(
+			placement_service.tower_config.get_tower_id_for_runtime_tower(tower)
+		)
 
 	return "Single"
 
 
-func _default_tower_type() -> GameTower.Type:
+func _default_tower_definition_id() -> String:
 	if placement_service == null or placement_service.tower_config == null:
-		return GameTower.Type.SINGLE_TARGET
+		return "single"
 
 	var tower_ids := placement_service.tower_config.get_tower_ids()
 	if tower_ids.is_empty():
-		return GameTower.Type.SINGLE_TARGET
+		return "single"
 
-	var tower_type := placement_service.tower_config.get_tower_type_for_id(String(tower_ids[0]))
-	if tower_type >= 0:
-		return tower_type as GameTower.Type
-	return GameTower.Type.SINGLE_TARGET
+	return String(tower_ids[0])

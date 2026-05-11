@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "waves": [
+    {
+      "id": "wave-1",
+      "enemy_type": "grunt",
+      "enemy_count": 7,
+      "spawn_interval_seconds": 0.9,
+      "clear_reward_gold": 18
+    },
+    {
+      "id": "wave-2",
+      "enemy_type": "grunt",
+      "enemy_count": 9,
+      "spawn_interval_seconds": 0.8,
+      "clear_reward_gold": 22
+    },
+    {
+      "id": "wave-3",
+      "enemy_type": "bruiser",
+      "enemy_count": 7,
+      "spawn_interval_seconds": 0.85,
+      "clear_reward_gold": 24
+    },
+    {
+      "id": "wave-4",
+      "enemy_type": "raider",
+      "enemy_count": 6,
+      "spawn_interval_seconds": 0.85,
+      "clear_reward_gold": 26
+    },
+    {
+      "id": "wave-5",
+      "enemy_type": "grunt",
+      "enemy_count": 12,
+      "spawn_interval_seconds": 0.65,
+      "clear_reward_gold": 32
+    },
+    {
+      "id": "wave-6",
+      "enemy_type": "bruiser",
+      "enemy_count": 10,
+      "spawn_interval_seconds": 0.75,
+      "clear_reward_gold": 36
+    },
+    {
+      "id": "wave-7",
+      "enemy_type": "raider",
+      "enemy_count": 9,
+      "spawn_interval_seconds": 0.7,
+      "clear_reward_gold": 42
+    },
+    {
+      "id": "wave-8",
+      "enemy_type": "bruiser",
+      "enemy_count": 13,
+      "spawn_interval_seconds": 0.6,
+      "clear_reward_gold": 50
+    }
+  ]
+}

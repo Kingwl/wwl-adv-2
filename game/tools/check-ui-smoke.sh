@@ -34,11 +34,26 @@ UI_SMOKE_ARTIFACT_DIR="${ARTIFACT_DIR}" "${RUNNER[@]}" 2>&1 | tee "${ARTIFACT_DI
 status="${PIPESTATUS[0]}"
 set -e
 
+visual_status=0
+if [[ -f "${ARTIFACT_DIR}/report.json" ]]; then
+  set +e
+  "${ROOT_DIR}/tools/generate-ui-visual-review.py" \
+    --artifact-dir "${ARTIFACT_DIR}" \
+    --block-size "${UI_VISUAL_REVIEW_BLOCK_SIZE:-4}"
+  visual_status="$?"
+  set -e
+fi
+
 "${ROOT_DIR}/tools/summarize-ui-smoke.py" "${ARTIFACT_DIR}/report.json" || true
 
 if [[ "${status}" -ne 0 ]]; then
   echo "UI smoke failed; artifacts: ${ARTIFACT_DIR}" >&2
   exit "${status}"
+fi
+
+if [[ "${visual_status}" -ne 0 ]]; then
+  echo "UI visual review generation failed; artifacts: ${ARTIFACT_DIR}" >&2
+  exit "${visual_status}"
 fi
 
 echo "UI smoke passed; artifacts: ${ARTIFACT_DIR}"

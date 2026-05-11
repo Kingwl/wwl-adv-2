@@ -4,6 +4,7 @@ extends RefCounted
 var id: String
 var display_name: String
 var style_id: String
+var wave_set_id: String
 var grid_width: int
 var grid_height: int
 var path_cells: Array
@@ -34,6 +35,7 @@ static func from_dictionary(data: Dictionary) -> LevelDefinition:
 	level.id = data.get("id", "")
 	level.display_name = data.get("display_name", level.id)
 	level.style_id = data.get("style_id", "")
+	level.wave_set_id = data.get("wave_set_id", "")
 	level.grid_width = int(grid.get("width", 0))
 	level.grid_height = int(grid.get("height", 0))
 	level.path_cells = LevelDefinition._cells_to_vector2i(data.get("path_cells", []))
@@ -58,7 +60,13 @@ func apply_to_board(board: Board) -> void:
 
 
 func is_valid() -> bool:
-	return grid_width > 0 and grid_height > 0 and path_cells.size() >= 2 and not style_id.is_empty()
+	return (
+		grid_width > 0
+		and grid_height > 0
+		and path_cells.size() >= 2
+		and not style_id.is_empty()
+		and not wave_set_id.is_empty()
+	)
 
 
 static func _cells_to_vector2i(cells: Array) -> Array:

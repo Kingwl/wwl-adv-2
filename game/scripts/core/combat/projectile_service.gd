@@ -42,7 +42,8 @@ func advance(projectiles: Array, enemies: Array, path_follower: PathFollower, de
 				projectile.target_enemy_id,
 				projectile.tower_type,
 				projectile.position,
-				true
+				true,
+				projectile.tower_definition_id
 			))
 			damage_events.append_array(_build_damage_events(projectile, enemies, path_follower))
 			status_events.append_array(_build_status_events(projectile, target))
