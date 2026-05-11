@@ -82,33 +82,13 @@ static func _validate_tier_stats(
 		errors.append("%s tier %d range_cells must be positive." % [tower_name, tier_number])
 	if float(tier_definition.get(TowerConfig.ATTACK_INTERVAL_KEY, 0.0)) <= 0.0:
 		errors.append("%s tier %d attack_interval must be positive." % [tower_name, tier_number])
-	if float(tier_definition.get(TowerConfig.SPLASH_RADIUS_KEY, 0.0)) < 0.0:
-		errors.append("%s tier %d splash_radius_cells cannot be negative." % [tower_name, tier_number])
-	if float(tier_definition.get(TowerConfig.SLOW_MULTIPLIER_KEY, 1.0)) <= 0.0:
-		errors.append("%s tier %d slow_multiplier must be positive." % [tower_name, tier_number])
-	if float(tier_definition.get(TowerConfig.SLOW_DURATION_KEY, 0.0)) < 0.0:
-		errors.append("%s tier %d slow_duration cannot be negative." % [tower_name, tier_number])
-	if TowerConfig._get_status_type(tier_definition) >= 0 and TowerConfig._get_status_duration(tier_definition) <= 0.0:
-		errors.append("%s tier %d status_duration must be positive when status_type is configured." % [tower_name, tier_number])
-	if TowerConfig._status_move_speed_multiplier_from_tier(tier_definition) <= 0.0:
-		errors.append("%s tier %d status_move_speed_multiplier must be positive." % [tower_name, tier_number])
-	if TowerConfig._status_tick_interval_from_tier(tier_definition) < 0.0:
-		errors.append("%s tier %d status_tick_interval cannot be negative." % [tower_name, tier_number])
-	if TowerConfig._status_tick_damage_from_tier(tier_definition) < 0.0:
-		errors.append("%s tier %d status_tick_damage cannot be negative." % [tower_name, tier_number])
-	if (
-		TowerConfig._status_tick_damage_from_tier(tier_definition) > 0.0
-		and TowerConfig._status_tick_interval_from_tier(tier_definition) <= 0.0
-	):
-		errors.append("%s tier %d status_tick_interval must be positive when status_tick_damage is positive." % [tower_name, tier_number])
 
-	if tier_definition.has(TowerConfig.EFFECTS_KEY):
-		var effect_definitions := tier_definition.get(TowerConfig.EFFECTS_KEY, []) as Array
-		if effect_definitions == null or effect_definitions.is_empty():
-			errors.append("%s tier %d effects must include at least one effect." % [tower_name, tier_number])
-		else:
-			for index in range(effect_definitions.size()):
-				_validate_effect_definition(errors, tower_name, tier_number, index + 1, effect_definitions[index])
+	var effect_definitions := tier_definition.get(TowerConfig.EFFECTS_KEY, []) as Array
+	if effect_definitions == null or effect_definitions.is_empty():
+		errors.append("%s tier %d effects must include at least one effect." % [tower_name, tier_number])
+	else:
+		for index in range(effect_definitions.size()):
+			_validate_effect_definition(errors, tower_name, tier_number, index + 1, effect_definitions[index])
 
 
 static func _validate_effect_definition(

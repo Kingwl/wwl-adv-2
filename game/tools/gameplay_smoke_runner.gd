@@ -166,7 +166,7 @@ func _scenario_place_single_tower(
 	_prepare_manual_combat(board_view)
 	var tower_cell := _preferred_tower_cell(board_view)
 	var gold_before := board_view.get_session().wallet.gold
-	board_view.select_tower_type(GameTower.Type.SINGLE_TARGET)
+	board_view.select_tower_id("single")
 	var placement := board_view.try_place_at_grid(tower_cell)
 	await _settle_frames(2)
 
@@ -184,7 +184,7 @@ func _scenario_tower_upgrade_remove_refund(
 ) -> void:
 	_prepare_manual_combat(board_view)
 	var tower_cell := _preferred_tower_cell(board_view)
-	board_view.select_tower_type(GameTower.Type.SINGLE_TARGET)
+	board_view.select_tower_id("single")
 	var placement := board_view.try_place_at_grid(tower_cell)
 	await _settle_frames(2)
 	_check(result, placement.succeeded, "tower placement succeeds before upgrade")
@@ -228,7 +228,7 @@ func _scenario_single_tower_kill_reward(
 	board_view: BoardView
 ) -> void:
 	_prepare_manual_combat(board_view)
-	board_view.select_tower_type(GameTower.Type.SINGLE_TARGET)
+	board_view.select_tower_id("single")
 	board_view.try_place_at_grid(_preferred_tower_cell(board_view))
 	var enemy := Enemy.new("smoke-enemy-1", 0.2, 10.0, 5)
 	enemy.path_distance = 2.0
@@ -254,7 +254,7 @@ func _scenario_area_tower_splash(
 	board_view: BoardView
 ) -> void:
 	_prepare_manual_combat(board_view)
-	board_view.select_tower_type(GameTower.Type.AREA)
+	board_view.select_tower_id("area")
 	board_view.try_place_at_grid(_preferred_tower_cell(board_view))
 	var first_enemy := Enemy.new("splash-enemy-1", 0.2, 6.0, 5)
 	var second_enemy := Enemy.new("splash-enemy-2", 0.2, 6.0, 5)
@@ -281,7 +281,7 @@ func _scenario_slow_tower_status(
 	board_view: BoardView
 ) -> void:
 	_prepare_manual_combat(board_view)
-	board_view.select_tower_type(GameTower.Type.SLOW)
+	board_view.select_tower_id("slow")
 	board_view.try_place_at_grid(_preferred_tower_cell(board_view))
 	var enemy := Enemy.new("slow-enemy-1", 0.2, 20.0, 5)
 	enemy.path_distance = 2.0
@@ -313,7 +313,7 @@ func _scenario_flame_tower_burn(
 	board_view: BoardView
 ) -> void:
 	_prepare_manual_combat(board_view)
-	board_view.select_tower_type(GameTower.Type.FLAME)
+	board_view.select_tower_id("flame")
 	board_view.try_place_at_grid(_preferred_tower_cell(board_view))
 	var enemy := Enemy.new(
 		"flame-enemy-1",
@@ -363,7 +363,7 @@ func _scenario_poison_tower_dot(
 	board_view: BoardView
 ) -> void:
 	_prepare_manual_combat(board_view)
-	board_view.select_tower_type(GameTower.Type.POISON)
+	board_view.select_tower_id("poison")
 	board_view.try_place_at_grid(_preferred_tower_cell(board_view))
 	var enemy := Enemy.new(
 		"poison-enemy-1",
@@ -414,12 +414,12 @@ func _scenario_tower_visual_catalog(
 ) -> void:
 	for spec in _tower_visual_specs():
 		var tower_name := String(spec["name"])
-		var tower_type: GameTower.Type = spec["tower_type"]
+		var tower_id := String(spec["tower_id"])
 		board_view.restart_game()
 		board_view.set_process(false)
 		board_view.apply_responsive_layout(Vector2(get_root().size))
 		_prepare_manual_combat(board_view)
-		board_view.select_tower_type(tower_type)
+		board_view.select_tower_id(tower_id)
 		var placement := board_view.try_place_at_grid(_preferred_tower_cell(board_view))
 		_check(result, placement.succeeded, "%s visual tower placement succeeds" % tower_name)
 
@@ -540,7 +540,7 @@ func _load_main_board(result: Dictionary, viewport_size: Vector2i) -> BoardView:
 
 
 func _tower_visual_specs() -> Array:
-	return TowerConfig.new().get_visual_test_tower_specs()
+	return TowerPresentationCatalog.new().get_visual_test_tower_specs()
 
 
 func _visual_catalog_enemy(tower_name: String) -> Enemy:

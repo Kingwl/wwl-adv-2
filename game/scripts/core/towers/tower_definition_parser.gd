@@ -97,7 +97,7 @@ static func effect_definition_from_data(effect_data: Dictionary) -> Dictionary:
 		TowerConfig.EFFECT_MOVE_SPEED_MULTIPLIER_KEY: float(effect_data.get(TowerConfig.EFFECT_MOVE_SPEED_MULTIPLIER_KEY, 1.0)),
 		TowerConfig.EFFECT_TICK_INTERVAL_KEY: float(effect_data.get(TowerConfig.EFFECT_TICK_INTERVAL_KEY, 0.0)),
 		TowerConfig.EFFECT_TICK_DAMAGE_KEY: float(effect_data.get(TowerConfig.EFFECT_TICK_DAMAGE_KEY, 0.0)),
-		TowerConfig.STATUS_STACK_POLICY_KEY: TowerConfig._stack_policy_from_value(effect_data.get(TowerConfig.STACK_POLICY_KEY, -1)),
+		TowerConfig.STACK_POLICY_KEY: TowerConfig._stack_policy_from_value(effect_data.get(TowerConfig.STACK_POLICY_KEY, -1)),
 	}
 	if effect_data.has(TowerConfig.ATTACK_TYPE_KEY):
 		definition[TowerConfig.ATTACK_TYPE_KEY] = TowerConfig._attack_type_from_value(effect_data[TowerConfig.ATTACK_TYPE_KEY])

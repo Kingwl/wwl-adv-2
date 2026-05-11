@@ -237,6 +237,18 @@ func select_tower_type(tower_type: GameTower.Type) -> void:
 		placement_service.basic_tower_type = selected_tower_type
 
 
+func select_tower_id(tower_id: String) -> bool:
+	if placement_service == null or placement_service.tower_config == null:
+		return false
+
+	var tower_type := placement_service.tower_config.get_tower_type_for_id(tower_id)
+	if tower_type < 0:
+		return false
+
+	select_tower_type(tower_type as GameTower.Type)
+	return true
+
+
 func get_visible_enemies() -> Array:
 	if combat_simulation == null:
 		return []
@@ -375,8 +387,11 @@ func _default_tower_type() -> GameTower.Type:
 	if placement_service == null or placement_service.tower_config == null:
 		return GameTower.Type.SINGLE_TARGET
 
-	var tower_types := placement_service.tower_config.get_tower_types()
-	if tower_types.is_empty():
+	var tower_ids := placement_service.tower_config.get_tower_ids()
+	if tower_ids.is_empty():
 		return GameTower.Type.SINGLE_TARGET
 
-	return tower_types[0] as GameTower.Type
+	var tower_type := placement_service.tower_config.get_tower_type_for_id(String(tower_ids[0]))
+	if tower_type >= 0:
+		return tower_type as GameTower.Type
+	return GameTower.Type.SINGLE_TARGET

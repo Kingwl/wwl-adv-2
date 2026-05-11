@@ -12,27 +12,22 @@
 
 ```bash
 cd game
-./tools/check-all.sh
 ./tools/agent-preflight.sh
-./tools/agent-preflight-full.sh
-./tools/check-env.sh
-./tools/godot-headless.sh
 ./tools/test-gut.sh
-./tools/check-structure.sh
+./tools/check-docs.sh
 ./tools/check-ui-smoke.sh
 ./tools/check-gameplay-smoke.sh
-./tools/check-web-smoke.sh ../build/web-smoke
 ```
 
 当前已知测试状态：
 
 - Godot: 4.6.2 stable.
 - GUT: 9.6.0.
-- GUT 套件：205 个测试通过，1414 个断言。
+- GUT 套件：208 个测试通过，1432 个断言。
 - Native UI smoke：桌面、移动横屏和方形视口通过，截图位于 `ci-artifacts/ui-smoke/native/`。
 - Native gameplay smoke：11 个代表性 gameplay scenario 通过，trace、截图、board overlay 和 focus overlay 位于 `ci-artifacts/gameplay-smoke/native/`。
 - Web export smoke：Web 导出页面通过本地 HTTP + headless browser 检查，报告和截图位于 `ci-artifacts/web-smoke/`。
-- Structural lint：Tree-sitter GDScript 解析 101 个文件，0 个 error，0 个 warning。
+- Structural lint：Tree-sitter GDScript 解析 103 个文件，0 个 error，0 个 warning。
 - Agent preflight fast：运行 `check-all.sh`，生成 Godot/GUT 结构化日志报告，不运行 native smoke。
 - Agent preflight full：运行 fast preflight、native UI smoke、native gameplay smoke 和 UI smoke 摘要。
 - 已知警告：GUT 退出时有来自场景/资源清理的 ObjectDB leaked instances 警告，记录为 TD-007。
@@ -51,7 +46,7 @@ cd game
 - 开始场景、主场景、暂停菜单、重开、返回开始、胜利和失败流程。
 - 五种基础塔：Single、Area、Slow、Flame 和 Poison，定义位于 `game/data/towers/towers.json`，包括建造费用、塔/投射物/命中特效资源引用，并由 `game/data/schemas/towers.schema.json` 和 `check-assets.sh` 校验。
 - 点击已放置塔会显示右上角浮动操作菜单，支持直接升级和拆除。
-- 塔选择卡组从塔配置自动生成；支持数字键按配置顺序选择塔，`U` 升级选中塔，`X`/`Delete`/`Backspace` 拆除选中塔，`Esc` 优先关闭塔操作菜单再进入暂停。
+- 塔选择卡组通过 `TowerPresentationCatalog` 从塔配置生成；HUD 按钮和数字键按 tower id 选择塔，`U` 升级选中塔，`X`/`Delete`/`Backspace` 拆除选中塔，`Esc` 优先关闭塔操作菜单再进入暂停。
 - 塔升级效果按塔类型和 tier 配置化；普通升级只做数值提升，每次升级必须提升伤害和攻击范围；升级不清空攻击冷却，只会按新攻击间隔钳制剩余冷却。
 - 塔操作菜单显示下一次升级预览，包含伤害和范围成长。
 - 攻击、防御、伤害类型和种族抗性第一版已进入核心伤害结算；现有五塔的武器形态、攻击类型、伤害类型、攻击模式、投射物速度和视觉资源从塔数据文件加载。
@@ -63,14 +58,14 @@ cd game
 - 生成的城市防御地图、道路 guide 产物、UI frame、塔 sprite、敌人 sprite 和攻击特效。
 - 覆盖 start-to-main 可玩性、响应式视口、单塔放置、塔操作菜单和截图产物的 native UI smoke。
 - 覆盖放塔、升级/拆除返还、Single 击杀奖励、Area 溅射、Slow 状态、Flame 灼烧 DoT、Poison 中毒 DoT、逐塔视觉目录、漏怪、胜利和失败的 native gameplay smoke。
-- 逐塔视觉目录从塔配置自动发现 `visual_test_enabled` 的塔，并为每种塔产出塔本体、投射物飞行中、命中/效果出现后的整屏截图、board crop、focus crop 和辅助线 overlay。
+- 逐塔视觉目录通过 `TowerPresentationCatalog` 从塔配置自动发现 `visual_test_enabled` 的塔，并为每种塔产出塔本体、投射物飞行中、命中/效果出现后的整屏截图、board crop、focus crop 和辅助线 overlay。
 - Tree-sitter structural lint，覆盖 core/scene/render 边界、BoardView 资产加载边界和结构回膨胀 warning 报告。
 - `BoardAssetCatalog`，集中管理主棋盘场景的关卡、map style、HUD 图标、敌人 sprite 和特效贴图加载；塔本体、投射物和命中特效资源从 `TowerConfig` 读取。
 - `BoardGameSession`，集中管理一局游戏的棋盘、钱包、放置服务、战斗模拟、波次、奖励和胜负 flow；场景测试和 smoke runner 通过 `BoardView.get_session()` 明确访问。
-- `BoardLayoutService`、`BoardHudController`、`BoardInputAdapter`、`BoardVisualState` 和 `BoardRenderer`，分别承接主棋盘响应式布局、HUD/overlay 同步、输入路由、表现层动画状态和绘制 adapter。
+- `BoardLayoutService`、`BoardHudController`、`BoardInputAdapter`、`BoardVisualState`、`BoardRenderer` 和 `TowerPresentationCatalog`，分别承接主棋盘响应式布局、HUD/overlay 同步、输入路由、表现层动画状态、绘制 adapter 和塔卡/smoke 展示清单。
 - `BoardView` 不再保留 session、layout、asset 或 visual state 的兼容镜像字段；场景测试和 smoke runner 通过显式 getter 访问拆出的边界。
 - `BoardMapRenderer` 已从 `game/scripts/core/` 迁到 `game/scripts/board/`，core 目录下渲染/资源加载耦合现在由 structural lint 作为 error 阻止。
-- `TowerConfig` 的 JSON 加载/原始解析和语义校验已拆到 `TowerDefinitionParser`、`TowerDefinitionValidator`；`TowerConfig` 保留运行时读取 API 和向后兼容委托入口。
+- `TowerConfig` 的 JSON 加载/原始解析、语义校验和 UI/smoke 展示清单已拆到 `TowerDefinitionParser`、`TowerDefinitionValidator` 和 `TowerPresentationCatalog`；`TowerConfig` 保留运行时读取 API、tower id lookup 和 parser/validator 委托入口。
 - 用于本地 agent 迭代反馈的 agent preflight 和 UI smoke 摘要脚本。
 - Godot/GUT 日志结构化报告，输出到 `ci-artifacts/godot-log/report.json` 和 `report.md`。
 - Web export smoke，验证 Godot Web 导出页面 canvas 非空且无关键浏览器错误，并作为 Pages 发布前门禁。
@@ -89,8 +84,9 @@ cd game
 
 ## 已知风险
 
-- 塔 roster 仍受 `GameTower.Type`、tower schema、工具枚举和若干 tower-type match 绑定，新增塔不是纯数据改动，记录为 TD-011 和 TD-016。
-- `TowerConfig` 已拆出 loader/parser/validator，但仍保留默认值、legacy tier/effect fallback 和 UI spec；`BoardRenderer`、`BoardHudController` 和 `test_main_scene.gd` 仍是体积最大的维护点，记录为 TD-012、TD-015 和 TD-017。
+- 塔 roster 已让 HUD 按钮、数字键和 smoke 选塔走 tower id，但核心运行时仍受 `GameTower.Type`、tower schema、`check-assets.py` 枚举和若干 tower-type match 绑定，新增塔还不是纯数据改动，记录为 TD-011 和 TD-016。
+- `TowerConfig` 已拆出 loader/parser/validator/presentation catalog，并删除旧 tier/effect fallback；仍保留 enum/default 映射以支撑现有运行时 roster，记录为 TD-011/TD-012 的剩余边界。
+- `BoardRenderer`、`BoardHudController` 和 `test_main_scene.gd` 仍是体积最大的维护点，记录为 TD-015 和 TD-017。
 - 当前敌人和波次已数据化，但只有三类基础敌人和 prototype 三波；MVP 长局仍缺平衡快照。
 - 紧凑视口 status/hint 依赖自由文本解析，文案调整可能破坏 UI 状态同步，记录为 TD-014。
 - 测试质量依赖 GUT 加 checklist，而不是行覆盖率。
@@ -110,6 +106,6 @@ cd game
 
 ## 下一步最值得做的工作
 
-1. 继续收口 `TowerConfig`：移出 UI button/visual test spec，并清理已被 `effects[]` 取代的 legacy tier/effect fallback。
-2. 在雷霆塔前处理塔 roster 的 `GameTower.Type` 绑定，逐步转向 tower id 驱动。
+1. 在雷霆塔前继续处理塔 roster 的 `GameTower.Type` 绑定：优先让核心放置/战斗配置、schema 和 `check-assets.py` 接受 tower id 数据契约。
+2. 收口 tower/effect 校验规则重复，明确 JSON schema、`check-assets.py` 和 GDScript validator 的职责边界。
 3. 保持 `game/tools/check-all.sh` 作为默认验证命令。

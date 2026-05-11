@@ -2,8 +2,7 @@
 
 ## 现在
 
-- [ ] 继续拆分 `TowerConfig` 的 UI spec 职责，并清理已被 `effects[]` 取代的 legacy tier/effect fallback。
-- [ ] 继续将塔 roster 从 `GameTower.Type` enum 推进到 tower id 数据契约，降低新增塔的跨模块改动面。
+- [ ] 继续将核心塔 roster、schema 和 asset check 从 `GameTower.Type` enum 推进到 tower id 数据契约，降低新增塔的跨模块改动面。
 - [ ] 评估确定性 road ribbon 渲染，用于未来可编辑路径地图。
 - [ ] 为塔、敌人、投射物和命中特效 sprite 添加 normal map，并接入 2D lighting。
 
@@ -39,6 +38,7 @@
 
 ## 已完成
 
+- [x] 拆分 `TowerConfig` 的 UI/smoke presentation spec，并清理已被 `effects[]` 取代的 legacy tier/effect fallback。
 - [x] 创建文档目录。
 - [x] 记录 Godot 2D 塔防合成方向。
 - [x] 记录 TDD 和覆盖策略。

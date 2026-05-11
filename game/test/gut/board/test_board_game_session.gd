@@ -68,6 +68,16 @@ func test_try_remove_tower_refunds_gold_updates_status_and_syncs_combat_towers()
 	assert_eq(session.status_text, "Removed tower-1 for 32 gold refund.")
 
 
+func test_select_tower_id_maps_config_id_to_placement_type() -> void:
+	var session := _new_initialized_session()
+
+	assert_true(session.select_tower_id("poison"))
+	assert_eq(session.selected_tower_type, GameTower.Type.POISON)
+	assert_eq(session.placement_service.basic_tower_type, GameTower.Type.POISON)
+	assert_false(session.select_tower_id("missing"))
+	assert_eq(session.selected_tower_type, GameTower.Type.POISON)
+
+
 func test_apply_tick_rewards_aggregates_multiple_rewards() -> void:
 	var session := _new_initialized_session()
 	var tick_result := CombatTickResult.new(

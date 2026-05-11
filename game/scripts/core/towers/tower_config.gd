@@ -19,9 +19,6 @@ const TIERS_KEY := "tiers"
 const DAMAGE_KEY := "damage"
 const RANGE_KEY := "range_cells"
 const ATTACK_INTERVAL_KEY := "attack_interval"
-const SPLASH_RADIUS_KEY := "splash_radius_cells"
-const SLOW_MULTIPLIER_KEY := "slow_multiplier"
-const SLOW_DURATION_KEY := "slow_duration"
 const UPGRADE_COST_KEY := "upgrade_cost"
 const UPGRADE_PREVIEW_KEY := "upgrade_preview"
 const WEAPON_TYPE_KEY := "weapon_type"
@@ -37,11 +34,6 @@ const EFFECT_DAMAGE_MULTIPLIER_KEY := "damage_multiplier"
 const EFFECT_RADIUS_KEY := "radius_cells"
 const EFFECT_DURATION_KEY := "duration"
 const STATUS_TYPE_KEY := "status_type"
-const STATUS_DURATION_KEY := "status_duration"
-const STATUS_MOVE_SPEED_MULTIPLIER_KEY := "status_move_speed_multiplier"
-const STATUS_TICK_INTERVAL_KEY := "status_tick_interval"
-const STATUS_TICK_DAMAGE_KEY := "status_tick_damage"
-const STATUS_STACK_POLICY_KEY := "status_stack_policy"
 const EFFECT_MOVE_SPEED_MULTIPLIER_KEY := "move_speed_multiplier"
 const EFFECT_TICK_INTERVAL_KEY := "tick_interval"
 const EFFECT_TICK_DAMAGE_KEY := "tick_damage"
@@ -77,11 +69,11 @@ func get_stats(tower_type: GameTower.Type, tier: int) -> TowerStats:
 	var effects := _get_effects(tier_definition)
 	var status_effect = _first_status_effect(effects)
 	var status_type := _status_type_from_effect(status_effect)
-	var status_duration := _status_duration_from_effect_or_legacy(tier_definition, status_effect)
-	var status_move_speed_multiplier := _status_move_speed_multiplier_from_effect_or_legacy(tier_definition, status_effect)
-	var status_tick_interval := _status_tick_interval_from_effect_or_legacy(tier_definition, status_effect)
-	var status_tick_damage := _status_tick_damage_from_effect_or_legacy(tier_definition, status_effect)
-	var status_stack_policy := _status_stack_policy_from_effect_or_legacy(tier_definition, status_effect)
+	var status_duration := _status_duration_from_effect(status_effect)
+	var status_move_speed_multiplier := _status_move_speed_multiplier_from_effect(status_effect)
+	var status_tick_interval := _status_tick_interval_from_effect(status_effect)
+	var status_tick_damage := _status_tick_damage_from_effect(status_effect)
+	var status_stack_policy := _status_stack_policy_from_effect(status_effect)
 	var projectile_definition := _get_projectile_definition(tower_type)
 
 	return TowerStats.new(
@@ -92,9 +84,9 @@ func get_stats(tower_type: GameTower.Type, tier: int) -> TowerStats:
 		attack_type,
 		damage_school,
 		get_attack_pattern(tower_type),
-		_get_splash_radius_cells(tier_definition, effects),
-		_slow_multiplier_from_status(tier_definition, status_type, status_move_speed_multiplier),
-		_slow_duration_from_status(tier_definition, status_type, status_duration),
+		_get_splash_radius_cells(effects),
+		_slow_multiplier_from_status(status_type, status_move_speed_multiplier),
+		_slow_duration_from_status(status_type, status_duration),
 		status_type,
 		status_duration,
 		status_move_speed_multiplier,
@@ -170,9 +162,27 @@ func get_tower_types() -> Array:
 	return tower_types
 
 
+func get_tower_ids() -> Array:
+	var tower_ids := []
+	for tower_type in get_tower_types():
+		tower_ids.append(get_tower_id(tower_type))
+	return tower_ids
+
+
 func get_tower_id(tower_type: GameTower.Type) -> String:
 	var tower_definition := _get_tower_definition(tower_type)
 	return str(tower_definition.get(ID_KEY, _tower_type_id(tower_type)))
+
+
+func get_tower_type_for_id(tower_id: String) -> int:
+	for tower_type in get_tower_types():
+		if get_tower_id(tower_type) == tower_id:
+			return tower_type
+	return -1
+
+
+func has_tower_id(tower_id: String) -> bool:
+	return get_tower_type_for_id(tower_id) >= 0
 
 
 func get_display_name(tower_type: GameTower.Type) -> String:
@@ -197,42 +207,9 @@ func get_impact_texture_paths(tower_type: GameTower.Type) -> Array:
 	return (_get_visuals_definition(tower_type).get(IMPACT_TEXTURES_KEY, []) as Array).duplicate()
 
 
-func get_tower_button_node_name(tower_type: GameTower.Type) -> String:
-	return "%sTowerButton" % _pascal_case_id(get_tower_id(tower_type))
-
-
-func get_tower_button_specs() -> Array:
-	var specs := []
-	for tower_type in get_tower_types():
-		specs.append({
-			"name": get_tower_id(tower_type),
-			"tower_type": tower_type,
-			"display_name": get_display_name(tower_type),
-			"description": get_description(tower_type),
-			"build_cost": get_build_cost(tower_type),
-			"node_name": get_tower_button_node_name(tower_type),
-			"node_path": "Hud/%s" % get_tower_button_node_name(tower_type),
-		})
-
-	return specs
-
-
 func is_visual_test_enabled(tower_type: GameTower.Type) -> bool:
 	var tower_definition := _get_tower_definition(tower_type)
 	return bool(tower_definition.get(VISUAL_TEST_ENABLED_KEY, true))
-
-
-func get_visual_test_tower_specs() -> Array:
-	var specs := []
-	for tower_type in get_tower_types():
-		if is_visual_test_enabled(tower_type):
-			specs.append({
-				"name": get_tower_id(tower_type),
-				"tower_type": tower_type,
-				"display_name": get_display_name(tower_type),
-			})
-
-	return specs
 
 
 func can_upgrade(tower: GameTower) -> bool:
@@ -281,43 +258,12 @@ func _get_visuals_definition(tower_type: GameTower.Type) -> Dictionary:
 
 
 func _get_effects(tier_definition: Dictionary) -> Array:
-	if not tier_definition.has(EFFECTS_KEY):
-		return _legacy_effects_from_tier(tier_definition)
-
 	var effects := []
 	var effect_definitions := tier_definition.get(EFFECTS_KEY, []) as Array
 	for candidate in effect_definitions:
 		var effect: TowerEffect = _effect_from_value(candidate)
 		if effect != null:
 			effects.append(effect)
-
-	return effects
-
-
-func _legacy_effects_from_tier(tier_definition: Dictionary) -> Array:
-	var effects := []
-	var splash_radius := float(tier_definition.get(SPLASH_RADIUS_KEY, 0.0))
-	if splash_radius > 0.0:
-		effects.append(TowerEffect.splash_damage(splash_radius))
-	else:
-		effects.append(TowerEffect.damage_primary())
-
-	var status_type := _get_status_type(tier_definition)
-	var status_duration := _get_status_duration(tier_definition)
-	if status_type >= 0 and status_duration > 0.0:
-		effects.append(TowerEffect.apply_status(
-			status_type,
-			status_duration,
-			float(tier_definition.get(
-				STATUS_MOVE_SPEED_MULTIPLIER_KEY,
-				tier_definition.get(SLOW_MULTIPLIER_KEY, 1.0)
-			)),
-			float(tier_definition.get(STATUS_TICK_INTERVAL_KEY, 0.0)),
-			float(tier_definition.get(STATUS_TICK_DAMAGE_KEY, 0.0)),
-			-1,
-			-1,
-			int(tier_definition.get(STATUS_STACK_POLICY_KEY, -1))
-		))
 
 	return effects
 
@@ -343,13 +289,13 @@ static func _effect_from_value(value):
 		TowerEffect.EffectType.APPLY_STATUS:
 			return TowerEffect.apply_status(
 				_status_type_from_value(definition.get(STATUS_TYPE_KEY, -1)),
-				float(definition.get(EFFECT_DURATION_KEY, definition.get(STATUS_DURATION_KEY, 0.0))),
-				float(definition.get(EFFECT_MOVE_SPEED_MULTIPLIER_KEY, definition.get(STATUS_MOVE_SPEED_MULTIPLIER_KEY, 1.0))),
-				float(definition.get(EFFECT_TICK_INTERVAL_KEY, definition.get(STATUS_TICK_INTERVAL_KEY, 0.0))),
-				float(definition.get(EFFECT_TICK_DAMAGE_KEY, definition.get(STATUS_TICK_DAMAGE_KEY, 0.0))),
+				float(definition.get(EFFECT_DURATION_KEY, 0.0)),
+				float(definition.get(EFFECT_MOVE_SPEED_MULTIPLIER_KEY, 1.0)),
+				float(definition.get(EFFECT_TICK_INTERVAL_KEY, 0.0)),
+				float(definition.get(EFFECT_TICK_DAMAGE_KEY, 0.0)),
 				_attack_type_from_value(definition.get(ATTACK_TYPE_KEY, -1)),
 				_damage_school_from_value(definition.get(DAMAGE_SCHOOL_KEY, -1)),
-				_stack_policy_from_value(definition.get(STATUS_STACK_POLICY_KEY, definition.get(STACK_POLICY_KEY, -1)))
+				_stack_policy_from_value(definition.get(STACK_POLICY_KEY, -1))
 			)
 
 	return TowerEffect.damage_primary(
@@ -360,11 +306,6 @@ static func _effect_from_value(value):
 
 
 static func _tier_has_slow(tier_definition: Dictionary) -> bool:
-	if float(tier_definition.get(SLOW_DURATION_KEY, 0.0)) > 0.0:
-		return true
-	if float(tier_definition.get(SLOW_MULTIPLIER_KEY, 1.0)) < 1.0:
-		return true
-
 	var status_effect = _first_status_effect_from_tier(tier_definition)
 	if status_effect == null:
 		return false
@@ -376,25 +317,11 @@ static func _tier_has_slow(tier_definition: Dictionary) -> bool:
 
 
 static func _get_status_type(tier_definition: Dictionary) -> int:
-	if tier_definition.has(STATUS_TYPE_KEY):
-		return _status_type_from_value(tier_definition[STATUS_TYPE_KEY])
-
 	var status_effect = _first_status_effect_from_tier(tier_definition)
 	if status_effect != null:
 		return status_effect.status_type
 
-	return StatusEvent.StatusType.SLOW if _tier_has_slow(tier_definition) else -1
-
-
-static func _get_status_duration(tier_definition: Dictionary) -> float:
-	if tier_definition.has(STATUS_DURATION_KEY) or tier_definition.has(SLOW_DURATION_KEY):
-		return float(tier_definition.get(STATUS_DURATION_KEY, tier_definition.get(SLOW_DURATION_KEY, 0.0)))
-
-	var status_effect = _first_status_effect_from_tier(tier_definition)
-	if status_effect != null:
-		return status_effect.duration
-
-	return 0.0
+	return -1
 
 
 static func _first_status_effect_from_tier(tier_definition: Dictionary):
@@ -410,43 +337,7 @@ static func _first_status_effect_from_tier(tier_definition: Dictionary):
 	return null
 
 
-static func _status_move_speed_multiplier_from_tier(tier_definition: Dictionary) -> float:
-	if tier_definition.has(STATUS_MOVE_SPEED_MULTIPLIER_KEY) or tier_definition.has(SLOW_MULTIPLIER_KEY):
-		return float(tier_definition.get(STATUS_MOVE_SPEED_MULTIPLIER_KEY, tier_definition.get(SLOW_MULTIPLIER_KEY, 1.0)))
-
-	var status_effect = _first_status_effect_from_tier(tier_definition)
-	if status_effect != null:
-		return status_effect.move_speed_multiplier
-
-	return 1.0
-
-
-static func _status_tick_interval_from_tier(tier_definition: Dictionary) -> float:
-	if tier_definition.has(STATUS_TICK_INTERVAL_KEY):
-		return float(tier_definition[STATUS_TICK_INTERVAL_KEY])
-
-	var status_effect = _first_status_effect_from_tier(tier_definition)
-	if status_effect != null:
-		return status_effect.tick_interval
-
-	return 0.0
-
-
-static func _status_tick_damage_from_tier(tier_definition: Dictionary) -> float:
-	if tier_definition.has(STATUS_TICK_DAMAGE_KEY):
-		return float(tier_definition[STATUS_TICK_DAMAGE_KEY])
-
-	var status_effect = _first_status_effect_from_tier(tier_definition)
-	if status_effect != null:
-		return status_effect.tick_damage
-
-	return 0.0
-
-
 static func _get_splash_radius_from_tier(tier_definition: Dictionary) -> float:
-	if tier_definition.has(SPLASH_RADIUS_KEY):
-		return float(tier_definition[SPLASH_RADIUS_KEY])
-
 	var effect_definitions := tier_definition.get(EFFECTS_KEY, []) as Array
 	if effect_definitions == null:
 		return 0.0
@@ -458,10 +349,7 @@ static func _get_splash_radius_from_tier(tier_definition: Dictionary) -> float:
 	return 0.0
 
 
-func _get_splash_radius_cells(tier_definition: Dictionary, effects: Array) -> float:
-	if tier_definition.has(SPLASH_RADIUS_KEY):
-		return float(tier_definition[SPLASH_RADIUS_KEY])
-
+func _get_splash_radius_cells(effects: Array) -> float:
 	for candidate in effects:
 		var effect := candidate as TowerEffect
 		if effect != null and effect.effect_type == TowerEffect.EffectType.SPLASH_DAMAGE:
@@ -501,59 +389,44 @@ func _status_type_from_effect(status_effect) -> int:
 	return status_effect.status_type
 
 
-func _status_duration_from_effect_or_legacy(tier_definition: Dictionary, status_effect) -> float:
-	if tier_definition.has(STATUS_DURATION_KEY) or tier_definition.has(SLOW_DURATION_KEY):
-		return float(tier_definition.get(STATUS_DURATION_KEY, tier_definition.get(SLOW_DURATION_KEY, 0.0)))
+func _status_duration_from_effect(status_effect) -> float:
 	if status_effect != null:
 		return status_effect.duration
 	return 0.0
 
 
-func _status_move_speed_multiplier_from_effect_or_legacy(tier_definition: Dictionary, status_effect) -> float:
-	if tier_definition.has(STATUS_MOVE_SPEED_MULTIPLIER_KEY) or tier_definition.has(SLOW_MULTIPLIER_KEY):
-		return float(tier_definition.get(STATUS_MOVE_SPEED_MULTIPLIER_KEY, tier_definition.get(SLOW_MULTIPLIER_KEY, 1.0)))
+func _status_move_speed_multiplier_from_effect(status_effect) -> float:
 	if status_effect != null:
 		return status_effect.move_speed_multiplier
 	return 1.0
 
 
-func _status_tick_interval_from_effect_or_legacy(tier_definition: Dictionary, status_effect) -> float:
-	if tier_definition.has(STATUS_TICK_INTERVAL_KEY):
-		return float(tier_definition[STATUS_TICK_INTERVAL_KEY])
+func _status_tick_interval_from_effect(status_effect) -> float:
 	if status_effect != null:
 		return status_effect.tick_interval
 	return 0.0
 
 
-func _status_tick_damage_from_effect_or_legacy(tier_definition: Dictionary, status_effect) -> float:
-	if tier_definition.has(STATUS_TICK_DAMAGE_KEY):
-		return float(tier_definition[STATUS_TICK_DAMAGE_KEY])
+func _status_tick_damage_from_effect(status_effect) -> float:
 	if status_effect != null:
 		return status_effect.tick_damage
 	return 0.0
 
 
-func _status_stack_policy_from_effect_or_legacy(tier_definition: Dictionary, status_effect) -> int:
-	if tier_definition.has(STATUS_STACK_POLICY_KEY):
-		return int(tier_definition[STATUS_STACK_POLICY_KEY])
+func _status_stack_policy_from_effect(status_effect) -> int:
 	if status_effect != null:
 		return status_effect.resolved_stack_policy()
 	return -1
 
 
 func _slow_multiplier_from_status(
-	tier_definition: Dictionary,
 	status_type: int,
 	status_move_speed_multiplier: float
 ) -> float:
-	if tier_definition.has(SLOW_MULTIPLIER_KEY):
-		return float(tier_definition[SLOW_MULTIPLIER_KEY])
 	return status_move_speed_multiplier if status_type == StatusEvent.StatusType.SLOW else 1.0
 
 
-func _slow_duration_from_status(tier_definition: Dictionary, status_type: int, status_duration: float) -> float:
-	if tier_definition.has(SLOW_DURATION_KEY):
-		return float(tier_definition[SLOW_DURATION_KEY])
+func _slow_duration_from_status(status_type: int, status_duration: float) -> float:
 	return status_duration if status_type == StatusEvent.StatusType.SLOW else 0.0
 
 
@@ -569,28 +442,25 @@ static func _effect_value(effect_definition, key: String, default_value):
 				return effect.radius_cells
 			STATUS_TYPE_KEY:
 				return effect.status_type
-			EFFECT_DURATION_KEY, STATUS_DURATION_KEY:
+			EFFECT_DURATION_KEY:
 				return effect.duration
-			EFFECT_MOVE_SPEED_MULTIPLIER_KEY, STATUS_MOVE_SPEED_MULTIPLIER_KEY:
+			EFFECT_MOVE_SPEED_MULTIPLIER_KEY:
 				return effect.move_speed_multiplier
-			EFFECT_TICK_INTERVAL_KEY, STATUS_TICK_INTERVAL_KEY:
+			EFFECT_TICK_INTERVAL_KEY:
 				return effect.tick_interval
-			EFFECT_TICK_DAMAGE_KEY, STATUS_TICK_DAMAGE_KEY:
+			EFFECT_TICK_DAMAGE_KEY:
 				return effect.tick_damage
 			ATTACK_TYPE_KEY:
 				return effect.attack_type
 			DAMAGE_SCHOOL_KEY:
 				return effect.damage_school
-			STATUS_STACK_POLICY_KEY:
+			STACK_POLICY_KEY:
 				return effect.stack_policy
 		return default_value
 
 	var dictionary := effect_definition as Dictionary
 	if dictionary == null:
 		return default_value
-
-	if key == STATUS_STACK_POLICY_KEY and dictionary.has(STACK_POLICY_KEY):
-		return dictionary[STACK_POLICY_KEY]
 
 	return dictionary.get(key, default_value)
 
@@ -838,13 +708,3 @@ static func _format_positive_delta(delta: float) -> String:
 	if text.ends_with("."):
 		text = text.left(text.length() - 1)
 	return "+%s" % text
-
-
-static func _pascal_case_id(value: String) -> String:
-	var result := ""
-	for part in value.split("_", false):
-		for subpart in part.split("-", false):
-			if subpart.is_empty():
-				continue
-			result += subpart.substr(0, 1).to_upper() + subpart.substr(1).to_lower()
-	return result

@@ -111,10 +111,10 @@ Tier 定义使用“完整快照”，不使用增量补丁。也就是 tier 2 �
 | `damage` | 必须严格提升。 |
 | `range_cells` | 必须严格提升。 |
 | `attack_interval` | 可选，数值降低表示攻速提升。 |
-| `splash_radius_cells` | 可选，但只允许已有溅射塔提升。 |
-| `status.duration_seconds` | 可选，但只允许已有状态延长持续时间。 |
-| `status.tick_damage` | 可选，但只允许已有 DoT 提升 tick 伤害。 |
-| `status.move_speed_multiplier` | 可选，但只允许已有减速强化倍率。 |
+| `effects[].radius_cells` | 可选，但只允许已有 `splash_damage` 效果提升。 |
+| `effects[].duration` | 可选，但只允许已有 `apply_status` 效果延长持续时间。 |
+| `effects[].tick_damage` | 可选，但只允许已有 DoT 提升 tick 伤害。 |
+| `effects[].move_speed_multiplier` | 可选，但只允许已有减速状态强化倍率。 |
 | `chain.max_targets` | 可选，但只允许已有连锁塔提升目标数量。 |
 | `chain.damage_falloff` | 可选，但只允许已有连锁塔降低衰减。 |
 

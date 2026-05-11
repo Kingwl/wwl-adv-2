@@ -47,6 +47,12 @@ func test_try_place_basic_tower_uses_tower_type_build_cost() -> void:
 					"damage": 6.0,
 					"range_cells": 2.0,
 					"attack_interval": 1.4,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.SPLASH_DAMAGE,
+							"radius_cells": 0.75,
+						},
+					],
 				},
 			],
 		},

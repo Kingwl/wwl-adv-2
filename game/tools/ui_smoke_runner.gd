@@ -453,10 +453,10 @@ func _capture_visual_state_artifacts(
 		board_view.clear_tower_action_menu()
 		await _settle_frames(1)
 
-	for spec in TowerConfig.new().get_visual_test_tower_specs():
+	for spec in TowerPresentationCatalog.new().get_visual_test_tower_specs():
 		var tower_name := String(spec["name"])
-		var tower_type: GameTower.Type = spec["tower_type"]
-		board_view.select_tower_type(tower_type)
+		var tower_id := String(spec["tower_id"])
+		board_view.select_tower_id(tower_id)
 		await _settle_frames(2)
 		await _capture_current_review_artifacts(
 			result,
@@ -597,7 +597,7 @@ func _review_crop_specs(main_scene: Node, image_size: Vector2i) -> Array:
 
 func _tower_button_paths() -> Array:
 	var paths := []
-	for spec in TowerConfig.new().get_tower_button_specs():
+	for spec in TowerPresentationCatalog.new().get_tower_button_specs():
 		paths.append(String(spec["node_path"]))
 	return paths
 

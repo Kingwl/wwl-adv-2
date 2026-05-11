@@ -36,12 +36,13 @@ func test_default_tower_config_loads_json_tower_definitions() -> void:
 	])
 	assert_eq(config.get_tower_id(GameTower.Type.SINGLE_TARGET), "single")
 	assert_eq(config.get_tower_id(GameTower.Type.FLAME), "flame")
+	assert_eq(config.get_tower_ids(), ["single", "area", "slow", "flame", "poison"])
+	assert_eq(config.get_tower_type_for_id("poison"), GameTower.Type.POISON)
+	assert_true(config.has_tower_id("slow"))
+	assert_false(config.has_tower_id("missing"))
 	assert_eq(config.get_display_name(GameTower.Type.POISON), "Poison")
 	assert_eq(config.get_description(GameTower.Type.POISON), "Toxic DoT")
-	assert_eq(config.get_tower_button_node_name(GameTower.Type.POISON), "PoisonTowerButton")
-	assert_eq(config.get_tower_button_specs().size(), 5)
 	assert_true(config.is_visual_test_enabled(GameTower.Type.SLOW))
-	assert_eq(config.get_visual_test_tower_specs().size(), 5)
 	assert_eq(config.get_build_cost(GameTower.Type.SINGLE_TARGET), 25)
 	assert_eq(
 		config.get_tower_texture_path(GameTower.Type.SINGLE_TARGET),
@@ -108,7 +109,7 @@ func test_tower_definition_parser_normalizes_raw_json_data() -> void:
 	assert_eq((definition["projectile"] as Dictionary)["speed_cells_per_second"], 5.5)
 	assert_eq(effect["type"], TowerEffect.EffectType.APPLY_STATUS)
 	assert_eq(effect["status_type"], StatusEvent.StatusType.BURN)
-	assert_eq(effect["status_stack_policy"], StatusEffect.StackPolicy.REFRESH)
+	assert_eq(effect["stack_policy"], StatusEffect.StackPolicy.REFRESH)
 
 
 func test_single_target_upgrade_tiers_focus_damage_and_fire_rate() -> void:
@@ -339,11 +340,21 @@ func test_custom_tower_definitions_drive_stats_and_upgrade_cost() -> void:
 					"range_cells": 1.5,
 					"attack_interval": 2.0,
 					"upgrade_cost": 9,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.DAMAGE_PRIMARY,
+						},
+					],
 				},
 				{
 					"damage": 4.0,
 					"range_cells": 2.5,
 					"attack_interval": 1.5,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.DAMAGE_PRIMARY,
+						},
+					],
 				},
 			],
 		},
@@ -400,14 +411,28 @@ func test_validate_definitions_rejects_new_splash_or_slow_mechanics_during_upgra
 					"range_cells": 2.0,
 					"attack_interval": 1.0,
 					"upgrade_cost": 10,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.DAMAGE_PRIMARY,
+						},
+					],
 				},
 				{
 					"damage": 7.0,
 					"range_cells": 2.2,
 					"attack_interval": 0.9,
-					"splash_radius_cells": 0.3,
-					"slow_multiplier": 0.8,
-					"slow_duration": 1.0,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.SPLASH_DAMAGE,
+							"radius_cells": 0.3,
+						},
+						{
+							"type": TowerEffect.EffectType.APPLY_STATUS,
+							"status_type": StatusEvent.StatusType.SLOW,
+							"duration": 1.0,
+							"move_speed_multiplier": 0.8,
+						},
+					],
 				},
 			],
 		},
@@ -426,20 +451,30 @@ func test_validate_definitions_rejects_status_type_change_during_upgrade() -> vo
 					"damage": 5.0,
 					"range_cells": 2.0,
 					"attack_interval": 1.0,
-					"status_type": StatusEvent.StatusType.BURN,
-					"status_duration": 3.0,
-					"status_tick_interval": 1.0,
-					"status_tick_damage": 2.0,
 					"upgrade_cost": 10,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.APPLY_STATUS,
+							"status_type": StatusEvent.StatusType.BURN,
+							"duration": 3.0,
+							"tick_interval": 1.0,
+							"tick_damage": 2.0,
+						},
+					],
 				},
 				{
 					"damage": 7.0,
 					"range_cells": 2.2,
 					"attack_interval": 0.9,
-					"status_type": StatusEvent.StatusType.POISON,
-					"status_duration": 3.0,
-					"status_tick_interval": 1.0,
-					"status_tick_damage": 2.0,
+					"effects": [
+						{
+							"type": TowerEffect.EffectType.APPLY_STATUS,
+							"status_type": StatusEvent.StatusType.POISON,
+							"duration": 3.0,
+							"tick_interval": 1.0,
+							"tick_damage": 2.0,
+						},
+					],
 				},
 			],
 		},

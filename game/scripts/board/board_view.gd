@@ -276,6 +276,16 @@ func select_tower_type(tower_type: GameTower.Type) -> void:
 	queue_redraw()
 
 
+func select_tower_id(tower_id: String) -> void:
+	_ensure_dependencies()
+	if not _game_session.select_tower_id(tower_id):
+		return
+
+	_update_selected_tower_hint()
+	_sync_tower_button_state()
+	queue_redraw()
+
+
 func set_status_text(text: String) -> void:
 	_ensure_dependencies()
 	_game_session.set_status(text)
@@ -399,7 +409,7 @@ func _configure_hud() -> void:
 	_hud_controller.configure(_asset_catalog.menu_icon_texture)
 	_hud_controller.connect_signals(
 		Callable(self, "open_pause_menu"),
-		Callable(self, "select_tower_type"),
+		Callable(self, "select_tower_id"),
 		Callable(self, "_on_overlay_primary_pressed"),
 		Callable(self, "_on_overlay_secondary_pressed"),
 		Callable(self, "upgrade_selected_tower"),
@@ -516,9 +526,12 @@ func _update_selected_tower_hint() -> void:
 
 
 func _sync_tower_button_state() -> void:
+	var selected_config_tower_id := ""
+	if _game_session.placement_service != null and _game_session.placement_service.tower_config != null:
+		selected_config_tower_id = _game_session.placement_service.tower_config.get_tower_id(_game_session.selected_tower_type)
 	_hud_controller.sync_tower_button_state(
 		_game_session.flow_state,
-		_game_session.selected_tower_type,
+		selected_config_tower_id,
 		_game_session.wallet,
 		_game_session.economy_config,
 		_game_session.placement_service.tower_config,
@@ -609,18 +622,18 @@ func _select_tower_if_occupied(grid_position: Vector2i) -> bool:
 
 
 func _select_tower_by_shortcut_index(index: int) -> void:
-	var tower_types := _game_session.placement_service.tower_config.get_tower_types()
-	if index < 0 or index >= tower_types.size():
+	var tower_ids := _game_session.placement_service.tower_config.get_tower_ids()
+	if index < 0 or index >= tower_ids.size():
 		return
 
-	select_tower_type(tower_types[index])
+	select_tower_id(String(tower_ids[index]))
 
 
 func _tower_card_count() -> int:
 	if _game_session == null or _game_session.placement_service == null:
 		return BoardLayoutService.DEFAULT_TOWER_CARD_COUNT
 
-	return _game_session.placement_service.tower_config.get_tower_types().size()
+	return _game_session.placement_service.tower_config.get_tower_ids().size()
 
 
 func _sync_combat_tower_selection() -> void:
