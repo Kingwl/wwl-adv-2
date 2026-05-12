@@ -32,6 +32,7 @@ var _visual_state: BoardVisualState
 var _input_adapter: BoardInputAdapter
 var _board_renderer: BoardRenderer
 var _map_normal_light: DirectionalLight2D
+var _current_level_definition_path := ""
 
 
 func _ready() -> void:
@@ -98,6 +99,16 @@ func get_visual_state() -> BoardVisualState:
 func get_renderer() -> BoardRenderer:
 	_ensure_dependencies()
 	return _board_renderer
+
+
+func get_level_definition_path() -> String:
+	if _current_level_definition_path.is_empty():
+		_current_level_definition_path = _resolve_level_definition_path()
+	return _current_level_definition_path
+
+
+func get_next_level_definition_path() -> String:
+	return LevelCatalog.get_next_level_path(get_level_definition_path())
 
 
 func screen_to_grid_position(screen_position: Vector2) -> Vector2i:
@@ -221,7 +232,7 @@ func open_pause_menu() -> void:
 		return
 
 	clear_tower_action_menu()
-	_show_overlay("Paused", "Game paused.", "Resume", "Start")
+	_show_overlay("Paused", "Game paused.", "Resume", "Select")
 	_refresh_hud()
 
 
@@ -248,7 +259,20 @@ func restart_game() -> void:
 func return_to_start_screen() -> void:
 	_game_session.gameplay_paused = true
 	_sync_tower_button_state()
+	get_tree().set_meta(LevelCatalog.START_IN_LEVEL_SELECT_META_KEY, true)
 	get_tree().change_scene_to_file(START_SCENE_PATH)
+
+
+func start_next_level() -> void:
+	_ensure_dependencies()
+	var next_level_path := get_next_level_definition_path()
+	if next_level_path.is_empty():
+		return_to_start_screen()
+		return
+
+	_game_session.gameplay_paused = true
+	get_tree().set_meta(LevelCatalog.SELECTED_LEVEL_META_KEY, next_level_path)
+	get_tree().reload_current_scene()
 
 
 func show_victory_screen() -> void:
@@ -256,7 +280,7 @@ func show_victory_screen() -> void:
 	clear_tower_action_menu()
 	_game_session.show_victory_screen()
 	_game_session.set_status_message(BoardMessage.victory())
-	_show_overlay("Victory", "All waves cleared.", "Restart", "Start")
+	_show_victory_overlay()
 	_refresh_hud()
 
 
@@ -265,7 +289,7 @@ func show_defeat_screen() -> void:
 	clear_tower_action_menu()
 	_game_session.show_defeat_screen()
 	_game_session.set_status_message(BoardMessage.defeat())
-	_show_overlay("Defeat", "Enemies breached the path.", "Restart", "Start")
+	_show_overlay("Defeat", "Enemies breached the path.", "Restart", "Select")
 	_refresh_hud()
 
 
@@ -378,7 +402,8 @@ func _ensure_dependencies() -> void:
 
 
 func _load_assets() -> void:
-	_asset_catalog.load_all(level_definition_path)
+	_current_level_definition_path = _resolve_level_definition_path()
+	_asset_catalog.load_all(_current_level_definition_path)
 
 
 func _initialize_board() -> void:
@@ -443,11 +468,11 @@ func _sync_flow_overlay_from_transition(previous_flow_state: int) -> void:
 
 	match _game_session.flow_state:
 		BoardGameSession.FlowState.WON:
-			_show_overlay("Victory", "All waves cleared.", "Restart", "Start")
+			_show_victory_overlay()
 		BoardGameSession.FlowState.LOST:
-			_show_overlay("Defeat", "Enemies breached the path.", "Restart", "Start")
+			_show_overlay("Defeat", "Enemies breached the path.", "Restart", "Select")
 		BoardGameSession.FlowState.MENU:
-			_show_overlay("Paused", "Game paused.", "Resume", "Start")
+			_show_overlay("Paused", "Game paused.", "Resume", "Select")
 		BoardGameSession.FlowState.PLAYING:
 			_set_overlay_visible(false)
 
@@ -501,6 +526,19 @@ func _show_overlay(title: String, message: String, primary_text: String, seconda
 	_hud_controller.show_overlay(title, message, primary_text, secondary_text, get_layout_metrics())
 
 
+func _show_victory_overlay() -> void:
+	var next_level_path := get_next_level_definition_path()
+	if next_level_path.is_empty():
+		_show_overlay("Victory", "All waves cleared.", "Select", "Restart")
+		return
+
+	var next_level_name := LevelCatalog.get_level_display_name(next_level_path)
+	var message := "All waves cleared."
+	if not next_level_name.is_empty():
+		message = "All waves cleared. Next: %s." % next_level_name
+	_show_overlay("Victory", message, "Next", "Restart")
+
+
 func _set_overlay_visible(should_be_visible: bool) -> void:
 	_hud_controller.set_overlay_visible(should_be_visible)
 
@@ -509,17 +547,21 @@ func _on_overlay_primary_pressed() -> void:
 	match _game_session.flow_state:
 		BoardGameSession.FlowState.MENU:
 			resume_game()
-		BoardGameSession.FlowState.WON, BoardGameSession.FlowState.LOST:
+		BoardGameSession.FlowState.WON:
+			if get_next_level_definition_path().is_empty():
+				return_to_start_screen()
+			else:
+				start_next_level()
+		BoardGameSession.FlowState.LOST:
 			restart_game()
 
 
 func _on_overlay_secondary_pressed() -> void:
-	if (
-		_game_session.flow_state == BoardGameSession.FlowState.MENU
-		or _game_session.flow_state == BoardGameSession.FlowState.WON
-		or _game_session.flow_state == BoardGameSession.FlowState.LOST
-	):
-		return_to_start_screen()
+	match _game_session.flow_state:
+		BoardGameSession.FlowState.MENU, BoardGameSession.FlowState.LOST:
+			return_to_start_screen()
+		BoardGameSession.FlowState.WON:
+			restart_game()
 
 
 func _set_hint_message(message: BoardMessage) -> void:
@@ -672,3 +714,16 @@ func _tower_action_menu_rect(grid_position: Vector2i) -> Rect2:
 	)
 
 	return Rect2(menu_position, menu_size)
+
+
+func _resolve_level_definition_path() -> String:
+	if not level_definition_path.strip_edges().is_empty():
+		return level_definition_path.strip_edges()
+
+	var tree := get_tree()
+	if tree != null and tree.has_meta(LevelCatalog.SELECTED_LEVEL_META_KEY):
+		var selected_level_path := String(tree.get_meta(LevelCatalog.SELECTED_LEVEL_META_KEY))
+		if not selected_level_path.strip_edges().is_empty():
+			return selected_level_path.strip_edges()
+
+	return LevelCatalog.get_default_level_path()

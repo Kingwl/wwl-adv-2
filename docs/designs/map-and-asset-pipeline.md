@@ -13,7 +13,7 @@ Accepted
 ## 当前契约
 
 - `game/data/levels/*.json` 是玩法地图事实来源，定义棋盘尺寸、path cells、blocked cells、locked cells、spawn、exit 和 `style_id`。
-- `game/data/map_styles/*.json` 将 `style_id` 映射到背景 frame、normal、可选全棋盘 `grid_layer`、可选逐 slot overlay 和视觉参数。
+- `game/data/map_styles/*.json` 将 `style_id` 映射到背景 frame、normal、可选全棋盘 `grid_layer`、可选 `grid_layer_hidden_blocker_cells`、可选逐 slot overlay 和视觉参数。
 - `BoardAssetCatalog` 加载关卡、map style 和棋盘场景资产。
 - `BoardMapRenderer` 在棋盘 rect 内按顺序绘制 background、可选 `grid_layer` 和可选逐 slot overlay。
 - 敌人移动、放置规则和地图视觉都必须遵循同一份关卡路径数据。
@@ -24,14 +24,14 @@ Accepted
 新地图优先使用 `layered_raster`：
 
 - background layer：整体场景底图，只负责外圈景观和中间固定尺寸空地。当前 10x8 棋盘的默认 reference 使用一格外圈和 8x6 中间空地；中间空地必须保持低细节、平坦、无道路、无塔台、无可建造暗示和无装饰物堆叠。
-- grid layer：透明全棋盘覆盖图，盖在 background 之上，负责每关的 buildable cells、path cells、interior blocked cells 和 locked cells。路径转角、入口、出口和每关差异优先放到这一层。
+- grid layer：透明全棋盘覆盖图，盖在 background 之上，负责每关的 buildable cells、path cells、interior blocked cells 和 locked cells。路径转角、入口、出口和每关差异优先放到这一层。若某些 blocked cells 只是为了规则上排除护城河、城墙或边界景观，不应额外画 blocker，可在 map style 的 `grid_layer_hidden_blocker_cells` 中列出。
 - slot tiles：可选补充层，用 `tiles.buildable`、`tiles.path`、`tiles.blocked`、`tiles.locked` 为某类格子提供重复纹理；如果 full `grid_layer` 已经表达完整道路和格子，slot tiles 可以为空。
 
 现有 baked 背景继续合法；当 map style 没有 `grid_layer` 或 slot tile 时，渲染结果保持原 baked background 行为。
 
 ## Deterministic Grid Layer Compositor
 
-`game/tools/compose-map-grid-layer.py` 是分层地图的第一版确定性合成器。它读取 `game/data/levels/*.json` 和对应 map style，把现有 image-generated 背景作为外圈场景和纹理来源，但 clean playfield、路径 ribbon、可建造塔台和内部阻挡的几何全部从关卡 JSON 计算。脚本输出透明 `grid_layer_composed.png`、flattened `preview.png` 和 `composition_manifest.json`，默认产物位于 `game/tools/out/composed_map_layers/`；带 `--write-clean-background` 时会额外输出 `background_frame_clean.png`，带 `--write-style-assets` 时会把运行时 clean background / grid layer 写入 `game/assets/tilesets/<style_id>/`。
+`game/tools/compose-map-grid-layer.py` 是分层地图的第一版确定性合成器。它读取 `game/data/levels/*.json` 和对应 map style，把现有 image-generated 背景作为外圈场景和纹理来源，但 clean playfield、路径 ribbon、边缘路径端点 apron/threshold、可建造塔台和内部阻挡的几何全部从关卡 JSON 计算。style 中的 `grid_layer_hidden_blocker_cells` 只影响 blocker 是否可见，不改变 blocked/locked 玩法规则。脚本输出透明 `grid_layer_composed.png`、flattened `preview.png` 和 `composition_manifest.json`，默认产物位于 `game/tools/out/composed_map_layers/`；带 `--write-clean-background` 时会额外输出 `background_frame_clean.png`，带 `--write-style-assets` 时会把运行时 clean background / grid layer 写入 `game/assets/tilesets/<style_id>/`。
 
 典型命令：
 
@@ -73,7 +73,7 @@ cd game
 - `level_002` / Long Road：`long_road_v1`，目录 `res://assets/tilesets/long_road_v1/`。
 - `level_003` / Kill Zone：`kill_zone_v1`，目录 `res://assets/tilesets/kill_zone_v1/`。
 - `level_004` / Armored Column：`armored_column_v1`，目录 `res://assets/tilesets/armored_column_v1/`。
-- `level_005` / MVP Showcase：`mvp_showcase_v1`，目录 `res://assets/tilesets/mvp_showcase_v1/`；当前背景为 clean citadel courtyard background-only 图，并接入 `grid_layer_composed.png` 作为确定性道路和成簇塔台覆盖层。
+- `level_005` / MVP Showcase：`mvp_showcase_v1`，目录 `res://assets/tilesets/mvp_showcase_v1/`；当前背景为 clean citadel courtyard background-only 图，并接入 `grid_layer_composed.png` 作为确定性道路和成簇塔台覆盖层；左侧护城河边界 blocked cells 通过 `grid_layer_hidden_blocker_cells` 保留规则但隐藏视觉 blocker。
 
 `level_001` 当前仍使用 baked 背景。`level_002` 到 `level_005` 已接入 clean background + deterministic grid layer，正常游玩中不绘制永久调试网格，但会显示由关卡 JSON 合成的道路、塔台和内部 blocker 覆盖层。后续重生成背景时，应优先维持分层：先用 `background_reference.png` 固定外圈景观和中间空地，再用 compositor 或 image-generated tile/texture source 生成可覆盖在棋盘 rect 上的透明 grid layer。
 
@@ -89,5 +89,5 @@ cd game
 ## 仍未解决
 
 - 确定性 grid layer compositor 已在 Level 2-5 配套 clean background 底图；Level 1 如需同一视觉语言，仍需要生成同类底图并接入 grid layer。
-- 新地图目前是数据 fixture 和资产层接入；玩家可选关卡入口和 per-level 截图 smoke 仍待补。
+- 新地图已可通过开始页选关入口进入；per-level 长局截图 smoke 仍待补，现有截图证据主要来自 level grid audit 和地图 visual review。
 - 塔、敌人、波次和经济配置已迁移到数据文件并纳入资产/schema 检查；当前还需要长局平衡 fixture。

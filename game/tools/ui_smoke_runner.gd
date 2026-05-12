@@ -17,6 +17,7 @@ enum ReviewSpecKind {
 	MAIN,
 	START,
 	START_FULL,
+	LEVEL_SELECT,
 	TOWER_DECK,
 	BOARD_PREVIEW,
 	TOWER_ACTION,
@@ -126,8 +127,32 @@ func _run_viewport(viewport: Dictionary) -> Dictionary:
 		)
 		start_button.emit_signal("pressed")
 
+	await _settle_frames(4)
+	var level_select_panel := start_scene.get_node_or_null("LevelSelectPanel") as VBoxContainer
+	var first_level_button := start_scene.get_node_or_null("LevelSelectPanel/LevelButton1") as Button
+	_check(result, level_select_panel != null, "level select panel exists")
+	_check(result, level_select_panel != null and level_select_panel.visible, "start button opens level select")
+	_check(result, first_level_button != null, "first level button exists")
+	if first_level_button != null:
+		_check(result, first_level_button.text == "1. Training Gate", "first level button text")
+		_check(result, first_level_button.size.x >= 160.0 and first_level_button.size.y >= 30.0, "first level button clickable size")
+		_check_control_rect(result, first_level_button, viewport_size, "first level button in viewport")
+	if level_select_panel != null:
+		_check_control_rect(result, level_select_panel, viewport_size, "level select panel in viewport")
+		await _capture_current_review_artifacts(
+			result,
+			viewport_name,
+			start_scene,
+			"level select",
+			ReviewSpecKind.LEVEL_SELECT,
+			"level-select",
+			"Level select"
+		)
+	if first_level_button != null:
+		first_level_button.emit_signal("pressed")
+
 	var main_loaded := await _wait_for_scene(MAIN_SCENE_PATH, 30)
-	_check(result, main_loaded, "start button enters main scene")
+	_check(result, main_loaded, "level select enters main scene")
 	if not main_loaded:
 		return _finalize_viewport(result)
 
@@ -585,6 +610,8 @@ func _review_specs_for_kind(
 			return [_start_screen_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.START_FULL:
 			return [_start_screen_full_review_spec(scene, image_size, spec_name, spec_title)]
+		ReviewSpecKind.LEVEL_SELECT:
+			return [_level_select_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.TOWER_DECK:
 			return [_tower_deck_review_spec(scene, image_size, spec_name, spec_title)]
 		ReviewSpecKind.BOARD_PREVIEW:
@@ -786,6 +813,50 @@ func _start_screen_full_review_spec(
 			["Title"],
 			["StartButton"],
 		],
+	}
+
+
+func _level_select_review_spec(
+	start_scene: Node,
+	image_size: Vector2i,
+	spec_name: String = "",
+	spec_title: String = ""
+) -> Dictionary:
+	var level_button_paths := []
+	for index in range(1, 6):
+		level_button_paths.append("LevelSelectPanel/LevelButton%d" % index)
+	var paths := [
+		"MenuFrame",
+		"CrestIcon",
+		"Title",
+		"LevelSelectPanel",
+		"LevelSelectPanel/LevelPrompt",
+		"LevelSelectPanel/LevelBackButton",
+	]
+	paths.append_array(level_button_paths)
+	var controls := [
+		{"path": "MenuFrame", "kind": "frame"},
+		{"path": "CrestIcon", "kind": "icon"},
+		{"path": "Title", "kind": "control"},
+		{"path": "LevelSelectPanel", "kind": "frame"},
+		{"path": "LevelSelectPanel/LevelPrompt", "kind": "control"},
+	]
+	var groups := [
+		["MenuFrame", "CrestIcon", "Title", "LevelSelectPanel"],
+		["LevelSelectPanel/LevelPrompt"],
+	]
+	for button_path in level_button_paths:
+		controls.append({"path": button_path, "kind": "control"})
+		groups.append([button_path])
+	controls.append({"path": "LevelSelectPanel/LevelBackButton", "kind": "control"})
+	groups.append(["LevelSelectPanel/LevelBackButton"])
+
+	return {
+		"name": spec_name if not spec_name.is_empty() else "level-select",
+		"title": spec_title if not spec_title.is_empty() else "Level select",
+		"rect": _expanded_control_group_rect(start_scene, paths, image_size),
+		"controls": controls,
+		"groups": groups,
 	}
 
 
@@ -1170,7 +1241,7 @@ func _render_markdown_report() -> String:
 	lines.append("- [ ] Tower deck: cards fit the viewport, selected/disabled states are readable, and card text does not collide with icons or frames.")
 	lines.append("- [ ] Tower placement preview: hovered buildable tile shows a readable translucent preview of the selected tower.")
 	lines.append("- [ ] Tower action menu: floating Upgrade/Remove panel appears beside the selected tower, stays in viewport, and its button text is readable.")
-	lines.append("- [ ] Start and overlays: start, pause, victory, and defeat panels keep title, message, and buttons centered and readable.")
+	lines.append("- [ ] Start and overlays: start, level select, pause, victory, and defeat panels keep title, message, and buttons centered and readable.")
 	lines.append("- [ ] Compact viewports: top HUD, board, and bottom/side tower deck remain visually separated.")
 	lines.append("")
 	lines.append("Overlay legend: cyan = frame/panel rect, magenta = label/button rect, amber = icon rect, green = grouped control rect, white = grouped control centerline.")

@@ -9,7 +9,7 @@
 ## 下一步
 
 - [ ] 为 MVP Showcase 增加长局 gameplay smoke 或 headless balance summary，覆盖金币、生命、漏怪、胜负和最终波次。
-- [ ] 为 Level 2-5 增加可进入的关卡选择或 smoke 参数化入口，让新地图能被玩家路径和截图证据覆盖。
+- [x] 为 Level 2-5 增加可进入的关卡选择或 smoke 参数化入口，让新地图能被玩家路径和截图证据覆盖；已实现开始页选关入口，截图证据由 UI smoke 选关 crop 和 level grid audit 地图截图覆盖。
 - [ ] 塔成长模型确定后，设计随机召唤塔的概率。
 - [ ] 如果攻击应在造成伤害前有飞行时间，设计真实投射物实体。
 - [ ] 如果保留的敌人影响长期运行性能，添加敌人清理服务。
@@ -33,7 +33,10 @@
 - [x] Level 4 composed grid layer preview 与 baked 背景中已有的方形塔台重复表达，形成两套不同透明度和材质的可建造语言；已生成 clean playfield 背景并接入 deterministic grid layer。
 - [x] Level 4 runtime buildable cells 一部分有明确石质塔台，一部分只是普通泥地或兵营空地，建造 affordance 不一致；已用统一 buildable pad 层表达可建造区。
 - [x] Level 5 右下大块空石板区域没有塔台但视觉上仍像可建造地面，需要为非可建造空地增加明确的景观/障碍/材质差异；已让 deterministic grid layer 为内部 blocked cells 画 blocker 标记。
-- [ ] Level 5 deterministic road 在左入口和右出口处仍像半透明铺色块直接切出画面，没有和城门、桥或边界景观自然衔接。
+- [x] Level 5 deterministic road 在左入口和右出口处仍像半透明铺色块直接切出画面，没有和城门、桥或边界景观自然衔接；已为边缘路径端点增加 deterministic stone apron 和 threshold 衔接。
+- [x] Level 5 左侧护城河上仍显示一列灰色 blocker 方块，看起来像规则层错位或可交互格；已通过 map style 的 `grid_layer_hidden_blocker_cells` 隐藏这些视觉 blocker，但保留 blocked 规则。
+- [x] Level 5 左上 2x2 塔位的上排塔 sprite 贴到水渠边缘，看起来像塔基压在水面上；已移除上排两个塔位并把同等数量塔位补到中下部安全区域。
+- [x] Level grid audit 的全可建造格截图会残留上一格非法放置红框，干扰逐格视觉审查；已在截图前清理 placement result、hover 和塔操作菜单状态。
 - [x] Level 5 buildable pads 仍偏 UI overlay 感，尤其与同材质石板底面叠加时不够像地图原生平台；已改为更低饱和石质 tint 和更弱描边。
 - [x] Level 2 clean background 第一版重复铺出绿色斑块，4x4 采样下像规律污渍；已改为低对比、低频石板地面。
 - [x] Level 2-4 clean background 第二版逐格亮度变化形成规则棋盘感，容易被误读为玩法格；已改为连续小尺度石板纹理，不按玩法格对齐。

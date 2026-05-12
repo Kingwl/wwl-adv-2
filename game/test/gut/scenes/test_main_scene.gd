@@ -4,11 +4,15 @@ const SAFE_BUILDABLE_CELL := Vector2i(1, 1)
 const SAFE_COMBAT_CELL := Vector2i(1, 2)
 
 
+func after_each() -> void:
+	_clear_level_selection_meta()
+
+
 func test_project_entry_scene_is_start_scene() -> void:
 	assert_eq(ProjectSettings.get_setting("application/run/main_scene"), "res://scenes/start.tscn")
 
 
-func test_start_scene_loads_title_and_start_button() -> void:
+func test_start_scene_loads_title_start_button_and_level_select_panel() -> void:
 	var packed_scene: PackedScene = load("res://scenes/start.tscn")
 	var scene: Node = packed_scene.instantiate()
 	add_child_autoqfree(scene)
@@ -16,6 +20,7 @@ func test_start_scene_loads_title_and_start_button() -> void:
 
 	var title: Label = scene.get_node("Title") as Label
 	var start_button: Button = scene.get_node("StartButton") as Button
+	var level_select_panel: VBoxContainer = scene.get_node("LevelSelectPanel") as VBoxContainer
 
 	assert_not_null(scene as StartScreen)
 	assert_eq(title.text, "WWL 大冒险 2")
@@ -26,6 +31,40 @@ func test_start_scene_loads_title_and_start_button() -> void:
 	assert_eq(start_button.text, "Start")
 	assert_eq(start_button.alignment, HORIZONTAL_ALIGNMENT_CENTER)
 	assert_true(start_button.get_theme_stylebox("normal") is StyleBoxTexture)
+	assert_true(start_button.visible)
+	assert_false(level_select_panel.visible)
+
+
+func test_start_button_opens_level_select() -> void:
+	var packed_scene: PackedScene = load("res://scenes/start.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var start_screen := scene as StartScreen
+	var start_button: Button = scene.get_node("StartButton") as Button
+	var level_select_panel: VBoxContainer = scene.get_node("LevelSelectPanel") as VBoxContainer
+	var back_button: Button = scene.get_node("LevelSelectPanel/LevelBackButton") as Button
+
+	start_button.pressed.emit()
+	await get_tree().process_frame
+
+	var level_buttons := start_screen.get_level_buttons()
+	assert_true(start_screen.is_showing_level_select())
+	assert_false(start_button.visible)
+	assert_true(level_select_panel.visible)
+	assert_eq(level_buttons.size(), 5)
+	assert_eq((level_buttons[0] as Button).text, "1. Training Gate")
+	assert_eq((level_buttons[4] as Button).text, "5. MVP Showcase")
+	assert_eq(back_button.text, "Back")
+	assert_true((level_buttons[0] as Button).get_theme_stylebox("normal") is StyleBoxTexture)
+
+	back_button.pressed.emit()
+	await get_tree().process_frame
+
+	assert_false(start_screen.is_showing_level_select())
+	assert_true(start_button.visible)
+	assert_false(level_select_panel.visible)
 
 
 func test_main_scene_loads_board_view_and_hud() -> void:
@@ -162,6 +201,22 @@ func test_board_view_level_definition_matches_default_path() -> void:
 	assert_eq(int(level["grid"]["height"]), board_view.get_session().board.height)
 	assert_eq(_path_cells_to_vector2i(level["path_cells"]), board_view.get_session().get_default_path())
 	assert_eq(level["style_id"], board_view.get_asset_catalog().map_style_definition.id)
+
+
+func test_board_view_uses_selected_level_from_scene_tree_meta() -> void:
+	get_tree().set_meta(LevelCatalog.SELECTED_LEVEL_META_KEY, "res://data/levels/level_003.json")
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+
+	assert_eq(board_view.get_level_definition_path(), "res://data/levels/level_003.json")
+	assert_eq(board_view.get_asset_catalog().level_definition.id, "level_003")
+	assert_eq(board_view.get_asset_catalog().level_definition.display_name, "Kill Zone")
+	assert_eq(board_view.get_asset_catalog().map_style_definition.id, "kill_zone_v1")
+	assert_eq(board_view.get_next_level_definition_path(), "res://data/levels/level_004.json")
 
 
 func test_board_view_initializes_board_and_default_path() -> void:
@@ -507,7 +562,7 @@ func test_board_view_pause_menu_pauses_and_resumes_game() -> void:
 	assert_true(board_view.get_session().gameplay_paused)
 	assert_eq(title.text, "Paused")
 	assert_true(secondary_button.visible)
-	assert_eq(secondary_button.text, "Start")
+	assert_eq(secondary_button.text, "Select")
 	assert_true(single_button.disabled)
 	assert_almost_eq(enemy.path_distance, paused_distance, 0.00001)
 
@@ -1160,7 +1215,7 @@ func test_board_view_shows_defeat_when_lives_reach_zero() -> void:
 	assert_eq(title.text, "Defeat")
 	assert_eq(primary_button.text, "Restart")
 	assert_true(secondary_button.visible)
-	assert_eq(secondary_button.text, "Start")
+	assert_eq(secondary_button.text, "Select")
 	assert_eq(lives_label.text, "Lives: 0")
 	assert_eq(status_label.text, "Defeat. Enemies breached the path.")
 
@@ -1175,6 +1230,7 @@ func test_board_view_shows_victory_when_all_waves_are_cleared() -> void:
 	var status_label: Label = scene.get_node("Hud/Status") as Label
 	var overlay: Control = scene.get_node("Overlay/Screen") as Control
 	var title: Label = scene.get_node("Overlay/Screen/Panel/Title") as Label
+	var primary_button: Button = scene.get_node("Overlay/Screen/Panel/PrimaryButton") as Button
 	var secondary_button: Button = scene.get_node("Overlay/Screen/Panel/SecondaryButton") as Button
 	board_view.start_game()
 	board_view.show_victory_screen()
@@ -1183,9 +1239,32 @@ func test_board_view_shows_victory_when_all_waves_are_cleared() -> void:
 	assert_true(board_view.get_session().gameplay_paused)
 	assert_true(overlay.visible)
 	assert_eq(title.text, "Victory")
+	assert_eq(primary_button.text, "Next")
 	assert_true(secondary_button.visible)
-	assert_eq(secondary_button.text, "Start")
+	assert_eq(secondary_button.text, "Restart")
+	assert_eq(board_view.get_next_level_definition_path(), "res://data/levels/level_002.json")
 	assert_eq(status_label.text, "Victory. All waves cleared.")
+
+
+func test_board_view_last_level_victory_returns_to_level_select() -> void:
+	get_tree().set_meta(LevelCatalog.SELECTED_LEVEL_META_KEY, "res://data/levels/level_005.json")
+	var packed_scene: PackedScene = load("res://scenes/main.tscn")
+	var scene: Node = packed_scene.instantiate()
+	add_child_autoqfree(scene)
+	await get_tree().process_frame
+
+	var board_view: BoardView = scene.get_node("BoardView") as BoardView
+	var title: Label = scene.get_node("Overlay/Screen/Panel/Title") as Label
+	var primary_button: Button = scene.get_node("Overlay/Screen/Panel/PrimaryButton") as Button
+	var secondary_button: Button = scene.get_node("Overlay/Screen/Panel/SecondaryButton") as Button
+
+	board_view.show_victory_screen()
+
+	assert_eq(board_view.get_level_definition_path(), "res://data/levels/level_005.json")
+	assert_eq(board_view.get_next_level_definition_path(), "")
+	assert_eq(title.text, "Victory")
+	assert_eq(primary_button.text, "Select")
+	assert_eq(secondary_button.text, "Restart")
 
 
 func _key_event(keycode: Key) -> InputEventKey:
@@ -1193,3 +1272,10 @@ func _key_event(keycode: Key) -> InputEventKey:
 	event.keycode = keycode
 	event.pressed = true
 	return event
+
+
+func _clear_level_selection_meta() -> void:
+	if get_tree().has_meta(LevelCatalog.SELECTED_LEVEL_META_KEY):
+		get_tree().remove_meta(LevelCatalog.SELECTED_LEVEL_META_KEY)
+	if get_tree().has_meta(LevelCatalog.START_IN_LEVEL_SELECT_META_KEY):
+		get_tree().remove_meta(LevelCatalog.START_IN_LEVEL_SELECT_META_KEY)

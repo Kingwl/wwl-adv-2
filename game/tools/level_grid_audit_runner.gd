@@ -320,6 +320,11 @@ func _populate_all_buildable_towers(result: Dictionary, board_view: BoardView, e
 			"actual": tower_count,
 		}
 	)
+	board_view.get_session().last_placement_result = null
+	board_view.hover_grid_position = BoardView.INVALID_GRID_POSITION
+	board_view.clear_tower_action_menu()
+	board_view.refresh_hud()
+	board_view.queue_redraw()
 
 
 func _populate_path_enemies(result: Dictionary, board_view: BoardView, level: LevelDefinition) -> void:

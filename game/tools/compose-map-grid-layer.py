@@ -122,6 +122,7 @@ def compose_for_level(level_path: Path, output_root: Path, args: argparse.Namesp
     size = (width * tile_size, height * tile_size)
 
     cells = classify_cells(level, level_path, width, height)
+    cells["hidden_blockers"] = hidden_blocker_cells(style, level_path, cells, width, height)
     background_path = source_background_path(args.source_background, style)
     background = load_background(background_path, size)
     runtime_background = background
@@ -183,6 +184,7 @@ def compose_for_level(level_path: Path, output_root: Path, args: argparse.Namesp
             "blocked": len(cells["blocked"]),
             "exterior": len(cells["exterior"]),
             "interior_blocked": len(cells["interior_blocked"]),
+            "hidden_blockers": len(cells["hidden_blockers"]),
             "locked": len(cells["locked"]),
         },
         "cells": {
@@ -191,11 +193,12 @@ def compose_for_level(level_path: Path, output_root: Path, args: argparse.Namesp
             "path_order": [[x, y] for x, y in cells["path_order"]],
             "blocked": sorted_cells(cells["blocked"]),
             "interior_blocked": sorted_cells(cells["interior_blocked"]),
+            "hidden_blockers": sorted_cells(cells["hidden_blockers"]),
             "locked": sorted_cells(cells["locked"]),
         },
-        "method": "deterministic clean playfield, road, buildable-pad, and blocker geometry from level JSON over image-generated exterior art"
+        "method": "deterministic clean playfield, road, endpoint apron, buildable-pad, and blocker geometry from level JSON over image-generated exterior art"
         if args.write_clean_background
-        else "deterministic road, buildable-pad, and blocker geometry from level JSON over image-generated background art",
+        else "deterministic road, endpoint apron, buildable-pad, and blocker geometry from level JSON over image-generated background art",
         "runtime_clean_background": asset_clean_background,
         "runtime_grid_layer": asset_grid_layer,
         "outputs": outputs,
@@ -415,6 +418,30 @@ def classify_cells(level: dict, level_path: Path, width: int, height: int) -> di
     }
 
 
+def hidden_blocker_cells(
+    style: dict,
+    level_path: Path,
+    cells: dict,
+    width: int,
+    height: int,
+) -> set[tuple[int, int]]:
+    hidden_cells = cells_to_tuples(style.get("grid_layer_hidden_blocker_cells", []), "grid_layer_hidden_blocker_cells")
+    if len(set(hidden_cells)) != len(hidden_cells):
+        raise SystemExit(f"{level_path}: grid_layer_hidden_blocker_cells contains duplicate cells.")
+
+    hidden_set = set(hidden_cells)
+    for x, y in hidden_set:
+        if x < 0 or y < 0 or x >= width or y >= height:
+            raise SystemExit(f"{level_path}: grid_layer_hidden_blocker_cells cell {(x, y)!r} is outside the grid.")
+
+    non_blocker_cells = hidden_set - (cells["blocked"] | cells["locked"])
+    if non_blocker_cells:
+        raise SystemExit(
+            f"{level_path}: grid_layer_hidden_blocker_cells must reference blocked/locked cells, got {sorted_cells(non_blocker_cells)}"
+        )
+    return hidden_set
+
+
 def cells_to_tuples(cells: Iterable[object], field_name: str) -> list[tuple[int, int]]:
     result: list[tuple[int, int]] = []
     for index, cell in enumerate(cells):
@@ -547,11 +574,13 @@ def render_grid_layer(
 ) -> Image.Image:
     layer = Image.new("RGBA", size, (0, 0, 0, 0))
     draw_path(layer, cells["path_order"], tile_size, textures["path"], path_width_fraction)
+    draw_endpoint_aprons(layer, cells["path_order"], tile_size, textures["path"], path_width_fraction)
     draw_buildable_pads(layer, cells["buildable"], tile_size, textures["buildable"])
     width = size[0] // tile_size
     height = size[1] // tile_size
     blocker_cells = inner_playfield_cells(cells["blocked"] | cells["locked"], width, height)
     blocker_cells -= cells["path"] | cells["buildable"]
+    blocker_cells -= cells.get("hidden_blockers", set())
     for cell in sorted(blocker_cells, key=lambda value: (value[1], value[0])):
         draw_blocker(layer, cell, tile_size, textures["blocked"])
     return layer
@@ -596,6 +625,105 @@ def draw_path(
     highlight_width = max(3, int(tile_size * 0.035))
     highlight_mask = path_mask(layer.size, points, max(4, body_width - int(tile_size * 0.2)), (0, -highlight_width))
     composite_solid(layer, (255, 240, 203, 28), highlight_mask)
+
+
+def draw_endpoint_aprons(
+    layer: Image.Image,
+    path_order: list[tuple[int, int]],
+    tile_size: int,
+    texture: Image.Image,
+    path_width_fraction: float,
+) -> None:
+    if len(path_order) < 2:
+        return
+
+    for endpoint in (path_order[0], path_order[-1]):
+        if not is_edge_cell(endpoint, layer.size, tile_size):
+            continue
+
+        body_mask = endpoint_apron_mask(layer.size, endpoint, tile_size, path_width_fraction)
+        if body_mask is None:
+            continue
+
+        border_mask = body_mask.filter(ImageFilter.MaxFilter(7))
+        shadow_mask = shifted_mask(border_mask, (0, max(2, tile_size // 38)))
+        composite_solid(layer, (0, 0, 0, 32), shadow_mask)
+        composite_solid(layer, (76, 61, 45, 128), border_mask)
+        composite_texture(layer, tile_texture(texture, layer.size), scaled_mask(body_mask, 236))
+        composite_solid(layer, (255, 240, 205, 30), endpoint_threshold_mask(layer.size, endpoint, tile_size, path_width_fraction))
+
+
+def endpoint_apron_mask(
+    size: tuple[int, int],
+    endpoint: tuple[int, int],
+    tile_size: int,
+    path_width_fraction: float,
+) -> Image.Image | None:
+    center_x, center_y = cell_center(endpoint, tile_size)
+    width = max(4, int(tile_size * (path_width_fraction + 0.08)))
+    half = width // 2
+    overhang = max(8, int(tile_size * 0.12))
+    x, y = endpoint
+    grid_width = size[0] // tile_size
+    grid_height = size[1] // tile_size
+    if x == 0:
+        rect = (-overhang, center_y - half, center_x + half, center_y + half)
+    elif x == grid_width - 1:
+        rect = (center_x - half, center_y - half, size[0] + overhang, center_y + half)
+    elif y == 0:
+        rect = (center_x - half, -overhang, center_x + half, center_y + half)
+    elif y == grid_height - 1:
+        rect = (center_x - half, center_y - half, center_x + half, size[1] + overhang)
+    else:
+        return None
+
+    mask = Image.new("L", size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.rounded_rectangle(rect, radius=max(8, int(tile_size * 0.08)), fill=214)
+    return mask.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.MinFilter(5))
+
+
+def endpoint_threshold_mask(
+    size: tuple[int, int],
+    endpoint: tuple[int, int],
+    tile_size: int,
+    path_width_fraction: float,
+) -> Image.Image:
+    center_x, center_y = cell_center(endpoint, tile_size)
+    width = max(4, int(tile_size * (path_width_fraction + 0.16)))
+    half = width // 2
+    depth = max(5, int(tile_size * 0.055))
+    x, y = endpoint
+    grid_width = size[0] // tile_size
+    grid_height = size[1] // tile_size
+    if x == 0:
+        rect = (0, center_y - half, depth, center_y + half)
+    elif x == grid_width - 1:
+        rect = (size[0] - depth, center_y - half, size[0], center_y + half)
+    elif y == 0:
+        rect = (center_x - half, 0, center_x + half, depth)
+    elif y == grid_height - 1:
+        rect = (center_x - half, size[1] - depth, center_x + half, size[1])
+    else:
+        rect = (0, 0, 0, 0)
+
+    mask = Image.new("L", size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.rectangle(rect, fill=160)
+    return mask
+
+
+def shifted_mask(mask: Image.Image, offset: tuple[int, int]) -> Image.Image:
+    shifted = Image.new("L", mask.size, 0)
+    shifted.paste(mask, offset)
+    return shifted
+
+
+def is_edge_cell(cell: tuple[int, int], size: tuple[int, int], tile_size: int) -> bool:
+    width = size[0] // tile_size
+    height = size[1] // tile_size
+    x, y = cell
+    return x == 0 or y == 0 or x == width - 1 or y == height - 1
 
 
 def path_mask(

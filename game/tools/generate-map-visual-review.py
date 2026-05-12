@@ -314,9 +314,9 @@ def regions_for_level(level_id: str, base_size: tuple[int, int]) -> list[dict]:
             },
             {
                 "id": "upper_left_pad_cluster",
-                "label": "Upper-left 2x2 pad cluster",
+                "label": "Upper-left safe pad pair",
                 "bbox": [170, 70, 570, 430],
-                "reason": "Grouped pads should feel like a platform; towers should dominate the pad.",
+                "reason": "Towers should stay clear of the moat; upper blocked buffers should read as non-buildable.",
             },
             {
                 "id": "upper_right_pad_cluster",

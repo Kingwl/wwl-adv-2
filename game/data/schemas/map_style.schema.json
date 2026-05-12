@@ -39,6 +39,18 @@
     "grid_layer": {
       "type": "string"
     },
+    "grid_layer_hidden_blocker_cells": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
     "lighting": {
       "type": "object",
       "additionalProperties": false,

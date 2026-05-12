@@ -422,7 +422,7 @@
     ],
     "locked": []
   },
-  "method": "deterministic clean playfield, road, buildable-pad, and blocker geometry from level JSON over image-generated exterior art",
+  "method": "deterministic clean playfield, road, endpoint apron, buildable-pad, and blocker geometry from level JSON over image-generated exterior art",
   "runtime_clean_background": "res://assets/tilesets/kill_zone_v1/background_frame_clean.png",
   "runtime_grid_layer": "res://assets/tilesets/kill_zone_v1/grid_layer_composed.png",
   "outputs": {

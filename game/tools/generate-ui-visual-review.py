@@ -22,6 +22,7 @@ DEFAULT_BLOCK_SIZE = 4
 KEY_CROPS = [
     "start-screen-full",
     "start-screen",
+    "level-select",
     "hud-resources",
     "status-hint",
     "status-reward",
